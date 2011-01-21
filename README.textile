@@ -1,0 +1,45 @@
+h1. About
+
+Very low-level AMQP 0.9.1 client which is supposed to be used for implementing more high-level AMQP libraries rather than to be used by the end users.
+
+_Caution: this is *VERY EXPERIMENTAL*! It will be likely renamed at the future as we'll get a clearer vision what it actually should do :)_
+
+h1. Usage
+
+Install by running @gem install amq-client@.
+
+<pre>
+require "amq/client/adapters/socket"
+
+AMQ::Client::Settings.register_io_adapter(AMQ::Client::SocketAdapter)
+</pre>
+
+h2. Nightly Builds
+
+You can always find nightly builds at "gems.101ideas.cz":http://gems.101ideas.cz. You can install them thusly:
+
+<pre>
+wget http://gems.101ideas.cz/amq-client-nightly.gem
+gem install amq-client-nightly.gem
+</pre>
+
+_*NOTE:* This could be better achieved by a gem server, but it's just utterly broken._
+
+h2. Git Repository
+
+<pre>
+git clone git://github.com/ruby-amqp/amq-client.git --recursive
+</pre>
+
+Or, if you are on an older version of Git:
+
+<pre>
+git clone git://github.com/ruby-amqp/amq-client.git
+git submodule update --init
+</pre>
+
+h1. Links
+
+* "RDoc.info API Docs":http://rdoc.info/github/ruby-amqp/amq-client/master/frames
+* "Examples":https://github.com/ruby-amqp/amq-client/tree/master/examples/
+* "Bug reporting":http://github.com/ruby-amqp/amq-client/issues
