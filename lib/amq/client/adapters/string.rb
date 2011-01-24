@@ -20,6 +20,8 @@
 #       @size, @payload = nil
 #     end
 #   end
+#
+#   NOTE: the client should also implement waiting for another frames, in case that some header/body frames are expected.
 # end
 
 module AMQ
