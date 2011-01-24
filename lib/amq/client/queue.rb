@@ -34,7 +34,7 @@ module AMQ
     # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback. The cache includes only queues with {nowait: false}.
     self.handle(Protocol::Queue::DeclareOk) do |client, frame|
       queue = client.cache[AMQ::Protocol::Queue::DeclareOk].shift
-      queue.callback(:declare, frame.queue_name, frame.consumer_count, frame.messages_count)
+      queue.exec_callback(:declare, frame.queue_name, frame.consumer_count, frame.messages_count)
     end
 
     self.handle(Protocol::Queue::BindOk) do |client, frame|

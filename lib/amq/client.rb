@@ -60,7 +60,7 @@ module AMQ
         @adapter, @callbacks = adapter, Hash.new
       end
 
-      def callback(name, *args)
+      def exec_callback(name, *args)
         callback = self.callbacks[name]
         callback.call(self, *args)
       end
