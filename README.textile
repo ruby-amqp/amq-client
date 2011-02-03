@@ -57,6 +57,15 @@ AMQ::SocketClient.connect(:port => 5672)
 AMQ::SocketClient.connect("amqp://")
 </pre>
 
+h3. Logging
+
+<pre>
+require "logger"
+
+AMQ::Client.logging = true
+AMQ::Client.logger  = Logger.new(STDERR)
+</pre>
+
 h3. AMQP API
 
 <pre>

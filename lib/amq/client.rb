@@ -47,6 +47,30 @@ module AMQ
       client
     end
 
+    def self.logger
+      @logger ||= begin
+        require "logger"
+        Logger.new(STDERR)
+      end
+    end
+
+    def self.logger=(logger)
+      methods = AMQ::Client::Logging::REQUIRED_METHODS
+      unless methods.all? { |method| logger.respond_to?(method) }
+        raise AMQ::Client::Logging::IncompatibleLoggerError.new
+      end
+
+      @logger = logger
+    end
+
+    def self.logging
+      @settings[:logging]
+    end
+
+    def self.logging=(boolean)
+      @settings[:logging] = boolean
+    end
+
     # AMQ::Client interface
     # This has to be implemented by all the clients.
     def amq_init
