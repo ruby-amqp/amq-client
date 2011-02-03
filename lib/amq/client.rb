@@ -1,7 +1,20 @@
 # encoding: utf-8
 
+require "amq/client/logging"
+
 module AMQ
   module Client
+    # Let's integrate logging.
+    module Logging
+      def self.logging
+        AMQ::Client.logging
+      end
+
+      def self.logging=(boolean)
+        AMQ::Client.logging = boolean
+      end
+    end
+
     class MissingInterfaceMethodError < NotImplementedError
       def initialize(method_name)
         super("Method #{method_name} is supposed to be redefined ......")
@@ -61,6 +74,12 @@ module AMQ
       end
 
       @logger = logger
+    end
+
+    attr_accessor :logger, :settings
+    def initialize
+      self.logger   = self.class.logger
+      self.settings = self.class.settings
     end
 
     def self.logging

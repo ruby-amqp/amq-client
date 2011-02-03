@@ -1,0 +1,25 @@
+GIT
+  remote: git://github.com/ruby-amqp/amq-protocol.git
+  revision: 568b620306e4ffd00a1816883c3c41b410fe9168
+  specs:
+    amq-protocol (0.0.1)
+
+GEM
+  remote: http://gemcutter.org/
+  specs:
+    diff-lcs (1.1.2)
+    rspec (2.4.0)
+      rspec-core (~> 2.4.0)
+      rspec-expectations (~> 2.4.0)
+      rspec-mocks (~> 2.4.0)
+    rspec-core (2.4.0)
+    rspec-expectations (2.4.0)
+      diff-lcs (~> 1.1.2)
+    rspec-mocks (2.4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  amq-protocol!
+  rspec (>= 2.0.0)

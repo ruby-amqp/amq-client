@@ -63,8 +63,12 @@ h3. Logging
 require "logger"
 
 AMQ::Client.logging = true
-AMQ::Client.logger  = Logger.new(STDERR)
+AMQ::Client.logger  = MyLogger.new(STDERR)
 </pre>
+
+If @AMQ::Client.logging@ is true but the @AMQ::Client.logger@ isn't initialized, it will require @logger@ library from the Ruby stdlib and assign an instance of this logger to @AMQ::Client.logger@.
+
+If you want to be able to log messages just from specified classes or even instances, just make the instance respond to @#logging@ and set it to desired value.
 
 h3. AMQP API
 
