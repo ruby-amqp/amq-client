@@ -25,7 +25,7 @@ module AMQ
       # Basic.Consume
       def consume(&block)
         if @consumer_tag
-          raise RuntimeError.new("This instance is already consumed! Create another one using #dup.")
+          raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.")
         end
         @consumer_tag = "random sh1t3"
         adapter.client.consumers[@consumer_tag] = self ### WHAT IF there'll be more consume blocks for the same object? Now that's about opinion, but we are NOT building an opinionated API here!!!!

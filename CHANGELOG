@@ -1,3 +1,4 @@
 = Version 0.0.1
-  * [FEATURES] Settings.
-  * [FEATURES] IO adapters.
+  * [FEATURE] Settings.
+  * [FEATURE] IO adapters.
+  * [FEATURE] Basic AMQP API.
