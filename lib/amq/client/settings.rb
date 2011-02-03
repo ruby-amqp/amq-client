@@ -21,13 +21,31 @@ module AMQ
           :logging => false,
 
           # ssl
-          :ssl => false
+          :ssl => false,
+
+          # broker
+          # if you want to load broker-specific extensions
+          :broker => nil
         }
       end
     end
 
-    def configure(settings)
-      @settings ||= self.default.merge(settings)
+    def configure(settings = nil)
+      @settings ||= begin
+        case settings
+        when Hash
+          self.default.merge(settings)
+        when String
+          settings = self.parse_amqp_url(settings)
+          self.default.merge(settings)
+        when NilClass
+          self.default
+        end
+      end
+    end
+
+    def parse_amqp_url(string)
+      raise NotImplementedError.new
     end
   end
 end

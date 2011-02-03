@@ -21,15 +21,53 @@ The important thing about AMQ-Client is that it shouldn't do any assumptions, it
 
 On top of the AMQ-Client there can a lot of various opinionated clients which can make usage of AMQP easier. Implementing of a good AMQP abstraction isn't easy, so creating another clients should be encouraged. Typical stuff which should be taken care about on this layer: reconnecting, behind-scene channel creation, simplified API, RPC ...
 
-h1. Usage
+h2. AMQ-Client API
 
-Install by @gem install amq-client@.
+h3. Adapters
+
+Adapters provide uniform API for all the IO read/write methods. Available adapters are @coolio@, @eventmachine@, @io_select@ and @socket@.
 
 <pre>
 require "amq/client/adapters/socket"
 
-AMQ::Client::Settings.register_io_adapter(AMQ::Client::SocketAdapter)
+AMQ::SocketClient.connect(:host => "localhost") do |client|
+  # ...
+end
 </pre>
+
+h3. Settings
+
+h4. Available Options
+
+* *host* (defaults to @"127.0.0.1"@)
+* *port* (defaults to @AMQ::Protocol::DEFAULT_PORT@)
+* *user* (defaults to "guest")
+* *pass* (defaults to "guest")
+* *vhost* (default to @"/"@)
+* *timeout* (defaults to @nil@)
+* *logging* (defaults to @false@)
+* *ssl* (defaults to @false@)
+* *broker* if you want to load broker-specific extensions (defaults to @nil@)
+
+h4. Usage
+
+<pre>
+AMQ::SocketClient.connect
+AMQ::SocketClient.connect(:port => 5672)
+AMQ::SocketClient.connect("amqp://")
+</pre>
+
+h3. AMQP API
+
+<pre>
+AMQ::SocketClient.connect do |client|
+  client.queue("", 1)
+end
+</pre>
+
+h1. Installation
+
+Install by @gem install amq-client@.
 
 h2. Nightly Builds
 

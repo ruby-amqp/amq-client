@@ -8,6 +8,9 @@ module AMQ
   class EventMachineClient < Client
     include EventMachine::Deferrable
 
+    def self.__connect__(settings)
+    end
+
     def initialize
       @frames, @size, @payload = Array.new, 0, ""
     end

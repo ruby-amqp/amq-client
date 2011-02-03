@@ -3,8 +3,8 @@
 module AMQ
   module Client
     class MissingInterfaceMethodError < NotImplementedError
-      def initialize
-        super("This is supposed to be redefined ......")
+      def initialize(method_name)
+        super("Method #{method_name} is supposed to be redefined ......")
       end
     end
 
@@ -16,7 +16,7 @@ module AMQ
 
     def self.register_io_adapter(adapter)
       load_amq_protocol
-      AMQ::Protocol::Frame.extend(adapter)
+      AMQ::Protocol::Frame.extend(adapter) # FIXME: what if one want to use more adapters in the same app? I. e. during the rewrite ...
     end
 
     def self.load_amq_protocol
@@ -29,10 +29,36 @@ module AMQ
       end
     end
 
+    # @api public
+    def self.connect(settings = nil)
+      @settings = AMQ::Client::Settings.configure(settings)
+      self.__connect__(@settings)
+      self.handshake
+    end
+
+    # @api plugin
+    def self.__connect__(settings)
+      raise MissingInterfaceMethodError.new("AMQ::Client.connect(settings)")
+    end
+
+    def self.handshake
+      client = self.new
+      client.amq_init
+      client
+    end
+
     # AMQ::Client interface
     # This has to be implemented by all the clients.
+    def amq_init
+      self.send_raw(AMQ::Protocol::PREAMBLE)
+    end
+
     def send(data)
-      raise MissingInterfaceMethodError.new
+      raise MissingInterfaceMethodError.new("AMQ::Client#send(data)")
+    end
+
+    def send_raw(data)
+      raise MissingInterfaceMethodError.new("AMQ::Client#send_raw(data)")
     end
 
     def receive_frame(frame)
