@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
-
 require "amq/client"
 
 AMQ.register_io_adapter(:string)
