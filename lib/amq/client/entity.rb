@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 module AMQ
-  class Client
+  module Client
     class Entity
       attr_reader :callbacks
       def initialize(adapter)

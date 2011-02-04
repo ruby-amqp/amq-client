@@ -1,12 +1,11 @@
 # encoding: utf-8
 
-require "ostruct"
 require "spec_helper"
 require "amq/client/entity"
 
 describe AMQ::Client::Entity do
   subject do
-    AMQ::Client::Entity.new(OpenStruct.new(name: "adapter"))
+    AMQ::Client::Entity.new(Object.new)
   end
 
   it "should maintain an associative array of callbacks" do

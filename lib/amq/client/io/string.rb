@@ -33,7 +33,7 @@ module AMQ
         header = string[0..6]
         type, channel, size = self.decode_header(header)
         data = string[7..-1]
-        payload, frame_end = data[0..-2], data[-1].force_encoding(FINAL_OCTET.encoding)
+        payload, frame_end = data[0..-2], data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
 
         # 1) the size is miscalculated
         if payload.bytesize != size

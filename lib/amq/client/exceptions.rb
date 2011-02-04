@@ -8,7 +8,7 @@ module AMQ
 
     class NoFinalOctetError < InconsistentDataError
       def initialize
-        super("Frame doesn't end with #{FINAL_OCTET} as it must, which means the size is miscalculated.")
+        super("Frame doesn't end with #{AMQ::Protocol::Frame::FINAL_OCTET} as it must, which means the size is miscalculated.")
       end
     end
 
