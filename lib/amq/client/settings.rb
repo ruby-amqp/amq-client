@@ -30,22 +30,22 @@ module AMQ
           :broker => nil
         }
       end
-    end
 
-    def self.configure(settings = nil)
-      case settings
-      when Hash
-        self.default.merge(settings)
-      when String
-        settings = self.parse_amqp_url(settings)
-        self.default.merge(settings)
-      when NilClass
-        self.default
+      def self.configure(settings = nil)
+        case settings
+        when Hash
+          self.default.merge(settings)
+        when String
+          settings = self.parse_amqp_url(settings)
+          self.default.merge(settings)
+        when NilClass
+          self.default
+        end
       end
-    end
 
-    def self.parse_amqp_url(string)
-      raise NotImplementedError.new
+      def self.parse_amqp_url(string)
+        raise NotImplementedError.new
+      end
     end
   end
 end
