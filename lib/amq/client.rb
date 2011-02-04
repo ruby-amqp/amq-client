@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require "amq/client/logging"
+require "amq/client/exceptions"
 
 module AMQ
   module Client
@@ -15,16 +16,28 @@ module AMQ
       end
     end
 
-    class MissingInterfaceMethodError < NotImplementedError
-      def initialize(method_name)
-        super("Method #{method_name} is supposed to be redefined ......")
+    def self.logger
+      @logger ||= begin
+        require "logger"
+        Logger.new(STDERR)
       end
     end
 
-    class MissingHandlerError < StandardError
-      def initialize(frame)
-        super("No callback registered for #{frame.method_class}")
+    def self.logger=(logger)
+      methods = AMQ::Client::Logging::REQUIRED_METHODS
+      unless methods.all? { |method| logger.respond_to?(method) }
+        raise AMQ::Client::Logging::IncompatibleLoggerError.new
       end
+
+      @logger = logger
+    end
+
+    def self.logging
+      @settings[:logging]
+    end
+
+    def self.logging=(boolean)
+      @settings[:logging] = boolean
     end
 
     def self.register_io_adapter(adapter)
@@ -32,10 +45,10 @@ module AMQ
       AMQ::Protocol::Frame.extend(adapter) # FIXME: what if one want to use more adapters in the same app? I. e. during the rewrite ...
     end
 
-    def self.load_amq_protocol
-      require "amq/protocol/client"
+    def self.load_amq_protocol(path = "client")
+      require "amq/protocol/#{path}"
     rescue LoadError => exception
-      if exception.message.match("amq/protocol/client")
+      if exception.message.match("amq/protocol")
         raise LoadError.new("You have to install amq-protocol library first!")
       else
         raise exception

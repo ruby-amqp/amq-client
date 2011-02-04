@@ -24,30 +24,10 @@
 #   NOTE: the client should also implement waiting for another frames, in case that some header/body frames are expected.
 # end
 
+require "amq/client/exceptions"
+
 module AMQ
   module Client
-
-
-    # TODO: currently this is copy/pasted
-    FINAL_OCTET = AMQ::Protocol::Frame::FINAL_OCTET
-
-    class InconsistentDataError < StandardError
-    end
-
-    class NoFinalOctetError < InconsistentDataError
-      def initialize
-        super("Frame doesn't end with #{FINAL_OCTET} as it must, which means the size is miscalculated.")
-      end
-    end
-
-    class BadLengthError < InconsistentDataError
-      def initialize(expected_length, actual_length)
-        super("Frame payload should be #{expected_length} long, but it's #{actual_length} long.")
-      end
-    end
-
-
-
     module StringAdapter
       def decode(string)
         header = string[0..6]
@@ -61,7 +41,7 @@ module AMQ
         end
 
         # 2) the size is OK, but the string doesn't end with FINAL_OCTET
-        raise NoFinalOctetError.new if frame_end != FINAL_OCTET
+        raise NoFinalOctetError.new if frame_end != AMQ::Protocol::Frame::FINAL_OCTET
 
         self.new(type, payload, channel)
       end
