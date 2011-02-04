@@ -9,7 +9,7 @@ require "spec_helper"
 # to mess around with unecessary dependencies.
 require "amq/protocol/frame"
 
-# We have to use Kernel#load so extensstringns to the
+# We have to use Kernel#load so extensions to the
 # Logging module from client.rb will be overridden.
 load "amq/client/io/string.rb"
 

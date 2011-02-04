@@ -41,7 +41,8 @@ else
   puts "~ Loading original #{irbrc} ..."
   load irbrc
 
-  require_relative "lib/amq/protocol/client.rb"
+  require_relative "lib/amq/client.rb"
+  require_relative "lib/amq/client/client.rb"
   include AMQ::Client
 
   require "stringio"

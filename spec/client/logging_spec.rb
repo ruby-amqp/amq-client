@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 require "spec_helper"
-require "amq/client/logging"
 
 class TestLogger
   def log(message)
@@ -25,7 +24,11 @@ class LoggingTestClass
 end
 
 describe AMQ::Client::Logging do
+  # We have to use Kernel#load so extensions to the
+  # Logging module from client.rb will be overridden.
   before(:all) do
+    load "amq/client/logging.rb"
+
     AMQ::Client::Logging.logging = true
   end
 

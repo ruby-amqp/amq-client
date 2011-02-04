@@ -1,10 +1,12 @@
 # encoding: utf-8
 
+require "amq/protocol/client" # TODO: "amq/protocol/constants"
+
 module AMQ
   module Client
     module Settings
-      def default
-        @default ||= {
+      def self.default
+        {
           # server
           :host  => "127.0.0.1",
           :port  => AMQ::Protocol::DEFAULT_PORT,
@@ -30,21 +32,19 @@ module AMQ
       end
     end
 
-    def configure(settings = nil)
-      @settings ||= begin
-        case settings
-        when Hash
-          self.default.merge(settings)
-        when String
-          settings = self.parse_amqp_url(settings)
-          self.default.merge(settings)
-        when NilClass
-          self.default
-        end
+    def self.configure(settings = nil)
+      case settings
+      when Hash
+        self.default.merge(settings)
+      when String
+        settings = self.parse_amqp_url(settings)
+        self.default.merge(settings)
+      when NilClass
+        self.default
       end
     end
 
-    def parse_amqp_url(string)
+    def self.parse_amqp_url(string)
       raise NotImplementedError.new
     end
   end

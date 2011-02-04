@@ -1,10 +1,16 @@
 # encoding: utf-8
 
 require "amq/client/logging"
+require "amq/client/settings"
 require "amq/client/exceptions"
 
 module AMQ
   module Client
+    # Settings
+    def self.settings
+      @settings ||= AMQ::Client::Settings.default
+    end
+
     # Let's integrate logging.
     module Logging
       def self.logging
@@ -17,16 +23,18 @@ module AMQ
     end
 
     def self.logger
-      @logger ||= begin
-        require "logger"
-        Logger.new(STDERR)
+      if self.logging
+        @logger ||= begin
+          require "logger"
+          Logger.new(STDERR)
+        end
       end
     end
 
     def self.logger=(logger)
       methods = AMQ::Client::Logging::REQUIRED_METHODS
       unless methods.all? { |method| logger.respond_to?(method) }
-        raise AMQ::Client::Logging::IncompatibleLoggerError.new
+        raise AMQ::Client::Logging::IncompatibleLoggerError.new(methods)
       end
 
       @logger = logger
