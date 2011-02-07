@@ -8,7 +8,7 @@ AMQ::Client.register_io_adapter(AMQ::Client::IOAdapter)
 
 module AMQ
   class SocketClient < AMQ::Client::Adapter
-    def establish_connection(settings) # co tohle udelat instancni #connect? treba kvuli pristupnosti @vars
+    def establish_connection(settings)
       # NOTE: this doesn't work with "localhost", I don't know why:
       settings[:host] = "127.0.0.1" if settings[:host] == "localhost"
       @socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
