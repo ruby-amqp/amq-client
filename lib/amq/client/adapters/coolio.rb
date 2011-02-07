@@ -17,7 +17,6 @@ require "cool.io"
 require "amq/client"
 
 require "amq/client/io/string"
-AMQ::Client.register_io_adapter(AMQ::Client::StringAdapter)
 
 module AMQ
   class CoolIoClient < AMQ::Client::Adapter

@@ -4,7 +4,6 @@ require "socket"
 require "amq/client"
 
 require "amq/client/io/io"
-AMQ::Client.register_io_adapter(AMQ::Client::IOAdapter)
 
 module AMQ
   class SocketClient < AMQ::Client::Adapter
@@ -17,8 +16,13 @@ module AMQ
       @socket.connect(sockaddr)
     rescue Errno::ECONNREFUSED
       abort "Don't forget to start an AMQP broker first!"
-    rescue Exception
-      @socket.close if @socket && ! @socket.closed?
+    rescue Exception => exception
+      self.disconnect if self.connected?
+      raise exception
+    end
+
+    def connected?
+      @socket && ! @socket.closed?
     end
 
     def disconnect
@@ -28,5 +32,12 @@ module AMQ
     def send_raw(data)
       @socket.write(data)
     end
+
+    def get_frame
+      frame = AMQ::Client::IOAdapter::Frame.decode(@socket)
+      self.receive_frame(frame)
+    end
   end
 end
+
+# TODO: merge this adapter with io_select, both need to behave async-ly, so we need to use IO.select, so user can use a loop with this async read to get async frames.

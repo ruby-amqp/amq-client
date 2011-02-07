@@ -60,6 +60,4 @@ describe AMQ::Client do
       AMQ::Client.logger.should eql(mock)
     end
   end
-
-  # NOTE: register_io_adapter and load_amq_protocol aren't documented at the moment.
 end

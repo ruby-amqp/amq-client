@@ -4,10 +4,10 @@ require "spec_helper"
 require "stringio"
 
 # We need to require AMQ-Protocol manually.
-# In the library this is implemented by
-# AMQ::Client.load_amq_protocol method,
-# but this is a unit test and we don't want
-# to mess around with unecessary dependencies.
+# In the library this is required in the file
+# amq/client.rb, but this is a unit test and
+# we don't want to mess around with unecessary
+# dependencies.
 require "amq/protocol/frame"
 
 # We have to use Kernel#load so extensions to the

@@ -29,21 +29,23 @@ require "amq/client/exceptions"
 module AMQ
   module Client
     module StringAdapter
-      def decode(string)
-        header = string[0..6]
-        type, channel, size = self.decode_header(header)
-        data = string[7..-1]
-        payload, frame_end = data[0..-2], data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
+      class Frame < AMQ::Protocol::Frame
+        def self.decode(string)
+          header = string[0..6]
+          type, channel, size = self.decode_header(header)
+          data = string[7..-1]
+          payload, frame_end = data[0..-2], data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
 
-        # 1) the size is miscalculated
-        if payload.bytesize != size
-          raise BadLengthError.new(size, payload.bytesize)
+          # 1) the size is miscalculated
+          if payload.bytesize != size
+            raise BadLengthError.new(size, payload.bytesize)
+          end
+
+          # 2) the size is OK, but the string doesn't end with FINAL_OCTET
+          raise NoFinalOctetError.new if frame_end != AMQ::Protocol::Frame::FINAL_OCTET
+
+          self.new(type, payload, channel)
         end
-
-        # 2) the size is OK, but the string doesn't end with FINAL_OCTET
-        raise NoFinalOctetError.new if frame_end != AMQ::Protocol::Frame::FINAL_OCTET
-
-        self.new(type, payload, channel)
       end
     end
   end

@@ -3,9 +3,18 @@
 module AMQ
   module Client
     class Entity
+      @@handlers ||= Hash.new
+      def self.handle(klass, &block)
+        @@handlers[klass] = block
+      end
+
+      def self.handlers
+        @@handlers
+      end
+
       attr_reader :callbacks
-      def initialize(adapter)
-        @adapter, @callbacks = adapter, Hash.new
+      def initialize(client)
+        @client, @callbacks = client, Hash.new
       end
 
       def exec_callback(name, *args, &block)
