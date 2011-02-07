@@ -4,7 +4,13 @@ require_relative "socket"
 
 module AMQ
   class IoSelectClient < SyncClient
-    def self.__connect__(settings)
+    def establish_connection(settings)
+    end
+
+    def disconnect
+    end
+
+    def send_raw(data)
     end
   end
 end

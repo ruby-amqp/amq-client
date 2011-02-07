@@ -1,6 +1,11 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
+require "bundler"
+
+Bundler.setup
+Bundler.require(:default)
+
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
 require "amq/client/adapters/socket"

@@ -2,13 +2,20 @@
 
 require "amq/client"
 
-AMQ.register_io_adapter(:string)
+require "amq/client/io/string"
+AMQ::Client.register_io_adapter(AMQ::Client::StringAdapter)
 
 module AMQ
-  class EventMachineClient < Client
+  class EventMachineClient < AMQ::Client::Adapter
     include EventMachine::Deferrable
 
-    def self.__connect__(settings)
+    def establish_connection(settings)
+    end
+
+    def disconnect
+    end
+
+    def send_raw(data)
     end
 
     def initialize

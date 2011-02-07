@@ -16,11 +16,12 @@
 require "cool.io"
 require "amq/client"
 
-AMQ.register_io_adapter(:string)
+require "amq/client/io/string"
+AMQ::Client.register_io_adapter(AMQ::Client::StringAdapter)
 
 module AMQ
-  class CoolIoClient < Client
-    def self.__connect__(settings)
+  class CoolIoClient < AMQ::Client::Adapter
+    def establish_connection(settings)
       cool.io.connect(settings[:host], settings[:port]) do
         on_connect do
           puts "Connected to #{remote_host}:#{remote_port}"
@@ -44,6 +45,12 @@ module AMQ
           puts "Error: Connection refused to #{remote_host}:#{remote_port}"
         end
       end
+    end
+
+    def disconnect
+    end
+
+    def send_raw(data)
     end
   end
 end

@@ -3,11 +3,12 @@
 require "socket"
 require "amq/client"
 
-AMQ.register_io_adapter(:io)
+require "amq/client/io/io"
+AMQ::Client.register_io_adapter(AMQ::Client::IOAdapter)
 
 module AMQ
-  class SocketClient < Client
-    def self.__connect__(settings) # co tohle udelat instancni #connect? treba kvuli pristupnosti @vars
+  class SocketClient < AMQ::Client::Adapter
+    def establish_connection(settings) # co tohle udelat instancni #connect? treba kvuli pristupnosti @vars
       # NOTE: this doesn't work with "localhost", I don't know why:
       settings[:host] = "127.0.0.1" if settings[:host] == "localhost"
       @socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
@@ -16,8 +17,16 @@ module AMQ
       @socket.connect(sockaddr)
     rescue Errno::ECONNREFUSED
       abort "Don't forget to start an AMQP broker first!"
-    ensure
-      @socket.close if @socket && @socket.connected?
+    rescue Exception
+      @socket.close if @socket && ! @socket.closed?
+    end
+
+    def disconnect
+      @socket.close
+    end
+
+    def send_raw(data)
+      @socket.write(data)
     end
   end
 end
