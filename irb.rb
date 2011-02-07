@@ -24,6 +24,10 @@
 # IRB.start(__FILE__)
 
 require "irb"
+require "bundler"
+
+Bundler.setup
+Bundler.require(:default)
 
 $LOAD_PATH.unshift(File.expand_path("../lib", __FILE__))
 
@@ -40,12 +44,11 @@ else
     irbrc = File.join(ENV["HOME"], ".irbrc")
     puts "~ Using #{__FILE__} as a custom .irbrc .."
 
-    require_relative "lib/amq/client.rb"
-    require_relative "lib/amq/client/client.rb"
+    require "amq/client.rb"
     include AMQ::Client
 
     require "amq/protocol/client"
-    include AMQ::Protocol
+    include AMQ
 
     require "stringio"
 
