@@ -12,6 +12,8 @@ require "amq/client/adapters/socket"
 require "amq/client/amqp/queue"
 
 AMQ::SocketClient.connect(:port => 5672) do |client|
+  client.handshake
+
   client.get_frame # Start/Start-Ok
   client.get_frame # Tune/Tune-Ok
 

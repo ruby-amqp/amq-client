@@ -61,11 +61,11 @@ module AMQ
         @settings = AMQ::Client::Settings.configure(settings)
         instance = self.new
         instance.establish_connection(@settings)
-        instance.send_preamble
         # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
 
         if block
           block.call(instance)
+          instance.connection.close
           instance.disconnect
         else
           instance
@@ -84,11 +84,17 @@ module AMQ
       end
 
       attr_accessor :logger, :settings, :connection
+      attr_accessor :mechanism, :response, :locale
       def initialize
         self.logger   = self.class.logger
         self.settings = self.class.settings
 
         @frames = Array.new
+      end
+
+      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
+        self.send_preamble
+        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
       end
 
       # This has to be implemented by all the clients.
