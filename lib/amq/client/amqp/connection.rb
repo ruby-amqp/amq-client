@@ -58,16 +58,11 @@ module AMQ
       self.handle(Protocol::Connection::Start) do |client, method|
         client.connection.server_properties = method.server_properties
         client.connection.start_ok
-        puts "~ StartOk" ###
       end
 
       self.handle(Protocol::Connection::Tune) do |client, method|
-        puts "~ Tune!" ###
-
         client.connection.tune_ok(method)
         client.connection.open
-
-        puts "~ AMQP initialized!" ####
       end
 
       self.handle(Protocol::Connection::Close) do |client, method|

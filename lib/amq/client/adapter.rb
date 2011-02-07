@@ -102,8 +102,7 @@ module AMQ
         self.send_raw(AMQ::Protocol::PREAMBLE)
       end
 
-      def send(frame)
-        puts "~ SEND #{frame.class}: #{frame.encode.inspect}"
+      def send(frame) # TODO: log frames
         self.send_raw(frame.encode)
       end
 
