@@ -4,10 +4,14 @@
 # Each connection respond to a TCP connection,
 # hence we need to use more client.connect calls.
 
-AMQ::SocketClient.connect(:port => 5672) do |client|
-  # ...
+Thred.new do
+  AMQ::Client::SocketClient.connect(:port => 5672) do |client|
+    # ...
+  end
 end
 
-AMQ::SocketClient.connect(:port => 5672) do |client|
-  # ...
+Thred.new do
+  AMQ::Client::SocketClient.connect(:port => 5672) do |client|
+    # ...
+  end
 end

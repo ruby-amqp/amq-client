@@ -19,37 +19,41 @@ require "amq/client"
 require "amq/client/io/string"
 
 module AMQ
-  class CoolIoClient < AMQ::Client::Adapter
-    def establish_connection(settings)
-      cool.io.connect(settings[:host], settings[:port]) do
-        on_connect do
-          puts "Connected to #{remote_host}:#{remote_port}"
-          write "bounce this back to me"
-        end
+  module Client
+    class CoolioClient < AMQ::Client::Adapter
+      self.sync = false
 
-        on_close do
-          puts "Disconnected from #{remote_host}:#{remote_port}"
-        end
+      def establish_connection(settings)
+        cool.io.connect(settings[:host], settings[:port]) do
+          on_connect do
+            puts "Connected to #{remote_host}:#{remote_port}"
+            write "bounce this back to me"
+          end
 
-        on_read do |data|
-          puts "Got: #{data}"
-          close
-        end
+          on_close do
+            puts "Disconnected from #{remote_host}:#{remote_port}"
+          end
 
-        on_resolve_failed do
-          puts "Error: Couldn't resolve #{remote_host}"
-        end
+          on_read do |data|
+            puts "Got: #{data}"
+            close
+          end
 
-        on_connect_failed do
-          puts "Error: Connection refused to #{remote_host}:#{remote_port}"
+          on_resolve_failed do
+            puts "Error: Couldn't resolve #{remote_host}"
+          end
+
+          on_connect_failed do
+            puts "Error: Connection refused to #{remote_host}:#{remote_port}"
+          end
         end
       end
-    end
 
-    def disconnect
-    end
+      def disconnect
+      end
 
-    def send_raw(data)
+      def send_raw(data)
+      end
     end
   end
 end

@@ -8,6 +8,7 @@ require "stringio"
 # amq/client.rb, but this is a unit test and
 # we don't want to mess around with unecessary
 # dependencies.
+require "amq/protocol/client"
 require "amq/protocol/frame"
 
 # We have to use Kernel#load so extensions to the
@@ -16,7 +17,7 @@ load "amq/client/io/io.rb"
 
 describe AMQ::Client::IOAdapter do
   subject do
-    TestIoAdapter.extend(AMQ::Client::IOAdapter)
+    AMQ::Client::IOAdapter::Frame
   end
 
   # Created by:
@@ -29,11 +30,11 @@ describe AMQ::Client::IOAdapter do
     data << "\xCE"
     @io = StringIO.new(data.join)
 
-    TestIoAdapter.stub(:decode_header).with(data.first).and_return([1, 0, data[1].bytesize])
+    subject.stub(:decode_header).with(data.first).and_return([1, 0, data[1].bytesize])
   end
 
   it "should be able to decode frame type" do
-    subject.decode(@io).type.should eql(1)
+    subject.decode(@io).should be_kind_of(AMQ::Protocol::MethodFrame)
   end
 
   it "should be able to decode channel" do

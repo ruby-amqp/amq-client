@@ -1,25 +1,35 @@
 # encoding: utf-8
 
 require "amq/client/entity"
+require "amq/client/adapter"
 
 module AMQ
   module Client
     class Queue < Entity
-      def initialize(client, name, default_channel = client.get_random_channel)
+      def initialize(client, name, default_channel = nil)
         @name, @default_channel = name, default_channel
         super(client)
       end
 
       def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, arguments = nil, &block)
-        data = Protocol::Queue::Declare.encode(channel, @name, passive, durable, exclusive, auto_delete, arguments)
-        p data #####
+        data = Protocol::Queue::Declare.encode(channel.id, @name, passive, durable, exclusive, auto_delete, arguments)
         @client.send(data)
-        self.callbacks[:declare] = block
-        self
 
-        if client.sync? && self.nowait == false
-          client.receive
+        self.callbacks[:declare] = block
+
+        self.execute_callback(:declare) if nowait
+
+        channel ||= client.get_random_channel
+
+        channel.queues_cache << self
+
+        if @client.sync? #&& self.nowait == false
+          until @client.receive.is_a?(Protocol::Queue::DeclareOk)
+            @client.receive
+          end
         end
+
+        self
       end
 
       def bind(exchange, channel = @default_channel, &block)
@@ -50,18 +60,25 @@ module AMQ
 
       # === Handlers ===
       # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback. The cache includes only queues with {nowait: false}.
-      self.handle(Protocol::Queue::DeclareOk) do |client, method|
-        queue = client.cache[AMQ::Protocol::Queue::DeclareOk].shift
-        queue.exec_callback(:declare, frame.queue_name, frame.consumer_count, frame.messages_count)
+      self.handle(Protocol::Queue::DeclareOk) do |client, frame|
+        method = frame.decode_payload
+
+        # We should have cache API, so it'll be easy to change caching behaviour easily. So in the amq-client we don't want to cache more than just the last instance per each channel, whereas more opinionated clients might want to have every single instance in the cache, so they can iterate over it etc.
+        channel = client.connection.channels[frame.channel]
+        queue = channel.queues_cache.shift
+
+        queue.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
       end
 
-      self.handle(Protocol::Queue::BindOk) do |client, method|
+      self.handle(Protocol::Queue::BindOk) do |client, frame|
+        method = frame.decode_payload
       end
 
       # Basic.Deliver
-      self.handle(Protocol::Basic::Deliver) do |client, method, header, *body|
-        queue = client.consumers[method.consumer_tag]
-        body  = body.reduce("") { |buffer, frame| buffer += frame.body }
+      self.handle(Protocol::Basic::Deliver) do |client, frame, header, *body|
+        method = frame.decode_payload
+        queue  = client.consumers[method.consumer_tag]
+        body   = body.reduce("") { |buffer, frame| buffer += frame.body }
         queue.exec_callback(:consume, body)
       end
     end

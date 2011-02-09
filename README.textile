@@ -30,7 +30,7 @@ Adapters provide uniform API for all the IO read/write methods. Available adapte
 <pre>
 require "amq/client/adapters/socket"
 
-AMQ::SocketClient.connect(:host => "localhost") do |client|
+AMQ::Client::SocketClient.connect(:host => "localhost") do |client|
   # ...
 end
 </pre>
@@ -52,9 +52,9 @@ h4. Available Options
 h4. Usage
 
 <pre>
-AMQ::SocketClient.connect
-AMQ::SocketClient.connect(:port => 5672)
-AMQ::SocketClient.connect("amqp://")
+AMQ::Client::SocketClient.connect
+AMQ::Client::SocketClient.connect(:port => 5672)
+AMQ::Client::SocketClient.connect("amqp://")
 </pre>
 
 h3. Logging
@@ -73,7 +73,7 @@ If you want to be able to log messages just from specified classes or even insta
 h3. AMQP API
 
 <pre>
-AMQ::SocketClient.connect do |client|
+AMQ::Client::SocketClient.connect do |client|
   client.queue("", 1)
 end
 </pre>

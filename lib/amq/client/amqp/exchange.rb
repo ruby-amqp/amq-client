@@ -7,4 +7,6 @@ module AMQ
     class Exchange < Entity
     end
   end
+
+  Adapter.register_entity(:exchange, Exchange)
 end

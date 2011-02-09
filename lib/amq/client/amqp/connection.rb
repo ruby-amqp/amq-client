@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require "amq/client"
 require "amq/client/entity"
 
 module AMQ
@@ -71,21 +72,25 @@ module AMQ
       end
 
       # === Handlers ===
-      self.handle(Protocol::Connection::Start) do |client, method|
+      self.handle(Protocol::Connection::Start) do |client, frame|
+        method = frame.decode_payload
         client.connection.server_properties = method.server_properties
         client.connection.start_ok
       end
 
-      self.handle(Protocol::Connection::Tune) do |client, method|
+      self.handle(Protocol::Connection::Tune) do |client, frame|
+        method = frame.decode_payload
         client.connection.tune_ok(method)
         client.connection.open
       end
 
-      self.handle(Protocol::Connection::OpenOk) do |client, method|
+      self.handle(Protocol::Connection::OpenOk) do |client, frame|
+        method = frame.decode_payload
         client.connection.handle_open_ok(method)
       end
 
-      self.handle(Protocol::Connection::Close) do |client, method|
+      self.handle(Protocol::Connection::Close) do |client, frame|
+        method = frame.decode_payload
         client.connection.handle_close(method)
       end
     end

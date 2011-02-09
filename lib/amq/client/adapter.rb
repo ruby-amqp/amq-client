@@ -4,7 +4,6 @@ require "amq/client/logging"
 require "amq/client/settings"
 require "amq/client/entity"
 require "amq/client/amqp/connection"
-require "amq/client/amqp/channel"
 
 # The Client interface:
 #   - establish_connection(settings)
@@ -56,10 +55,30 @@ module AMQ
         self.settings[:logging] = boolean
       end
 
+      # Example:
+      #   Adapter.register_entity(:channel, Channel)
+      #   # ... so then I can do:
+      #   channel = client.channel(1)
+      #   # instead of:
+      #   channel = Channel.new(client, 1)
+      def self.register_entity(name, klass)
+        define_method(name) do |*args, &block|
+          klass.new(self, *args, &block)
+        end
+      end
+
       # @api public
       def self.connect(settings = nil, &block)
+        if self.class != Adapter
+          adapter = self
+        elsif self.class == Adapter && settings && settings[:adapter] # not for subclasses
+          adapter = self.load_adapter(settings[:adapter])
+        else
+          raise "XXX", "you have to use either given adapter directly by calling its .connect method or you have to specify :adapter option in the settings."
+        end
+
         @settings = AMQ::Client::Settings.configure(settings)
-        instance = self.new
+        instance = adapter.new
         instance.establish_connection(@settings)
         # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
 
@@ -70,6 +89,14 @@ module AMQ
         else
           instance
         end
+      end
+
+      def self.load_adapter(adapter)
+        require "amq/client/adapters/#{adapter}"
+        const_name = adapter.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
+        self.const_get(const_name)
+      rescue LoadError
+        raise InvalidAdapterNameError.new(adapter)
       end
 
       # Establish socket connection to the server.
@@ -101,12 +128,24 @@ module AMQ
         end
       end
 
-      def sync?
+      def self.sync=(boolean)
+        @sync = boolean
+      end
+
+      def self.sync?
         @sync == true
       end
 
-      def async?
+      def sync?
+        self.class.sync?
+      end
+
+      def self.async?
         ! self.sync?
+      end
+
+      def async?
+        self.class.async?
       end
 
       # This has to be implemented by all the clients.
@@ -115,7 +154,11 @@ module AMQ
       end
 
       def send(frame) # TODO: log frames
-        self.send_raw(frame.encode)
+        if self.connection.opened?
+          self.send_raw(frame.encode)
+        else
+          raise ConnectionClosedError.new
+        end
       end
 
       def send_raw(data)
@@ -140,7 +183,7 @@ module AMQ
         frame = frames.first
         callable = AMQ::Client::Entity.handlers[frame.method_class]
         if callable
-          callable.call(self, frames.first.decode_payload, *frames[1..-1])
+          callable.call(self, frames.first, *frames[1..-1])
         else
           raise MissingHandlerError.new(frames.first)
         end
@@ -154,8 +197,10 @@ module AMQ
       def get_random_channel
         keys = self.connection.keys
         random_key = keys[rand(keys.length)]
-        self.connection[random_key]
+        self.connection.channels[random_key]
       end
     end
   end
 end
+
+require "amq/client/amqp/channel"

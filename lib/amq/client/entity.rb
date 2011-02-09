@@ -1,8 +1,12 @@
 # encoding: utf-8
 
+require "amq/client/status"
+
 module AMQ
   module Client
     class Entity
+      include Status
+
       @@handlers ||= Hash.new
       def self.handle(klass, &block)
         @@handlers[klass] = block
@@ -23,7 +27,7 @@ module AMQ
       end
 
       def error(exception)
-        if client.is_a?(AMQ::SocketClient)
+        if client.is_a?(AMQ::Client::SocketClient)
           # Synchronous error handling.
           # Just use begin/rescue in the main loop.
           raise exception
