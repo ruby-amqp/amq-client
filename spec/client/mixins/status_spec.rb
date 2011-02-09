@@ -1,11 +1,11 @@
 # encoding: utf-8
 
 require "spec_helper"
-require "amq/client/status"
+require "amq/client/mixins/status"
 
-describe AMQ::Client::Status do
+describe AMQ::Client::StatusMixin do
   subject do
-    Class.new { include AMQ::Client::Status }.new
+    Class.new { include AMQ::Client::StatusMixin }.new
   end
 
   describe "#status=" do
@@ -14,7 +14,7 @@ describe AMQ::Client::Status do
     end
 
     it "should raise ImproperStatusError if given value isn't in the permitted values" do
-      lambda { subject.status = :sleepy }.should raise_error(AMQ::Client::Status::ImproperStatusError)
+      lambda { subject.status = :sleepy }.should raise_error(AMQ::Client::StatusMixin::ImproperStatusError)
     end
   end
 

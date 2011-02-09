@@ -49,6 +49,10 @@ module AMQ
         self.exec_callback(:close)
       end
 
+      def handle_close(method)
+        p method
+      end
+
       # === Handlers ===
       self.handle(Protocol::Channel::OpenOk) do |client, frame|
         channels = client.connection.channels
@@ -59,8 +63,15 @@ module AMQ
       self.handle(Protocol::Channel::CloseOk) do |client, frame|
         method   = frame.decode_payload
         channels = client.connection.channels
-        channel  = channels[method.channel_id]
+        channel  = channels[frame.channel]
         channel.handle_close_ok
+      end
+
+      self.handle(Protocol::Channel::Close) do |client, frame|
+        method   = frame.decode_payload
+        channels = client.connection.channels
+        channel  = channels[frame.channel]
+        channel.handle_close(method)
       end
     end
 

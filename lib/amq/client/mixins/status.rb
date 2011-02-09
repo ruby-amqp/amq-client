@@ -2,7 +2,7 @@
 
 module AMQ
   module Client
-    module Status
+    module StatusMixin
       VALUES ||= [:opened, :closed, :opening, :closing]
 
       class ImproperStatusError < StandardError

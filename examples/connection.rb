@@ -10,6 +10,7 @@ $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
 require "amq/client/adapters/socket"
 require "amq/client/amqp/queue"
+require "amq/client/amqp/exchange"
 
 AMQ::Client::SocketClient.connect(:port => 5672) do |client|
   begin
@@ -27,7 +28,10 @@ AMQ::Client::SocketClient.connect(:port => 5672) do |client|
     channel.open { puts "Channel #{channel.id} opened!" }
 
     queue = AMQ::Client::Queue.new(client, "", channel)
-    queue.declare { puts "Queue declared!" }
+    queue.declare { puts "Queue #{queue.name.inspect} declared!" }
+
+    exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
+    exchange.declare { puts "Exchange #{exchange.name.inspect} declared!" }
 
     until client.connection.closed?
       client.receive_async

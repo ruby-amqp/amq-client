@@ -2,10 +2,14 @@
 
 require "amq/client/entity"
 require "amq/client/adapter"
+require "amq/client/mixins/anonymous_entity"
 
 module AMQ
   module Client
     class Queue < Entity
+      include AnonymousEntityMixin
+
+      attr_reader :name
       def initialize(client, name, default_channel = nil)
         @name, @default_channel = name, default_channel
         super(client)
@@ -23,10 +27,8 @@ module AMQ
 
         channel.queues_cache << self
 
-        if @client.sync? && nowait == false
-          until @client.receive.is_a?(Protocol::Queue::DeclareOk)
-            @client.receive
-          end
+        unless nowait
+          @client.read_until_receives(Protocol::Queue::DeclareOk)
         end
 
         self
@@ -49,13 +51,10 @@ module AMQ
         self.callbacks[:consume] = block
       end
 
-      def dup
-        if @name.eql?("")
-          raise RuntimeError.new("You can't clone anonymous queue until it receives back the name in Queue.Declare-Ok response. Move the code with #dup to the callback for the #declare method.") # TODO: that's not true in all cases, imagine the user didn't call #declare yet.
-        end
-        instance = self.dup
-        instance.instance_variable_set(:@consumer_tag, nil)
-        instance
+      def handle_declare_ok(method)
+        @name = method.queue if self.anonymous?
+
+        self.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
       end
 
       # === Handlers ===
@@ -67,7 +66,7 @@ module AMQ
         channel = client.connection.channels[frame.channel]
         queue = channel.queues_cache.shift
 
-        queue.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
+        queue.handle_declare_ok(method)
       end
 
       self.handle(Protocol::Queue::BindOk) do |client, frame|

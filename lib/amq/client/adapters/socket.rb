@@ -40,6 +40,7 @@ module AMQ
       def receive
         frame = AMQ::Client::IOAdapter::Frame.decode(@socket)
         self.receive_frame(frame)
+        frame
       end
 
       def receive_async
@@ -49,7 +50,16 @@ module AMQ
         @sockets ||= [@socket] # It'll be always only one socket, but we don't want to create many arrays, mind the GC!
         array = IO.select(@sockets, nil, nil, nil)
         array[0].each do |socket|
-          self.receive
+          res = self.receive
+        end
+        res
+      end
+
+      def read_until_receives(klass)
+        if self.sync?
+          until (frame = self.receive) && frame.is_a?(Protocol::MethodFrame) && frame.method_class == klass
+            sleep 0.1
+          end
         end
       end
     end
