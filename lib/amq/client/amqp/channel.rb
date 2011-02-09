@@ -6,6 +6,12 @@ require "amq/client/adapter"
 module AMQ
   module Client
     class Channel < Entity
+      class ChannelOutOfBadError < StandardError # TODO: inherit from some AMQP error class defined in amq-protocol or use it straight away.
+        def initialize(max, given)
+          super("Channel max is #{max}, #{given} given.")
+        end
+      end
+
       attr_reader :id
       attr_reader :queues_cache, :exchanges_cache
 
@@ -14,8 +20,9 @@ module AMQ
         @id = id
         @queues_cache, @exchanges_cache = Array.new, Array.new
 
-        unless (0..client.connection.channel_max).include?(id)
-          raise ChannelOutOfBadError.new(id)
+        channel_max = client.connection.channel_max
+        if channel_max != 0 && ! (0..channel_max).include?(id)
+          raise ChannelOutOfBadError.new(channel_max, id)
         end
       end
 

@@ -35,6 +35,12 @@ AMQ::Client::SocketClient.connect(:port => 5672) do |client|
     end
   rescue Interrupt
     warn "Manually interrupted, exciting ..."
+  rescue Exception => exception
+    STDERR.puts "\n\e[1;31m[#{exception.class}] #{exception.message}\e[0m"
+    exception.backtrace.each do |line|
+      line = "\e[0;36m#{line}\e[0m" if line.match(Regexp::quote(File.basename(__FILE__)))
+      STDERR.puts "  - " + line
+    end
   end
 end
 

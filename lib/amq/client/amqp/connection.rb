@@ -16,6 +16,8 @@ module AMQ
       attr_accessor :server_properties
       attr_reader :mechanism, :response, :locale
       attr_reader :channels
+
+      attr_accessor :channel_max, :frame_max, :heartbeat
       def initialize(client, mechanism, response, locale)
         @mechanism, @response, @locale = mechanism, response, locale
         @channels = Hash.new
@@ -37,11 +39,11 @@ module AMQ
       end
 
       def tune_ok(method)
-        channel_max = method.channel_max
-        frame_max   = method.frame_max
-        heartbeat   = method.heartbeat
+        @channel_max = method.channel_max
+        @frame_max   = method.frame_max
+        @heartbeat   = method.heartbeat
 
-        @client.send Protocol::Connection::TuneOk.encode(channel_max, frame_max, heartbeat)
+        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat)
       end
 
       def open

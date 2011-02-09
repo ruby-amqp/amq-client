@@ -11,8 +11,8 @@ module AMQ
         super(client)
       end
 
-      def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, arguments = nil, &block)
-        data = Protocol::Queue::Declare.encode(channel.id, @name, passive, durable, exclusive, auto_delete, arguments)
+      def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
+        data = Protocol::Queue::Declare.encode(channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments)
         @client.send(data)
 
         self.callbacks[:declare] = block
@@ -23,7 +23,7 @@ module AMQ
 
         channel.queues_cache << self
 
-        if @client.sync? #&& self.nowait == false
+        if @client.sync? && nowait == false
           until @client.receive.is_a?(Protocol::Queue::DeclareOk)
             @client.receive
           end
