@@ -5,7 +5,7 @@ require "amq/client/entity"
 module AMQ
   module Client
     class Queue < Entity
-      def initialize(client, name, default_channel)
+      def initialize(client, name, default_channel = client.get_random_channel)
         @name, @default_channel = name, default_channel
         super(client)
       end
@@ -16,6 +16,10 @@ module AMQ
         @client.send(data)
         self.callbacks[:declare] = block
         self
+
+        if client.sync? && self.nowait == false
+          client.receive
+        end
       end
 
       def bind(exchange, channel = @default_channel, &block)

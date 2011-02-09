@@ -7,6 +7,11 @@ require "amq/client/io/io"
 
 module AMQ
   class SocketClient < AMQ::Client::Adapter
+    def initialize(*args)
+      @sync = true
+      super(*args)
+    end
+
     def establish_connection(settings)
       # NOTE: this doesn't work with "localhost", I don't know why:
       settings[:host] = "127.0.0.1" if settings[:host] == "localhost"
@@ -33,9 +38,16 @@ module AMQ
       @socket.write(data)
     end
 
-    def get_frame
+    def receive
       frame = AMQ::Client::IOAdapter::Frame.decode(@socket)
       self.receive_frame(frame)
+    end
+
+    def receive_async
+      array = IO.select([@socket], nil, nil, nil)
+      array[0].each do |socket|
+        self.receive
+      end
     end
   end
 end

@@ -14,8 +14,10 @@ module AMQ
 
       attr_accessor :server_properties
       attr_reader :mechanism, :response, :locale
+      attr_reader :channels
       def initialize(client, mechanism, response, locale)
         @mechanism, @response, @locale = mechanism, response, locale
+        @channels = Hash.new
         super(client)
 
         # Default errback.
@@ -45,9 +47,23 @@ module AMQ
         @client.send Protocol::Connection::Open.encode("/")
       end
 
+      attr_reader :known_hosts
+      def handle_open_ok(method)
+        @known_hosts = method.known_hosts
+      end
+
       def handle_close(method)
         # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
         self.error RuntimeError.new(method.reply_text)
+        @closed = true
+      end
+
+      def closed?
+        @closed
+      end
+
+      def opened?
+        ! self.closed?
       end
 
       def close(reply_code = 0, reply_text = "Bye!", class_id = 0, method_id = 0)
@@ -63,6 +79,10 @@ module AMQ
       self.handle(Protocol::Connection::Tune) do |client, method|
         client.connection.tune_ok(method)
         client.connection.open
+      end
+
+      self.handle(Protocol::Connection::OpenOk) do |client, method|
+        client.connection.handle_open_ok(method)
       end
 
       self.handle(Protocol::Connection::Close) do |client, method|

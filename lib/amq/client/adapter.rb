@@ -95,6 +95,18 @@ module AMQ
       def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
         self.send_preamble
         self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+        if self.sync?
+          self.receive # Start/Start-Ok
+          self.receive # Tune/Tune-Ok
+        end
+      end
+
+      def sync?
+        @sync == true
+      end
+
+      def async?
+        ! self.sync?
       end
 
       # This has to be implemented by all the clients.
@@ -137,6 +149,12 @@ module AMQ
       def close_connection
         send AMQ::Protocol::Connection::Close.encode
         self.disconnect
+      end
+
+      def get_random_channel
+        keys = self.connection.keys
+        random_key = keys[rand(keys.length)]
+        self.connection[random_key]
       end
     end
   end
