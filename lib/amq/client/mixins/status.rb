@@ -13,7 +13,7 @@ module AMQ
 
       attr_reader :status
       def status=(value)
-        if VALUES.include?(vvalue)
+        if VALUES.include?(value)
           @status = value
         else
           raise ImproperStatusError.new(value)
