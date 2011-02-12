@@ -9,12 +9,16 @@ describe AMQ::Client::StatusMixin do
   end
 
   describe "#status=" do
-    it "should be able to store status if it is in the permitted values" do
-      lambda { subject.status = :opened }.should_not raise_error
+    context "if it is in the permitted values" do
+      it "should be able to store status" do
+        lambda { subject.status = :opened }.should_not raise_error
+      end
     end
 
-    it "should raise ImproperStatusError if given value isn't in the permitted values" do
-      lambda { subject.status = :sleepy }.should raise_error(AMQ::Client::StatusMixin::ImproperStatusError)
+    context "when given value isn't in the permitted values" do
+      it "should raise ImproperStatusError" do
+        lambda { subject.status = :sleepy }.should raise_error(AMQ::Client::StatusMixin::ImproperStatusError)
+      end
     end
   end
 
