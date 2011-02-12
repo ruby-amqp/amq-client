@@ -7,16 +7,16 @@ module AMQ
 
       class ImproperStatusError < StandardError
         def initialize(value)
-          super("Value #{value.inspect} isn't permitted. Choose one of: #{Status::VALUES.inspect}")
+          super("Value #{value.inspect} isn't permitted. Choose one of: #{StatusMixin::VALUES.inspect}")
         end
       end
 
       attr_reader :status
-      def status=(status)
-        if VALUES.include?(status)
-          @status = status
+      def status=(value)
+        if VALUES.include?(vvalue)
+          @status = value
         else
-          raise ImproperStatusError.new(status)
+          raise ImproperStatusError.new(value)
         end
       end
 
