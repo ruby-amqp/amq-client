@@ -31,10 +31,15 @@ module AMQ
     module StringAdapter
       class Frame < AMQ::Protocol::Frame
         def self.decode(string)
-          header = string[0..6]
+          header              = string[0..6]
           type, channel, size = self.decode_header(header)
-          data = string[7..-1]
-          payload, frame_end = data[0..-2], data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
+          data                = string[7..-1]
+          payload             = data[0..-2]
+          frame_end           = if RUBY_VERSION =~ /^1.8/
+            data[-1]
+          else
+            data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
+          end
 
           # 1) the size is miscalculated
           if payload.bytesize != size
