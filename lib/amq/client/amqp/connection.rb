@@ -6,12 +6,12 @@ require "amq/client/entity"
 module AMQ
   module Client
     class Connection < Entity
-      CLIENT_PROPERTIES ||= {
+      CLIENT_PROPERTIES = {
         :platform => ::RUBY_DESCRIPTION,
         :product  => "AMQ Client",
         :version  => AMQ::Client::VERSION,
         :homepage => "https://github.com/ruby-amqp/amq-client"
-      }
+      }.freeze
 
       attr_accessor :server_properties
       attr_reader :mechanism, :response, :locale

@@ -3,11 +3,11 @@
 module AMQ
   module Client
     module StatusMixin
-      VALUES ||= [:opened, :closed, :opening, :closing]
+      VALUES = [:opened, :closed, :opening, :closing].freeze
 
       class ImproperStatusError < StandardError
         def initialize(value)
-          super("Value #{value.inspect} isn't permitted. Choose one of: #{StatusMixin::VALUES.inspect}")
+          super("Value #{value.inspect} isn't permitted. Choose one of: #{AMQ::Client::StatusMixin::VALUES.inspect}")
         end
       end
 
