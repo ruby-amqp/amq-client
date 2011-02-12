@@ -36,10 +36,10 @@ module AMQ
           data                = string[7..-1]
           payload             = data[0..-2]
           frame_end           = if RUBY_VERSION =~ /^1.8/
-            data[-1]
-          else
-            data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
-          end
+                                  data[-1]
+                                else
+                                  data[-1].force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
+                                end
 
           # 1) the size is miscalculated
           if payload.bytesize != size
