@@ -27,7 +27,7 @@ module AMQ
       end
 
       def error(exception)
-        if client.sync?
+        if client.sync? # DO NOT DO THIS, just add a default errback to do exactly this, so if someone wants to use begin/rescue, he'll just ignore the errbacks.
           # Synchronous error handling.
           # Just use begin/rescue in the main loop.
           raise exception
