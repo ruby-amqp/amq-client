@@ -15,17 +15,15 @@ h2. The Overall AMQP Gems Architecture
 
 So the most low-level part is the "AMQ-Protocol gem":http://github.com/ruby-amqp/amq-protocol. Its only job is to take care about encoding, decoding and framing. Reasons for having it as a standalone gem is that it'll be easy to replace the current implementation by a different one which can be a rewrite for another AMQP version or just an optimised version written in C.
 
-The next piece in the puzzle is "AMQ-Client gem":http://github.com/ruby-amqp/amq-client which is supposed to take care about low-level API and IO abstraction, so it provides uniform interface all the IO read/write methods like @Socket#read/write@, @IO#select@ or EventMachine and adapters for them.
+The next piece in the puzzle is "AMQ-Client gem":http://github.com/ruby-amqp/amq-client which takes care about low-level API and IO abstraction, so it provides uniform interface for both sockets as well as for asynchronous libraries such as EventMachine and Cool.io.
 
 The important thing about AMQ-Client is that it shouldn't do any assumptions, it should just implement AMQP API in Ruby. The only exception is the AMQP @Basic@ class which is just a bunch of methods, so I put them to the class where it makes sense to have them, so the API seems more logical and significantly easier to use.
 
-On top of the AMQ-Client there can a lot of various opinionated clients which can make usage of AMQP easier. Implementing of a good AMQP abstraction isn't easy, so creating another clients should be encouraged. Typical stuff which should be taken care about on this layer: reconnecting, behind-scene channel creation, simplified API, RPC ...
+On top of the AMQ-Client there can be implemented various opinionated clients which can make usage of AMQP easier. Implementing of a good AMQP abstraction isn't easy, so creating another clients should be encouraged. Typical stuff which should be taken care about on this layer: reconnecting, caching of queues / exchanges, behind-scene channel creation, simplified API, RPC ...
 
 h2. AMQ-Client API
 
 h3. Adapters
-
-Adapters provide uniform API for all the IO read/write methods. Available adapters are @coolio@, @eventmachine@, @io_select@ and @socket@.
 
 <pre>
 require "amq/client/adapters/socket"
