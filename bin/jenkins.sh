@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# Server-specific, I have RVM setup at the profile file:
-source /etc/profile
-
-echo "<h3>Setup</h3>"
+echo "==== Setup ===="
 git fetch && git reset origin/master --hard
 bundle install --local
 
-echo "<h3>Ruby 1.9.2 Head</h3>"
+echo "\n\n==== Ruby 1.9.2 Head ===="
 rvm 1.9.2-head exec rspec spec
 
-echo "<h3>Ruby 1.8.7</h3>"
+echo "\n\n==== Ruby 1.8.7 ===="
 rvm 1.8.7 exec rspec spec
