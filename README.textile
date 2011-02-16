@@ -102,3 +102,4 @@ h1. Links
 * "RDoc.info API Docs":http://rdoc.info/github/ruby-amqp/amq-client/master/frames
 * "Examples":https://github.com/ruby-amqp/amq-client/tree/master/examples/
 * "Bug reporting":http://github.com/ruby-amqp/amq-client/issues
+* "Jenkins CI Server":http://jenkins.101ideas.cz/job/AMQ%20Client
