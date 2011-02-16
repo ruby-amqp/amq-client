@@ -2,7 +2,7 @@
 
 source "http://gemcutter.org"
 
-gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git"
+gem "amq-protocol", :path => "vendor/amq-protocol"
 
 group(:test) do
   gem "rspec", ">=2.0.0"

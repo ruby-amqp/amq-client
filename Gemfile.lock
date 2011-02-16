@@ -1,6 +1,5 @@
-GIT
-  remote: git://github.com/ruby-amqp/amq-protocol.git
-  revision: df7638d597efbc4f0faf30962e8e6077d109954a
+PATH
+  remote: vendor/amq-protocol
   specs:
     amq-protocol (0.0.1)
 
