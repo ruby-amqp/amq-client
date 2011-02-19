@@ -6,6 +6,9 @@ PATH
 GEM
   remote: http://gemcutter.org/
   specs:
+    ZenTest (4.5.0)
+    autotest (4.4.6)
+      ZenTest (>= 4.4.1)
     diff-lcs (1.1.2)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
@@ -21,4 +24,5 @@ PLATFORMS
 
 DEPENDENCIES
   amq-protocol!
+  autotest
   rspec (>= 2.0.0)

@@ -6,4 +6,5 @@ gem "amq-protocol", :path => "vendor/amq-protocol"
 
 group(:test) do
   gem "rspec", ">=2.0.0"
+  gem "autotest"
 end
