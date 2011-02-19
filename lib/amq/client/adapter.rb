@@ -5,13 +5,12 @@ require "amq/client/settings"
 require "amq/client/entity"
 require "amq/client/amqp/connection"
 
-# The Client interface:
-#   - establish_connection(settings)
-#   - disconnect
-#   - send_raw(data)
 module AMQ
+  # For overview of AMQP client adapters API, see {AMQ::Client::Adapter}
   module Client
-    # Let's integrate logging.
+    # Syntactic sugar for logging setting.
+    #
+    # @see AMQ::Client::Adapter
     module Logging
       def self.logging
         AMQ::Client::Adapter.logging
@@ -22,7 +21,36 @@ module AMQ
       end
     end
 
-
+    # Base adapter class. Specific implementations (for example, EventMachine-based, Cool.io-based or
+    # sockets-based) subclass it and must implement Adapter API methods:
+    #
+    # * #send_raw(data)
+    # * #estabilish_connection(settings)
+    # * #disconnect
+    #
+    # Adapters also must indicate whether they operate in asynchronous or synchronous mode
+    # using AMQ::Client::Adapter.sync accessor:
+    #
+    # @example EventMachine adapter indicates that it is asynchronous
+    #  module AMQ
+    #    module Client
+    #      class EventMachineClient < AMQ::Client::Adapter
+    #
+    #        #
+    #        # Behaviors
+    #        #
+    #
+    #        include EventMachine::Deferrable
+    #
+    #         self.sync = false
+    #
+    #         # the rest of implementation code ...
+    #
+    #       end
+    #     end
+    #   end
+    #
+    # @abstract
     class Adapter
       # Settings
       def self.settings
@@ -47,26 +75,33 @@ module AMQ
         @logger = logger
       end
 
+      # @return [Boolean] Current value of logging flag.
       def self.logging
         self.settings[:logging]
       end
 
+      # Turns loggin on or off.
       def self.logging=(boolean)
         self.settings[:logging] = boolean
       end
 
-      # Example:
-      #   Adapter.register_entity(:channel, Channel)
+
+      # @example Registering Channel implementation
+      #  Adapter.register_entity(:channel, Channel)
       #   # ... so then I can do:
-      #   channel = client.channel(1)
-      #   # instead of:
-      #   channel = Channel.new(client, 1)
+      #  channel = client.channel(1)
+      #  # instead of:
+      #  channel = Channel.new(client, 1)
       def self.register_entity(name, klass)
         define_method(name) do |*args, &block|
           klass.new(self, *args, &block)
         end
       end
 
+      # Establishes connection to AMQ broker and returns it. New connection object is yielded to
+      # the block if it is given.
+      #
+      # @param [Hash] Connection parameters, including :adapter to use.
       # @api public
       def self.connect(settings = nil, &block)
         if self.class != Adapter
@@ -91,6 +126,9 @@ module AMQ
         end
       end
 
+      # Loads adapter from amq/client/adapters.
+      #
+      # @raise [InvalidAdapterNameError] When loading attempt failed (LoadError was raised).
       def self.load_adapter(adapter)
         require "amq/client/adapters/#{adapter}"
         const_name = adapter.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
@@ -106,6 +144,8 @@ module AMQ
         raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection(settings)")
       end
 
+      # @api plugin
+      # @see #close_connection
       def disconnect
         raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
       end
@@ -128,27 +168,46 @@ module AMQ
         end
       end
 
+      # @see AMQ::Client::Adapter
       def self.sync=(boolean)
         @sync = boolean
       end
 
+      # Use this method to detect whether adapter is synchronous or asynchronous.
+      #
+      # @return [Boolean] true if this adapter is synchronous
+      # @api plugin
+      # @see AMQ::Client::Adapter
       def self.sync?
         @sync == true
       end
 
+      # @see .sync?
+      # @api plugin
+      # @see AMQ::Client::Adapter
       def sync?
         self.class.sync?
       end
 
+      # @see #sync?
+      # @api plugin
+      # @see AMQ::Client::Adapter
       def self.async?
         ! self.sync?
       end
 
+      # @see .async?
+      # @api plugin
+      # @see AMQ::Client::Adapter
       def async?
         self.class.async?
       end
 
-      # This has to be implemented by all the clients.
+      # Sends AMQ protocol header (also known as preamble).
+      #
+      # @note This must be implemented by all AMQP clients.
+      # @api plugin
+      # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.2)
       def send_preamble
         self.send_raw(AMQ::Protocol::PREAMBLE)
       end
@@ -161,6 +220,10 @@ module AMQ
         end
       end
 
+      # Sends opaque data to AMQ broker over active connection.
+      #
+      # @note This must be implemented by all AMQP clients.
+      # @api plugin
       def send_raw(data)
         raise MissingInterfaceMethodError.new("AMQ::Client#send_raw(data)")
       end
@@ -189,6 +252,12 @@ module AMQ
         end
       end
 
+      # Properly close connection with AMQ broker, as described in
+      # section 2.2.4 of the {http://bit.ly/hw2ELX AMQP 0.9.1 specification}.
+      #
+      # @api  plugin
+      # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
+      # @see  #disconnect
       def close_connection
         send AMQ::Protocol::Connection::Close.encode
         self.disconnect

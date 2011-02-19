@@ -14,7 +14,7 @@ module AMQ
     # Raised by adapters when frame does not end with {final octet AMQ::Protocol::Frame::FINAL_OCTET}.
     # This suggest that there is a bug in adapter or AMQ broker implementation.
     #
-    # @see Section 2.3.5 in {http://bit.ly/hw2ELX AMQP 0.9.1 specification}
+    # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.3)
     class NoFinalOctetError < InconsistentDataError
       def initialize
         super("Frame doesn't end with #{AMQ::Protocol::Frame::FINAL_OCTET} as it must, which means the size is miscalculated.")
@@ -25,7 +25,7 @@ module AMQ
     # to the size specified in that frame's header.
     # This suggest that there is a bug in adapter or AMQ broker implementation.
     #
-    # @see Section 2.3.5 in {http://bit.ly/hw2ELX AMQP 0.9.1 specification}
+    # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.3)
     class BadLengthError < InconsistentDataError
       def initialize(expected_length, actual_length)
         super("Frame payload should be #{expected_length} long, but it's #{actual_length} long.")
@@ -49,6 +49,10 @@ module AMQ
     end
 
     module Logging
+      # Raised when logger object passed to {AMQ::Client::Adapter.logger=} does not
+      # provide API it supposed to provide.
+      #
+      # @see AMQ::Client::Adapter.logger=
       class IncompatibleLoggerError < StandardError
         def initialize(required_methods)
           super("Logger has to respond to the following methods: #{required_methods.inspect}")
