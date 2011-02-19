@@ -6,6 +6,8 @@ gem "amq-protocol", :path => "vendor/amq-protocol"
 
 group :development do
   gem "yard"
+  # yard tags this buddy along
+  gem "RedCloth"
 end
 
 group :test do
