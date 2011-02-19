@@ -2,7 +2,10 @@
 
 module AMQ
   module Client
+    # Common behavior of AMQ entities that can be either client or server-named, for example, exchanges and queues.
     module AnonymousEntityMixin
+
+      # @return [Boolean] true if this entity is anonymous (server-named)
       def anonymous?
         @name.nil? or @name.empty?
       end

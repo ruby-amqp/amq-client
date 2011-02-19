@@ -4,10 +4,26 @@ require "amq/client/mixins/status"
 
 module AMQ
   module Client
+    # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
+    # when necessary.
+    #
+    # @note Exchanges and queues implementation is based on this class.
+    #
+    # @abstract
     class Entity
+
+      #
+      # Behaviors
+      #
+
       include StatusMixin
 
+      #
+      # API
+      #
+
       @@handlers ||= Hash.new
+
       def self.handle(klass, &block)
         @@handlers[klass] = block
       end
@@ -17,6 +33,7 @@ module AMQ
       end
 
       attr_reader :callbacks
+
       def initialize(client)
         @client, @callbacks = client, Hash.new
       end
