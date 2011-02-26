@@ -1,17 +1,28 @@
 # encoding: utf-8
 
 require "amq/client"
-
 require "amq/client/io/string"
+require "eventmachine"
 
 module AMQ
   module Client
     class EventMachineClient < AMQ::Client::Adapter
+
+      #
+      # Behaviors
+      #
+
       include EventMachine::Deferrable
 
       self.sync = false
 
+
+      #
+      # API
+      #
+
       def establish_connection(settings)
+        EM.connect settings[:host], settings[:port], self
       end
 
       def disconnect
