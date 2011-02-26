@@ -120,7 +120,7 @@ module AMQ
           end
 
           @settings = AMQ::Client::Settings.configure(settings)
-          instance = adapter.new
+          instance  = adapter.new
           instance.establish_connection(@settings)
           # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
 
@@ -132,6 +132,7 @@ module AMQ
             instance
           end
         end
+
 
         # Loads adapter from amq/client/adapters.
         #
@@ -179,11 +180,11 @@ module AMQ
 
 
 
-      def initialize
+      def initialize(*args)
         self.logger   = self.class.logger
         self.settings = self.class.settings
 
-        @frames = Array.new
+        @frames       = Array.new
       end
 
       def consumers
@@ -214,8 +215,8 @@ module AMQ
       # @api  plugin
       # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
       # @see  #disconnect
-      def close_connection
-        send AMQ::Protocol::Connection::Close.encode
+      def close_connection(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
+        send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         self.disconnect
       end
 

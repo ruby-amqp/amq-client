@@ -27,48 +27,77 @@ module AMQ
       # API
       #
 
+      def self.connect(settings = nil, &block)
+        settings          = AMQ::Client::Settings.configure(settings)
+
+        instance          = EM.connect(settings[:host], settings[:port], self)
+        instance.settings = settings
+
+        if block
+          block.call(instance)
+
+          instance.disconnect
+        else
+          instance
+        end
+      end
+
+
+
+
       def establish_connection(settings)
-        EM.connect settings[:host], settings[:port], self
+        # an intentional no-op
       end
 
-      def disconnect
+      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
+        self.send_preamble
+
+        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+        @connecting     = true
       end
 
-      def send_raw(data)
-      end
-
-      def initialize
-        @frames, @size, @payload = Array.new, 0, ""
-      end
 
       # Client interface
-      def send(frame)
-        self.send_data(frame.encode)
-      end
+
+      alias disconnect close_connection
+      alias send_raw   send_data
 
       def receive_data(chunk)
-        if @payload.nil?
-          self.decode_from_string(chunk[0..6])
-        elsif @payload && chunk[-1] != AMQ::Protocol::Frame::FINAL_OCTET
-          @payload += chunk
-          @size += chunk.bytesize
-        else
-          check_size(@size, @payload.bytesize)
-          frame = AMQ::Protocol::Frame.decode(@payload)
-          # Wait for header and body frames.
-          if frame.expects_body? or @frames.first.expects_more?(@frames.length)
-            receive_frame(@frame)
-          else
-            receive_frameset(@frames)
-            reset
-          end
-        end
+        puts "Got some data: #{chunk}"
       end
 
       def reset
         @size, @payload = 0, ""
-        @frames.clear
+        @frames = Array.new
       end
-    end
-  end
-end
+
+
+      #
+      # Implementation
+      #
+
+      def post_init
+        reset
+        reset_state
+
+        send_preamble
+
+        # @connection = AMQ::Client::Connection.new(self, "PLAIN", self.encode_credentials(@settings[:user], @settings[:pass], @settings.fetch(:locale, "en_GB")))
+      end # post_init
+
+      def unbind
+      end # unbind
+
+      protected
+
+      def reset_state
+        @connecting    = false
+        @disconnecting = false
+      end # reset_state
+
+      def encode_credentials(username, password)
+        "\0guest\0guest"
+      end # encode_credentials(username, password)
+    end # EventMachineClient
+  end # Client
+end # AMQ

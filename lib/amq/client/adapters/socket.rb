@@ -48,7 +48,7 @@ module AMQ
       end # connection
 
       def connected?
-        @socket && ! @socket.closed?
+        @socket && !@socket.closed?
       end
 
       def disconnect

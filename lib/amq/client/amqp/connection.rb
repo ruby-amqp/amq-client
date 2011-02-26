@@ -90,7 +90,6 @@ module AMQ
 
       def start_ok
         @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
-        # @client.send Protocol::Connection::StartOk.encode(CLIENT_PROPERTIES, self.mechanism, self.response, self.locale)
       end
 
       def tune_ok(method)
@@ -111,6 +110,7 @@ module AMQ
 
       # Handles Connection.Open-Ok
       #
+
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
       def handle_open_ok(method)
         @known_hosts = method.known_hosts
@@ -132,14 +132,14 @@ module AMQ
 
       # @returns [Boolean] true if this connection is open.
       def opened?
-        ! self.closed?
+        !self.closed?
       end
 
       # Sends Connection.Close to the server.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.5)
       # @todo Set @closing, await for Connection.Close-Ok, currently not thread-safe. {http://github.com/michaelklishin MK}.
-      def close(reply_code = 0, reply_text = "Bye!", class_id = 0, method_id = 0)
+      def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
       end
 
