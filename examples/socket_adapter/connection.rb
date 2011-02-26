@@ -38,7 +38,7 @@ AMQ::Client::SocketClient.connect(:port => 5672) do |client|
       sleep 1
     end
   rescue Interrupt
-    warn "Manually interrupted, exciting ..."
+    warn "Manually interrupted, terminating ..."
   rescue Exception => exception
     STDERR.puts "\n\e[1;31m[#{exception.class}] #{exception.message}\e[0m"
     exception.backtrace.each do |line|
