@@ -74,7 +74,5 @@ module AMQ
         channel.handle_close(method)
       end
     end
-
-    Adapter.register_entity(:channel, Channel)
   end
 end

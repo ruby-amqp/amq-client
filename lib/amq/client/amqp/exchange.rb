@@ -75,7 +75,5 @@ module AMQ
         exchange.handle_declare_ok(method)
       end
     end
-
-    Adapter.register_entity(:exchange, Exchange)
   end
 end

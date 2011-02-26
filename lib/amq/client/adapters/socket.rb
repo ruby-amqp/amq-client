@@ -2,19 +2,37 @@
 
 require "socket"
 require "amq/client"
-
+require "amq/client/amqp/channel"
+require "amq/client/amqp/exchange"
+require "amq/client/amqp/queue"
 require "amq/client/io/io"
 
 module AMQ
   module Client
-    class SocketClient < AMQ::Client::Adapter
+    class SocketClient
+
+      #
+      # Behaviors
+      #
+
+      include AMQ::Client::Adapter
+
       self.sync = true
+
+      register_entity :channel,  AMQ::Client::Channel
+      register_entity :exchange, AMQ::Client::Exchange
+      register_entity :queue,    AMQ::Client::Queue
+
+
+      #
+      # API
+      #
 
       def establish_connection(settings)
         # NOTE: this doesn't work with "localhost", I don't know why:
         settings[:host] = "127.0.0.1" if settings[:host] == "localhost"
-        @socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-        sockaddr = Socket.pack_sockaddr_in(settings[:port], settings[:host])
+        @socket         = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+        sockaddr        = Socket.pack_sockaddr_in(settings[:port], settings[:host])
 
         @socket.connect(sockaddr)
       rescue Errno::ECONNREFUSED => exception
@@ -24,6 +42,10 @@ module AMQ
         self.disconnect if self.connected?
         raise exception
       end
+
+      def connection
+        @socket
+      end # connection
 
       def connected?
         @socket && ! @socket.closed?
