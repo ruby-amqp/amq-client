@@ -15,8 +15,8 @@ require "amq/client/amqp/exchange"
 EM.run do
   AMQ::Client::EventMachineClient.connect(:port => 5672) do |client|
     begin
-      # channel = AMQ::Client::Channel.new(client, 1)
-      # channel.open { puts "Channel #{channel.id} opened!" }
+      channel = AMQ::Client::Channel.new(client, 1)
+      channel.open { puts "Channel #{channel.id} is now open!" }
 
       # queue = AMQ::Client::Queue.new(client, "", channel)
       # queue.declare { puts "Queue #{queue.name.inspect} declared!" }
