@@ -8,19 +8,6 @@ require "amq/client/amqp/connection"
 module AMQ
   # For overview of AMQP client adapters API, see {AMQ::Client::Adapter}
   module Client
-    # Syntactic sugar for logging setting.
-    #
-    # @see AMQ::Client::Adapter
-    module Logging
-      def self.logging
-        AMQ::Client::Adapter.logging
-      end
-
-      def self.logging=(boolean)
-        AMQ::Client::Adapter.logging = boolean
-      end
-    end
-
     # Base adapter class. Specific implementations (for example, EventMachine-based, Cool.io-based or
     # sockets-based) subclass it and must implement Adapter API methods:
     #
@@ -34,12 +21,13 @@ module AMQ
     # @example EventMachine adapter indicates that it is asynchronous
     #  module AMQ
     #    module Client
-    #      class EventMachineClient < AMQ::Client::Adapter
+    #      class EventMachineClient
     #
     #        #
     #        # Behaviors
     #        #
     #
+    #        include AMQ::Client::Adapter
     #        include EventMachine::Deferrable
     #
     #         self.sync = false
@@ -51,110 +39,133 @@ module AMQ
     #   end
     #
     # @abstract
-    class Adapter
-      # Settings
-      def self.settings
-        @settings ||= AMQ::Client::Settings.default
-      end
+    module Adapter
 
-      def self.logger
-        @logger ||= begin
-                      require "logger"
-                      Logger.new(STDERR)
-                    end
-      end
+      def self.included(host)
+        host.extend(ClassMethods)
 
-      def self.logger=(logger)
-        methods = AMQ::Client::Logging::REQUIRED_METHODS
-        unless methods.all? { |method| logger.respond_to?(method) }
-          raise AMQ::Client::Logging::IncompatibleLoggerError.new(methods)
+        host.class_eval do
+          attr_accessor :logger, :settings, :connection
+
+          # Authentication mechanism
+          attr_accessor :mechanism
+
+          # Security response data
+          attr_accessor :response
+
+          # The locale defines the language in which the server will send reply texts.
+          #
+          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+          attr_accessor :locale
+        end
+      end # self.included(host)
+
+
+
+      module ClassMethods
+        # Settings
+        def settings
+          @settings ||= AMQ::Client::Settings.default
         end
 
-        @logger = logger
-      end
-
-      # @return [Boolean] Current value of logging flag.
-      def self.logging
-        self.settings[:logging]
-      end
-
-      # Turns loggin on or off.
-      def self.logging=(boolean)
-        self.settings[:logging] = boolean
-      end
-
-
-      # @example Registering Channel implementation
-      #  Adapter.register_entity(:channel, Channel)
-      #   # ... so then I can do:
-      #  channel = client.channel(1)
-      #  # instead of:
-      #  channel = Channel.new(client, 1)
-      def self.register_entity(name, klass)
-        define_method(name) do |*args, &block|
-          klass.new(self, *args, &block)
-        end
-      end
-
-      # Establishes connection to AMQ broker and returns it. New connection object is yielded to
-      # the block if it is given.
-      #
-      # @param [Hash] Connection parameters, including :adapter to use.
-      # @api public
-      def self.connect(settings = nil, &block)
-        if self.class != Adapter
-          adapter = self
-        elsif self.class == Adapter && settings && settings[:adapter] # not for subclasses
-          adapter = self.load_adapter(settings[:adapter])
-        else
-          raise "XXX", "you have to use either given adapter directly by calling its .connect method or you have to specify :adapter option in the settings."
+        def logger
+          @logger ||= begin
+                        require "logger"
+                        Logger.new(STDERR)
+                      end
         end
 
-        @settings = AMQ::Client::Settings.configure(settings)
-        instance = adapter.new
-        instance.establish_connection(@settings)
-        # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
+        def logger=(logger)
+          methods = AMQ::Client::Logging::REQUIRED_METHODS
+          unless methods.all? { |method| logger.respond_to?(method) }
+            raise AMQ::Client::Logging::IncompatibleLoggerError.new(methods)
+          end
 
-        if block
-          block.call(instance)
-          instance.connection.close
-          instance.disconnect
-        else
-          instance
+          @logger = logger
         end
-      end
 
-      # Loads adapter from amq/client/adapters.
-      #
-      # @raise [InvalidAdapterNameError] When loading attempt failed (LoadError was raised).
-      def self.load_adapter(adapter)
-        require "amq/client/adapters/#{adapter}"
-        const_name = adapter.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
-        self.const_get(const_name)
-      rescue LoadError
-        raise InvalidAdapterNameError.new(adapter)
-      end
+        # @return [Boolean] Current value of logging flag.
+        def logging
+          settings[:logging]
+        end
 
-      # @see AMQ::Client::Adapter
-      def self.sync=(boolean)
-        @sync = boolean
-      end
+        # Turns loggin on or off.
+        def logging=(boolean)
+          settings[:logging] = boolean
+        end
 
-      # Use this method to detect whether adapter is synchronous or asynchronous.
-      #
-      # @return [Boolean] true if this adapter is synchronous
-      # @api plugin
-      # @see AMQ::Client::Adapter
-      def self.sync?
-        @sync == true
-      end
 
-      # @see #sync?
-      # @api plugin
-      # @see AMQ::Client::Adapter
-      def self.async?
-        ! self.sync?
-      end
+        # @example Registering Channel implementation
+        #  Adapter.register_entity(:channel, Channel)
+        #   # ... so then I can do:
+        #  channel = client.channel(1)
+        #  # instead of:
+        #  channel = Channel.new(client, 1)
+        def register_entity(name, klass)
+          define_method(name) do |*args, &block|
+            klass.new(self, *args, &block)
+          end
+        end
+
+        # Establishes connection to AMQ broker and returns it. New connection object is yielded to
+        # the block if it is given.
+        #
+        # @param [Hash] Connection parameters, including :adapter to use.
+        # @api public
+        def connect(settings = nil, &block)
+          if settings && settings[:adapter]
+            adapter = load_adapter(settings[:adapter])
+          else
+            adapter = self
+          end
+
+          @settings = AMQ::Client::Settings.configure(settings)
+          instance = adapter.new
+          instance.establish_connection(@settings)
+          # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
+
+          if block
+            block.call(instance)
+
+            instance.disconnect
+          else
+            instance
+          end
+        end
+
+        # Loads adapter from amq/client/adapters.
+        #
+        # @raise [InvalidAdapterNameError] When loading attempt failed (LoadError was raised).
+        def load_adapter(adapter)
+          require "amq/client/adapters/#{adapter}"
+
+          const_name = adapter.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
+          const_get(const_name)
+        rescue LoadError
+          raise InvalidAdapterNameError.new(adapter)
+        end
+
+        # @see AMQ::Client::Adapter
+        def sync=(boolean)
+          @sync = boolean
+        end
+
+        # Use this method to detect whether adapter is synchronous or asynchronous.
+        #
+        # @return [Boolean] true if this adapter is synchronous
+        # @api plugin
+        # @see AMQ::Client::Adapter
+        def sync?
+          @sync == true
+        end
+
+        # @see #sync?
+        # @api plugin
+        # @see AMQ::Client::Adapter
+        def async?
+          !sync?
+        end
+      end # ClassMethods
 
 
 
@@ -162,18 +173,11 @@ module AMQ
       # API
       #
 
-      attr_accessor :logger, :settings, :connection
+      def self.load_adapter(adapter)
+        ClassMethods.load_adapter(adapter)
+      end
 
-      # Authentication mechanism
-      attr_accessor :mechanism
 
-      # Security response data
-      attr_accessor :response
-
-      # The locale defines the language in which the server will send reply texts.
-      #
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
-      attr_accessor :locale
 
       def initialize
         self.logger   = self.class.logger
@@ -181,6 +185,12 @@ module AMQ
 
         @frames = Array.new
       end
+
+      def consumers
+        @consumers ||= Hash.new
+      end # consumers
+
+      
 
       # Establish socket connection to the server.
       #
