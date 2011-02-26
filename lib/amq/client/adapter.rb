@@ -190,7 +190,7 @@ module AMQ
         @consumers ||= Hash.new
       end # consumers
 
-      
+
 
       # Establish socket connection to the server.
       #
