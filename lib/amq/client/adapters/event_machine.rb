@@ -1,21 +1,27 @@
 # encoding: utf-8
 
 require "amq/client"
+require "amq/client/amqp/channel"
+require "amq/client/amqp/exchange"
 require "amq/client/io/string"
+
 require "eventmachine"
 
 module AMQ
   module Client
-    class EventMachineClient < AMQ::Client::Adapter
+    class EventMachineClient < EM::Connection
 
       #
       # Behaviors
       #
 
+      include AMQ::Client::Adapter
       include EventMachine::Deferrable
 
       self.sync = false
 
+      register_entity :channel,  AMQ::Client::Channel
+      register_entity :exchange, AMQ::Client::Exchange
 
       #
       # API
