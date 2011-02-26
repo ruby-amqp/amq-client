@@ -6,7 +6,7 @@ require "bundler"
 Bundler.setup
 Bundler.require(:default)
 
-$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
+$LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
 
 require "amq/client/adapters/socket"
 require "amq/client/amqp/queue"
