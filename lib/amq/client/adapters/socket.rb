@@ -51,7 +51,7 @@ module AMQ
         @socket && !@socket.closed?
       end
 
-      def disconnect
+      def close_connection
         @socket.close
       end
 

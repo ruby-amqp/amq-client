@@ -13,7 +13,7 @@ module AMQ
     #
     # * #send_raw(data)
     # * #estabilish_connection(settings)
-    # * #disconnect
+    # * #close_connection
     #
     # Adapters also must indicate whether they operate in asynchronous or synchronous mode
     # using AMQ::Client::Adapter.sync accessor:
@@ -216,20 +216,20 @@ module AMQ
       #
       # @api  plugin
       # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
-      # @see  #disconnect
-      def close_connection(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
+      # @see  #close_connection
+      def disconnect(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
-        self.disconnect
+        self.close_connection
       end
 
       # @api plugin
-      # @see #close_connection
+      # @see #disconnect
       # @note Adapters must implement this method but it is NOT supposed to be used directly.
       #       AMQ protocol defines two-step process of closing connection (send Connection.Close
-      #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#close_connection}
-      def disconnect
+      #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#disconnect}
+      def close_connection
         raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
-      end
+      end unless defined?(:close_connection) # since it is a module, this method may already be defined
 
       # Sends AMQ protocol header (also known as preamble).
       #

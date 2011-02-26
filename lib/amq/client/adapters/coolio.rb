@@ -49,7 +49,7 @@ module AMQ
         end
       end
 
-      def disconnect
+      def close_connection
       end
 
       def send_raw(data)
