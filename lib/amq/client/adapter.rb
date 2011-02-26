@@ -181,6 +181,8 @@ module AMQ
 
 
       def initialize(*args)
+        super
+
         self.logger   = self.class.logger
         self.settings = self.class.settings
 
