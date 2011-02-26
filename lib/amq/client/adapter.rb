@@ -135,40 +135,6 @@ module AMQ
         raise InvalidAdapterNameError.new(adapter)
       end
 
-      # Establish socket connection to the server.
-      #
-      # @api plugin
-      def establish_connection(settings)
-        raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection(settings)")
-      end
-
-      # @api plugin
-      # @see #close_connection
-      # @note Adapters must implement this method but it is NOT supposed to be used directly.
-      #       AMQ protocol defines two-step process of closing connection (send Connection.Close
-      #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#close_connection}
-      def disconnect
-        raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
-      end
-
-      attr_accessor :logger, :settings, :connection
-      attr_accessor :mechanism, :response, :locale
-      def initialize
-        self.logger   = self.class.logger
-        self.settings = self.class.settings
-
-        @frames = Array.new
-      end
-
-      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
-        self.send_preamble
-        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
-        if self.sync?
-          self.receive # Start/Start-Ok
-          self.receive # Tune/Tune-Ok
-        end
-      end
-
       # @see AMQ::Client::Adapter
       def self.sync=(boolean)
         @sync = boolean
@@ -183,13 +149,6 @@ module AMQ
         @sync == true
       end
 
-      # @see .sync?
-      # @api plugin
-      # @see AMQ::Client::Adapter
-      def sync?
-        self.class.sync?
-      end
-
       # @see #sync?
       # @api plugin
       # @see AMQ::Client::Adapter
@@ -197,11 +156,66 @@ module AMQ
         ! self.sync?
       end
 
-      # @see .async?
+
+
+      #
+      # API
+      #
+
+      attr_accessor :logger, :settings, :connection
+
+      # Authentication mechanism
+      attr_accessor :mechanism
+
+      # Security response data
+      attr_accessor :response
+
+      # The locale defines the language in which the server will send reply texts.
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+      attr_accessor :locale
+
+      def initialize
+        self.logger   = self.class.logger
+        self.settings = self.class.settings
+
+        @frames = Array.new
+      end
+
+      # Establish socket connection to the server.
+      #
       # @api plugin
-      # @see AMQ::Client::Adapter
-      def async?
-        self.class.async?
+      def establish_connection(settings)
+        raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection(settings)")
+      end
+
+      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
+        self.send_preamble
+        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+        if self.sync?
+          self.receive # Start/Start-Ok
+          self.receive # Tune/Tune-Ok
+        end
+      end
+
+      # Properly close connection with AMQ broker, as described in
+      # section 2.2.4 of the {http://bit.ly/hw2ELX AMQP 0.9.1 specification}.
+      #
+      # @api  plugin
+      # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
+      # @see  #disconnect
+      def close_connection
+        send AMQ::Protocol::Connection::Close.encode
+        self.disconnect
+      end
+
+      # @api plugin
+      # @see #close_connection
+      # @note Adapters must implement this method but it is NOT supposed to be used directly.
+      #       AMQ protocol defines two-step process of closing connection (send Connection.Close
+      #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#close_connection}
+      def disconnect
+        raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
       end
 
       # Sends AMQ protocol header (also known as preamble).
@@ -253,24 +267,27 @@ module AMQ
         end
       end
 
-      # Properly close connection with AMQ broker, as described in
-      # section 2.2.4 of the {http://bit.ly/hw2ELX AMQP 0.9.1 specification}.
-      #
-      # @api  plugin
-      # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
-      # @see  #disconnect
-      def close_connection
-        send AMQ::Protocol::Connection::Close.encode
-        self.disconnect
-      end
-
       def get_random_channel
         keys = self.connection.keys
         random_key = keys[rand(keys.length)]
         self.connection.channels[random_key]
       end
-    end
-  end
-end
+
+      # @see .sync?
+      # @api plugin
+      # @see AMQ::Client::Adapter
+      def sync?
+        self.class.sync?
+      end
+
+      # @see .async?
+      # @api plugin
+      # @see AMQ::Client::Adapter
+      def async?
+        self.class.async?
+      end
+    end # Adapter
+  end # Client
+end # AMQ
 
 require "amq/client/amqp/channel"
