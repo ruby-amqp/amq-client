@@ -8,6 +8,8 @@ group :development do
   gem "yard"
   # yard tags this buddy along
   gem "RedCloth"
+
+  gem "eventmachine"
 end
 
 group :test do
