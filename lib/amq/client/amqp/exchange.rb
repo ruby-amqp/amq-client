@@ -8,7 +8,7 @@ module AMQ
     class Exchange < Entity
       include AnonymousEntityMixin
 
-      TYPES ||= [:fanout, :direct, :topic]
+      TYPES = [:fanout, :direct, :topic].freeze
 
       class IncompatibleExchangeTypeError < StandardError
         def initialize(types, given)
