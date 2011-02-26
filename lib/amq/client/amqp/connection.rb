@@ -114,6 +114,10 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
       def handle_open_ok(method)
         @known_hosts = method.known_hosts
+
+        # async adapters need this callback to proceed with
+        # Adapter.connect block evaluation
+        @client.connection_opened if @client.respond_to?(:connection_opened)
       end
 
       # Handles Connection.Close-Ok

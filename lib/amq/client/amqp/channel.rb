@@ -54,6 +54,7 @@ module AMQ
       end
 
       # === Handlers ===
+
       self.handle(Protocol::Channel::OpenOk) do |client, frame|
         channels = client.connection.channels
         channel = channels[frame.channel]

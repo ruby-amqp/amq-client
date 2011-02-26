@@ -33,12 +33,17 @@ module AMQ
         instance          = EM.connect(settings[:host], settings[:port], self)
         instance.settings = settings
 
-        if block
-          block.call(instance)
-
-          instance.disconnect
-        else
+        if block.nil?
           instance
+        else
+          # delay calling block we were given till after we receive
+          # connection.open-ok. Connection will notify us when
+          # that happens.
+          instance.callback do
+            block.call(instance)
+
+            instance.disconnect
+          end
         end
       end
 
@@ -63,8 +68,15 @@ module AMQ
       alias send_raw   send_data
 
       def receive_data(chunk)
-        puts "Got some data: #{chunk}"
+        frame  = AMQ::Client::StringAdapter::Frame.decode(chunk)
+        method = frame.method_class
+
+        self.receive_frame(frame)
       end
+
+      # called by AMQ::Client::Connection after we receive connection.open-ok.
+      alias connection_opened succeed
+
 
       def reset
         @size, @payload = 0, ""
@@ -80,9 +92,9 @@ module AMQ
         reset
         reset_state
 
-        send_preamble
+        @connecting    = true
 
-        # @connection = AMQ::Client::Connection.new(self, "PLAIN", self.encode_credentials(@settings[:user], @settings[:pass], @settings.fetch(:locale, "en_GB")))
+        self.handshake
       end # post_init
 
       def unbind
