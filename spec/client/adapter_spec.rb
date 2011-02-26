@@ -29,34 +29,29 @@ describe AMQ::Client::Adapter do
   end
 
   describe ".logger" do
-    it "should provide a default logger if logging is on" do
-      AMQ::Client::Adapter.logging = true
-
+    it "should provide a default logger" do
       AMQ::Client::Adapter.logger.should respond_to(:debug)
       AMQ::Client::Adapter.logger.should respond_to(:info)
       AMQ::Client::Adapter.logger.should respond_to(:error)
       AMQ::Client::Adapter.logger.should respond_to(:fatal)
     end
-
-    it "should be nil if the logging is off" do
-      AMQ::Client::Adapter.logging = false
-      AMQ::Client::Adapter.logger.should be_nil
-    end
   end
 
   describe ".logger=(logger)" do
-    it "should raise an exception if the logger doesn't respond to all the necessary methods" do
-      lambda {
-        AMQ::Client::Adapter.logger = Object.new
-      }.should raise_error(AMQ::Client::Logging::IncompatibleLoggerError)
-    end
+    context "when new logger doesn't respond to all the necessary methods" do
+      it "should raise an exception" do
+        lambda {
+          AMQ::Client::Adapter.logger = Object.new
+        }.should raise_error(AMQ::Client::Logging::IncompatibleLoggerError)
+      end
 
-    it "should pass if the object provides all the necessary methods" do
-      AMQ::Client::Adapter.logging = true
+      it "should pass if the object provides all the necessary methods" do
+        AMQ::Client::Adapter.logging = true
 
-      mock = OpenStruct.new(:debug => nil, :info => nil, :error => nil, :fatal => nil)
-      AMQ::Client::Adapter.logger = mock
-      AMQ::Client::Adapter.logger.should eql(mock)
+        mock = OpenStruct.new(:debug => nil, :info => nil, :error => nil, :fatal => nil)
+        AMQ::Client::Adapter.logger = mock
+        AMQ::Client::Adapter.logger.should eql(mock)
+      end
     end
   end
 end

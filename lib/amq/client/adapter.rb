@@ -58,12 +58,10 @@ module AMQ
       end
 
       def self.logger
-        if self.logging
-          @logger ||= begin
-            require "logger"
-            Logger.new(STDERR)
-          end
-        end
+        @logger ||= begin
+                      require "logger"
+                      Logger.new(STDERR)
+                    end
       end
 
       def self.logger=(logger)
