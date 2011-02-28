@@ -57,6 +57,15 @@ module AMQ
           #
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
           attr_accessor :locale
+
+          # @api plugin
+          # @see #disconnect
+          # @note Adapters must implement this method but it is NOT supposed to be used directly.
+          #       AMQ protocol defines two-step process of closing connection (send Connection.Close
+          #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#disconnect}
+          def close_connection
+            raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
+          end unless defined?(:close_connection) # since it is a module, this method may already be defined
         end
       end # self.included(host)
 
@@ -221,15 +230,6 @@ module AMQ
         send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         self.close_connection
       end
-
-      # @api plugin
-      # @see #disconnect
-      # @note Adapters must implement this method but it is NOT supposed to be used directly.
-      #       AMQ protocol defines two-step process of closing connection (send Connection.Close
-      #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#disconnect}
-      def close_connection
-        raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
-      end unless defined?(:close_connection) # since it is a module, this method may already be defined
 
       # Sends AMQ protocol header (also known as preamble).
       #
