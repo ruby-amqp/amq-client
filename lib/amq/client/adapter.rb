@@ -64,7 +64,7 @@ module AMQ
           #       AMQ protocol defines two-step process of closing connection (send Connection.Close
           #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#disconnect}
           def close_connection
-            raise MissingInterfaceMethodError.new("AMQ::Client.disconnect")
+            raise MissingInterfaceMethodError.new("AMQ::Client.close_connection")
           end unless defined?(:close_connection) # since it is a module, this method may already be defined
         end
       end # self.included(host)
