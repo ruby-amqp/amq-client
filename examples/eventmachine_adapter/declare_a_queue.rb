@@ -21,19 +21,22 @@ EM.run do
       channel.open { puts "Channel #{channel.id} is now open!" }
 
       queue = AMQ::Client::Queue.new(client, "", channel)
-      queue.declare { puts "Queue #{queue.name.inspect} declared!" }
+      queue.declare { puts "Queue #{queue.name.inspect} is now declared!" }
 
       # exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
-      # exchange.declare { puts "Exchange #{exchange.name.inspect} declared!" }
+      # exchange.declare { puts "Exchange #{exchange.name.inspect} is now declared!" }
 
-      # until client.connection.closed?
-      #   client.receive_async
-      #   sleep 1
-      # end
 
-      # client.disconnect do
-      #   puts "AMQP connection is now properly closed"
-      # end
+      show_stopper = Proc.new {
+        client.disconnect do
+          puts
+          puts "AMQP connection is now properly closed"
+          EM.stop
+        end
+      }
+
+      Signal.trap "INT",  show_stopper
+      Signal.trap "TERM", show_stopper
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception
@@ -45,7 +48,3 @@ EM.run do
     end
   end
 end
-
-# TODO:
-# AMQ::Client.connect(:adapter => :socket)
-# Support for frame_max, heartbeat from Connection.Tune
