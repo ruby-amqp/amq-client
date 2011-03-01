@@ -17,8 +17,8 @@ EM.run do
     begin
       puts "Running a block"
 
-      channel = AMQ::Client::Channel.new(client, 1)
-      channel.open { puts "Channel #{channel.id} is now open!" }
+      # channel = AMQ::Client::Channel.new(client, 1)
+      # channel.open { puts "Channel #{channel.id} is now open!" }
 
       # queue = AMQ::Client::Queue.new(client, "", channel)
       # queue.declare { puts "Queue #{queue.name.inspect} declared!" }
@@ -30,6 +30,8 @@ EM.run do
       #   client.receive_async
       #   sleep 1
       # end
+
+      client.disconnect
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception
