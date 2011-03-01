@@ -106,9 +106,6 @@ module AMQ
 
       def post_init
         reset
-        reset_state
-
-        @connecting    = true
 
         self.handshake
       end # post_init
@@ -119,18 +116,12 @@ module AMQ
         self.send_preamble
 
         self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
-        @connecting     = true
       end
 
       def reset
         @size, @payload = 0, ""
         @frames = Array.new
       end
-
-      def reset_state
-        @connecting    = false
-        @disconnecting = false
-      end # reset_state
 
       def encode_credentials(username, password)
         "\0guest\0guest"
