@@ -17,11 +17,11 @@ EM.run do
     begin
       puts "AMQP connection is open"
 
-      # channel = AMQ::Client::Channel.new(client, 1)
-      # channel.open { puts "Channel #{channel.id} is now open!" }
+      channel = AMQ::Client::Channel.new(client, 1)
+      channel.open { puts "Channel #{channel.id} is now open!" }
 
-      # queue = AMQ::Client::Queue.new(client, "", channel)
-      # queue.declare { puts "Queue #{queue.name.inspect} declared!" }
+      queue = AMQ::Client::Queue.new(client, "", channel)
+      queue.declare { puts "Queue #{queue.name.inspect} declared!" }
 
       # exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
       # exchange.declare { puts "Exchange #{exchange.name.inspect} declared!" }
@@ -31,9 +31,9 @@ EM.run do
       #   sleep 1
       # end
 
-      client.disconnect do
-        puts "AMQP connection is now properly closed"
-      end
+      # client.disconnect do
+      #   puts "AMQP connection is now properly closed"
+      # end
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception

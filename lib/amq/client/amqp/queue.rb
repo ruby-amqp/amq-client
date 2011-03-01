@@ -27,8 +27,8 @@ module AMQ
 
         channel.queues_cache << self
 
-        unless nowait
-          @client.read_until_receives(Protocol::Queue::DeclareOk)
+        if @client.sync?
+          @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
         end
 
         self
