@@ -89,7 +89,10 @@ wget http://gems.101ideas.cz/amq-client-nightly.gem
 gem install amq-client-nightly.gem
 </pre>
 
-_*NOTE:* This could be better achieved by a gem server, but it's just utterly broken._
+If you use Bundler and want to use the very latest version, add this to your Gemfile:
+
+gem 'amq-client', :git => 'https://github.com/ruby-amqp/amq-client.git'
+
 
 h2. Git Repository
 
