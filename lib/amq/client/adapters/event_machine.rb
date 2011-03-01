@@ -81,10 +81,7 @@ module AMQ
       end # post_init
 
       def receive_data(chunk)
-        frame  = AMQ::Client::StringAdapter::Frame.decode(chunk)
-        method = frame.method_class
-
-        self.receive_frame(frame)
+        self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(chunk))
       end
 
 
