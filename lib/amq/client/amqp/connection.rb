@@ -147,6 +147,10 @@ module AMQ
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
       end
 
+      def close_ok(method)
+        @client.disconnection_successful
+      end # close_ok(method)
+
 
       #
       # Handlers
@@ -172,6 +176,11 @@ module AMQ
       self.handle(Protocol::Connection::Close) do |client, frame|
         method = frame.decode_payload
         client.connection.handle_close(method)
+      end
+
+      self.handle(Protocol::Connection::CloseOk) do |client, frame|
+        method = frame.decode_payload
+        client.connection.close_ok(method)
       end
     end
   end

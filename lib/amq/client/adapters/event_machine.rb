@@ -56,7 +56,8 @@ module AMQ
       def initialize(*args)
         super(*args)
 
-        @connection_deferrable = Deferrable.new
+        @connection_deferrable    = Deferrable.new
+        @disconnection_deferrable = Deferrable.new
       end # initialize(*args)
 
 
@@ -64,7 +65,6 @@ module AMQ
         # an intentional no-op
       end
 
-      alias disconnect close_connection
       alias send_raw   send_data
 
       def receive_data(chunk)
@@ -85,9 +85,18 @@ module AMQ
         @connection_deferrable.succeed
       end # connection_successful
 
-      def connection_error
-        @connection_deferrable.error
-      end # connection_error
+
+
+      def on_disconnection(&block)
+        @disconnection_deferrable.callback(&block)
+      end # on_disconnection(&block)
+
+      # called by AMQ::Client::Connection after we receive connection.close-ok.
+      def disconnection_successful
+        @disconnection_deferrable.succeed
+
+        self.close_connection
+      end # disconnection_successful
 
 
 

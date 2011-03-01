@@ -15,7 +15,7 @@ require "amq/client/amqp/exchange"
 EM.run do
   AMQ::Client::EventMachineClient.connect(:port => 5672) do |client|
     begin
-      puts "Running a block"
+      puts "AMQP connection is open"
 
       # channel = AMQ::Client::Channel.new(client, 1)
       # channel.open { puts "Channel #{channel.id} is now open!" }
@@ -31,7 +31,9 @@ EM.run do
       #   sleep 1
       # end
 
-      client.disconnect
+      client.disconnect do
+        puts "AMQP connection is now properly closed"
+      end
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception
