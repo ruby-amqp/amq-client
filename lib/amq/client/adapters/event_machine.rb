@@ -113,10 +113,6 @@ module AMQ
         self.handshake
       end # post_init
 
-      def unbind
-        puts "Unbound"
-      end # unbind
-
       protected
 
       def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
