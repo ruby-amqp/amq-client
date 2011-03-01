@@ -51,8 +51,10 @@ module AMQ
 
         channel.exchanges_cache << self
 
-        unless nowait
-          @client.read_until_receives(Protocol::Exchange::DeclareOk)
+        if @client.sync?
+          unless nowait
+            @client.read_until_receives(Protocol::Exchange::DeclareOk)
+          end
         end
 
         self
