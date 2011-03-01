@@ -113,9 +113,9 @@ module AMQ
       protected
 
       def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
-        self.send_preamble
-
         self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+
+        self.send_preamble
       end
 
       def reset
