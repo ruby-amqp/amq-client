@@ -117,7 +117,7 @@ module AMQ
 
         # async adapters need this callback to proceed with
         # Adapter.connect block evaluation
-        @client.connection_opened if @client.respond_to?(:connection_opened)
+        @client.connection_successful if @client.respond_to?(:connection_successful)
       end
 
       # Handles Connection.Close-Ok

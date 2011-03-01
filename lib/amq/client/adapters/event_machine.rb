@@ -11,12 +11,15 @@ module AMQ
   module Client
     class EventMachineClient < EM::Connection
 
+      class Deferrable
+        include EventMachine::Deferrable
+      end
+
       #
       # Behaviors
       #
 
       include AMQ::Client::Adapter
-      include EventMachine::Deferrable
 
       self.sync = false
 
@@ -39,30 +42,27 @@ module AMQ
           # delay calling block we were given till after we receive
           # connection.open-ok. Connection will notify us when
           # that happens.
-          instance.callback do
+          instance.on_connection do
             block.call(instance)
-
-            instance.disconnect
           end
         end
       end
 
 
+      #
+      # API
+      #
+
+      def initialize(*args)
+        super(*args)
+
+        @connection_deferrable = Deferrable.new
+      end # initialize(*args)
 
 
       def establish_connection(settings)
         # an intentional no-op
       end
-
-      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
-        self.send_preamble
-
-        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
-        @connecting     = true
-      end
-
-
-      # Client interface
 
       alias disconnect close_connection
       alias send_raw   send_data
@@ -74,14 +74,21 @@ module AMQ
         self.receive_frame(frame)
       end
 
+
+
+      def on_connection(&block)
+        @connection_deferrable.callback(&block)
+      end # on_connection(&block)
+
       # called by AMQ::Client::Connection after we receive connection.open-ok.
-      alias connection_opened succeed
+      def connection_successful
+        @connection_deferrable.succeed
+      end # connection_successful
 
+      def connection_error
+        @connection_deferrable.error
+      end # connection_error
 
-      def reset
-        @size, @payload = 0, ""
-        @frames = Array.new
-      end
 
 
       #
@@ -98,9 +105,22 @@ module AMQ
       end # post_init
 
       def unbind
+        puts "Unbound"
       end # unbind
 
       protected
+
+      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
+        self.send_preamble
+
+        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+        @connecting     = true
+      end
+
+      def reset
+        @size, @payload = 0, ""
+        @frames = Array.new
+      end
 
       def reset_state
         @connecting    = false
