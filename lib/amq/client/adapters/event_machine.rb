@@ -67,6 +67,19 @@ module AMQ
 
       alias send_raw   send_data
 
+
+
+
+      #
+      # Implementation
+      #
+
+      def post_init
+        reset
+
+        self.handshake
+      end # post_init
+
       def receive_data(chunk)
         frame  = AMQ::Client::StringAdapter::Frame.decode(chunk)
         method = frame.method_class
@@ -98,17 +111,6 @@ module AMQ
         self.close_connection
       end # disconnection_successful
 
-
-
-      #
-      # Implementation
-      #
-
-      def post_init
-        reset
-
-        self.handshake
-      end # post_init
 
       protected
 
