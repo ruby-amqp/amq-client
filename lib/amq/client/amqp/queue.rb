@@ -10,22 +10,21 @@ module AMQ
       include AnonymousEntityMixin
 
       attr_reader :name
-      def initialize(client, name, default_channel = nil)
-        @name, @default_channel = name, default_channel
+      def initialize(client, channel, name)
         super(client)
+
+        @name    = name
+        @channel = channel
       end
 
-      def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        data = Protocol::Queue::Declare.encode(channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments)
-        @client.send(data)
+      def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
+        @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         self.callbacks[:declare] = block
-
         self.execute_callback(:declare) if nowait
 
-        channel ||= client.get_random_channel
 
-        channel.queues_cache << self
+        @channel.queues_cache << self
 
         if @client.sync?
           @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
@@ -34,7 +33,8 @@ module AMQ
         self
       end
 
-      def bind(exchange, channel = @default_channel, &block)
+
+      def bind(channel, exchange, &block)
         data = Protocol::Queue::Bind.encode(channel, @name, exchange, routing_key, arguments)
         @client.send(data)
         self.callbacks[:bind] = block
@@ -42,13 +42,15 @@ module AMQ
       end
 
       # Basic.Consume
-      def consume(&block)
-        if @consumer_tag
-          raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.")
-        end
-        @consumer_tag = "random sh1t3"
-        @client.consumers[@consumer_tag] = self ### WHAT IF there'll be more consume blocks for the same object? Now that's about opinion, but we are NOT building an opinionated API here!!!!
-        self.callbacks[:consume] = block
+      def consume(no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = nil, &block)
+        raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
+
+        @consumer_tag                    = "#{name}-#{Kernel.rand(999_999_999_999)}"
+        @client.consumers[@consumer_tag] = self
+        # TODO: consider supporting multiple consumers in the same Ruby process here.
+        self.callbacks[:consume]         = block
+
+        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, false, false, false, nil))
       end
 
       def handle_declare_ok(method)
@@ -71,6 +73,11 @@ module AMQ
 
       self.handle(Protocol::Queue::BindOk) do |client, frame|
         method = frame.decode_payload
+        # TODO
+      end
+
+      self.handle(Protocol::Basic::ConsumeOk) do |client, frame|
+        # TODO
       end
 
       # Basic.Deliver

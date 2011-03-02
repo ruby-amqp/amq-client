@@ -20,11 +20,17 @@ EM.run do
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open { puts "Channel #{channel.id} is now open!" }
 
-      queue = AMQ::Client::Queue.new(client, "", channel)
-      queue.declare { puts "Queue #{queue.name.inspect} is now declared!" }
+      queue = AMQ::Client::Queue.new(client, channel, "amqpgem.interoperability.queue")
+      queue.declare(false, false, false, true) do
+        puts "Queue #{queue.name.inspect} is now declared!"
+      end
 
       # exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
       # exchange.declare { puts "Exchange #{exchange.name.inspect} is now declared!" }
+
+      queue.consume do |msg|
+        puts msg
+      end
 
 
       show_stopper = Proc.new {
