@@ -20,7 +20,7 @@ EM.run do
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open { puts "Channel #{channel.id} is now open!" }
 
-      queue = AMQ::Client::Queue.new(client, channel, "amqpgem.interoperability.queue")
+      queue = AMQ::Client::Queue.new(client, channel, "amq-client.queue2")
       queue.declare(false, false, false, true) do
         puts "Queue #{queue.name.inspect} is now declared!"
       end
