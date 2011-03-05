@@ -153,7 +153,6 @@ module AMQ
       # Sends Connection.Close to the server.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.5)
-      # @todo Set @closing, await for Connection.Close-Ok, currently not thread-safe. {http://github.com/michaelklishin MK}.
       def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         closing!
