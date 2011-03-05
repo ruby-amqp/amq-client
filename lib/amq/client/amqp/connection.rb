@@ -69,8 +69,11 @@ module AMQ
       #
 
       def initialize(client, mechanism, response, locale)
-        @mechanism, @response, @locale = mechanism, response, locale
-        @channels = Hash.new
+        @mechanism = mechanism
+        @response  = response
+        @locale    = locale
+
+        @channels  = Hash.new
         super(client)
 
         # Default errback.
