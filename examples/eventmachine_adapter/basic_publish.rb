@@ -1,16 +1,8 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-require "bundler"
-
-Bundler.setup
-Bundler.require(:default)
-
-$LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
-
-require "amq/client/adapters/event_machine"
-require "amq/client/amqp/queue"
-require "amq/client/amqp/exchange"
+__dir = File.dirname(File.expand_path(__FILE__))
+require File.join(__dir, "example_helper")
 
 
 if RUBY_VERSION.to_s =~ /^1.9/

@@ -1,16 +1,8 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-require "bundler"
-
-Bundler.setup
-Bundler.require(:default)
-
-$LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
-
-require "amq/client/adapters/event_machine"
-require "amq/client/amqp/queue"
-require "amq/client/amqp/exchange"
+__dir = File.dirname(File.expand_path(__FILE__))
+require File.join(__dir, "example_helper")
 
 EM.run do
   AMQ::Client::EventMachineClient.connect(:port => 5672, :vhost => "/amq_client_testbed") do |client|
@@ -27,10 +19,6 @@ EM.run do
 
       queue.bind("amq.fanout") do
         puts "Queue #{queue.name} is now bound to amq.fanout"
-      end
-
-
-      show_stopper = Proc.new {
         puts
         puts "Deleting queue #{queue.name}"
         queue.delete do |_, message_count|
@@ -42,10 +30,7 @@ EM.run do
             EM.stop
           end
         end
-      }
-
-      Signal.trap "INT",  show_stopper
-      Signal.trap "TERM", show_stopper
+      end
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception
