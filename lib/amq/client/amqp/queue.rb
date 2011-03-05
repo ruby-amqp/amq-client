@@ -102,12 +102,17 @@ module AMQ
       def consume(no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
-        @consumer_tag                    = "#{name}-#{Kernel.rand(999_999_999_999)}"
+        @consumer_tag                    = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, false, false, false, nil))
+
         @client.consumers[@consumer_tag] = self
+
         # TODO: consider supporting multiple consumers in the same Ruby process here.
         self.callbacks[:consume]         = block
 
-        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, false, false, false, nil))
+        @channel.queues_awaiting_consume_ok.push(self)
+
+        self
       end
 
 
@@ -133,6 +138,10 @@ module AMQ
       def handle_delete_ok(method)
         self.exec_callback(:delete, method.message_count)
       end # handle_delete_ok(method)
+
+      def handle_consume_ok(method)
+        self.exec_callback(:consume, method.consumer_tag)
+      end # handle_consume_ok(method)
 
       def handle_purge_ok(method)
         self.exec_callback(:purge, method.message_count)
@@ -185,7 +194,10 @@ module AMQ
 
 
       self.handle(Protocol::Basic::ConsumeOk) do |client, frame|
-        # TODO
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.queues_awaiting_consume_ok.shift
+
+        queue.handle_consume_ok(frame.decode_payload)
       end
 
       # Basic.Deliver
