@@ -21,7 +21,7 @@ module AMQ
 
       attr_reader :name
 
-      def initialize(client, channel, name)
+      def initialize(client, channel, name = AMQ::Protocol::EMPTY_STRING)
         super(client)
 
         @name    = name
@@ -103,7 +103,7 @@ module AMQ
 
 
       # Basic.Consume
-      def consume(no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = nil, &block)
+      def consume(no_ack = false, exclusive = false, nowait = false, no_local = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
         @consumer_tag                    = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
@@ -134,6 +134,10 @@ module AMQ
         self
       end # purge(nowait = false, &block)
 
+
+      def on_delivery(&block)
+        self.callbacks[:delivery] = block
+      end # on_delivery(&block)
 
 
 
@@ -209,11 +213,14 @@ module AMQ
       end
 
       # Basic.Deliver
-      self.handle(Protocol::Basic::Deliver) do |client, frame, header, *body|
-        method = frame.decode_payload
-        queue  = client.consumers[method.consumer_tag]
-        body   = body.reduce("") { |buffer, frame| buffer += frame.body }
-        queue.exec_callback(:consume, body)
+      self.handle(Protocol::Basic::Deliver) do |client, method_frame, content_frames|
+        method   = method_frame.decode_payload
+        queue    = client.consumers[method.consumer_tag]
+
+        puts "content_frames are: #{content_frames.inspect}"
+
+        # queue.exec_callback(:delivery, "A payload")
+        # TODO: ack if necessary
       end
 
 

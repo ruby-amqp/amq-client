@@ -266,6 +266,8 @@ module AMQ
         if frame.final?
           receive_frameset(@frames)
           @frames.clear
+        else
+          puts "#{frame.inspect} is NOT final"
         end
       end
 
@@ -279,7 +281,7 @@ module AMQ
         frame = frames.first
         callable = AMQ::Client::Entity.handlers[frame.method_class]
         if callable
-          callable.call(self, frames.first, *frames[1..-1])
+          callable.call(self, frames.first, frames[1..-1])
         else
           raise MissingHandlerError.new(frames.first)
         end
