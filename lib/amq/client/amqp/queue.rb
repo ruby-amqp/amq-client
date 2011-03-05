@@ -80,6 +80,17 @@ module AMQ
       end
 
 
+      def purge(nowait = false, &block)
+        @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
+        self.callbacks[:purge] = block
+
+        # TODO: handle channel & connection-level exceptions
+        @channel.purged_queues.push(self)
+
+        self
+      end # purge(nowait = false, &block)
+
+
 
 
       def handle_declare_ok(method)
@@ -91,6 +102,10 @@ module AMQ
       def handle_delete_ok(method)
         self.exec_callback(:delete, method.message_count)
       end # handle_delete_ok(method)
+
+      def handle_purge_ok(method)
+        self.exec_callback(:purge, method.message_count)
+      end # handle_purge_ok(method)
 
 
 
@@ -130,6 +145,15 @@ module AMQ
         body   = body.reduce("") { |buffer, frame| buffer += frame.body }
         queue.exec_callback(:consume, body)
       end
-    end
-  end
-end
+
+
+      self.handle(Protocol::Queue::PurgeOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.purged_queues.shift
+
+        queue.handle_purge_ok(frame.decode_payload)
+      end
+
+    end # Queue
+  end # Client
+end # AMQ
