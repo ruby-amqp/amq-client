@@ -10,6 +10,7 @@ group :development do
   gem "RedCloth"
 
   gem "eventmachine"
+  gem "changelog"
 end
 
 group :test do
