@@ -127,9 +127,11 @@ module AMQ
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.6)
       def handle_close(method)
+        self.channels.each { |key, value| value.status = :closed }
+
+        @closed = true
         # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
         self.error RuntimeError.new(method.reply_text)
-        @closed = true
       end
 
       # @returns [Boolean] true if this connection is closed.
