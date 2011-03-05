@@ -175,8 +175,7 @@ module AMQ
       end
 
       self.handle(Protocol::Connection::CloseOk) do |client, frame|
-        method = frame.decode_payload
-        client.connection.close_ok(method)
+        client.connection.close_ok(frame.decode_payload)
       end
     end
   end
