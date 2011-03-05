@@ -23,20 +23,15 @@ EM.run do
       end
 
 
-      show_stopper = Proc.new {
-        channel.close do
-          puts "Closed channel ##{channel.id}"
+      channel.close do
+        puts "Closed channel ##{channel.id}"
+        puts
+        client.disconnect do
           puts
-          client.disconnect do
-            puts
-            puts "AMQP connection is now properly closed"
-            EM.stop
-          end
+          puts "AMQP connection is now properly closed"
+          EM.stop
         end
-      }
-
-      Signal.trap "INT",  show_stopper
-      Signal.trap "TERM", show_stopper
+      end
     rescue Interrupt
       warn "Manually interrupted, terminating ..."
     rescue Exception => exception
