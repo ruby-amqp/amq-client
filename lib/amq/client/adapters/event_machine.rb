@@ -118,8 +118,9 @@ module AMQ
       end
 
       def reset
-        @size, @payload = 0, ""
-        @frames = Array.new
+        @size    = 0
+        @payload = ""
+        @frames  = Array.new
       end
 
       def encode_credentials(username, password)
