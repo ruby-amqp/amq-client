@@ -121,7 +121,6 @@ module AMQ
       # Sends Connection.Open to the server.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
-      # @todo Do not hardcode vhost we send to the broker. {http://github.com/michaelklishin MK}.
       def open(vhost = "/")
         @client.send Protocol::Connection::Open.encode(vhost)
       end
