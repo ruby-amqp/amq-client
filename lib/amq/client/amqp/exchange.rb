@@ -57,7 +57,6 @@ module AMQ
         @client.send(data)
 
         self.callbacks[:declare] = block
-        self.execute_callback(:declare) if nowait
 
         @channel.exchanges_cache << self
 
