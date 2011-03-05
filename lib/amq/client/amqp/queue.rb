@@ -90,7 +90,7 @@ module AMQ
         self.callbacks[:unbind] = block
 
         # TODO: handle channel & connection-level exceptions
-        @channel.unqueues_awaiting_bind_ok.push(self)
+        @channel.queues_awaiting_unbind_ok.push(self)
 
         self
       end
@@ -187,7 +187,7 @@ module AMQ
 
       self.handle(Protocol::Queue::UnbindOk) do |client, frame|
         channel = client.connection.channels[frame.channel]
-        queue   = channel.unqueues_awaiting_bind_ok.shift
+        queue   = channel.queues_awaiting_unbind_ok.shift
 
         queue.handle_unbind_ok(frame.decode_payload)
       end
