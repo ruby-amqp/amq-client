@@ -53,12 +53,11 @@ module AMQ
 
 
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        data = Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments)
-        @client.send(data)
+        @client.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
         self.callbacks[:declare] = block
 
-        @channel.exchanges_cache << self
+        @channel.exchanges_awaiting_declare_ok.push(self)
 
         if @client.sync?
           unless nowait
@@ -76,7 +75,7 @@ module AMQ
         self.callbacks[:delete] = block
 
         # TODO: delete itself from exchanges cache
-        @channel.deleted_exchanges.push(self)
+        @channel.exchanges_awaiting_delete_ok.push(self)
 
         self
       end # delete(if_unused = false, nowait = false)
@@ -114,7 +113,7 @@ module AMQ
         # whereas more opinionated clients might want to have every single instance in the cache,
         # so they can iterate over it etc.
         channel = client.connection.channels[frame.channel]
-        exchange = channel.exchanges_cache.shift
+        exchange = channel.exchanges_awaiting_declare_ok.shift
 
         exchange.handle_declare_ok(method)
       end # handle
@@ -122,7 +121,7 @@ module AMQ
 
       self.handle(Protocol::Exchange::DeleteOk) do |client, frame|
         channel  = client.connection.channels[frame.channel]
-        exchange = channel.deleted_exchanges.shift
+        exchange = channel.exchanges_awaiting_delete_ok.shift
         exchange.handle_delete_ok(frame.decode_payload)
       end # handle
 

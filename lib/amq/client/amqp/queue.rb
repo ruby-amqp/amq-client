@@ -36,7 +36,7 @@ module AMQ
         self.execute_callback(:declare) if nowait
 
 
-        @channel.queues_cache << self
+        @channel.queues_awaiting_declare_ok << self
 
         if @client.sync?
           @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
@@ -52,7 +52,7 @@ module AMQ
         self.callbacks[:delete] = block
 
         # TODO: delete itself from queues cache
-        @channel.deleted_queues.push(self)
+        @channel.queues_awaiting_delete_ok.push(self)
 
         self
       end # delete(channel, queue, if_unused, if_empty, nowait, &block)
@@ -71,7 +71,7 @@ module AMQ
         self.callbacks[:bind] = block
 
         # TODO: handle channel & connection-level exceptions
-        @channel.bound_queues.push(self)
+        @channel.queues_awaiting_bind_ok.push(self)
 
         self
       end
@@ -90,7 +90,7 @@ module AMQ
         self.callbacks[:unbind] = block
 
         # TODO: handle channel & connection-level exceptions
-        @channel.unbound_queues.push(self)
+        @channel.unqueues_awaiting_bind_ok.push(self)
 
         self
       end
@@ -121,7 +121,7 @@ module AMQ
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         # TODO: handle channel & connection-level exceptions
-        @channel.purged_queues.push(self)
+        @channel.queues_awaiting_purge_ok.push(self)
 
         self
       end # purge(nowait = false, &block)
@@ -164,7 +164,7 @@ module AMQ
 
         # We should have cache API, so it'll be easy to change caching behaviour easily. So in the amq-client we don't want to cache more than just the last instance per each channel, whereas more opinionated clients might want to have every single instance in the cache, so they can iterate over it etc.
         channel = client.connection.channels[frame.channel]
-        queue = channel.queues_cache.shift
+        queue = channel.queues_awaiting_declare_ok.shift
 
         queue.handle_declare_ok(method)
       end
@@ -172,14 +172,14 @@ module AMQ
 
       self.handle(Protocol::Queue::DeleteOk) do |client, frame|
         channel = client.connection.channels[frame.channel]
-        queue   = channel.deleted_queues.shift
+        queue   = channel.queues_awaiting_delete_ok.shift
         queue.handle_delete_ok(frame.decode_payload)
       end
 
 
       self.handle(Protocol::Queue::BindOk) do |client, frame|
         channel = client.connection.channels[frame.channel]
-        queue   = channel.bound_queues.shift
+        queue   = channel.queues_awaiting_bind_ok.shift
 
         queue.handle_bind_ok(frame.decode_payload)
       end
@@ -187,7 +187,7 @@ module AMQ
 
       self.handle(Protocol::Queue::UnbindOk) do |client, frame|
         channel = client.connection.channels[frame.channel]
-        queue   = channel.unbound_queues.shift
+        queue   = channel.unqueues_awaiting_bind_ok.shift
 
         queue.handle_unbind_ok(frame.decode_payload)
       end
@@ -211,7 +211,7 @@ module AMQ
 
       self.handle(Protocol::Queue::PurgeOk) do |client, frame|
         channel = client.connection.channels[frame.channel]
-        queue   = channel.purged_queues.shift
+        queue   = channel.queues_awaiting_purge_ok.shift
 
         queue.handle_purge_ok(frame.decode_payload)
       end

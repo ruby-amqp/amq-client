@@ -16,30 +16,18 @@ module AMQ
       DEFAULT_REPLY_TEXT = "Goodbye".freeze
 
       attr_reader :id
-      attr_reader :queues_cache, :exchanges_cache
 
 
-      attr_reader :deleted_exchanges
-      attr_reader :deleted_queues, :bound_queues, :unbound_queues, :purged_queues, :queues_awaiting_consume_ok
+      attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
+      attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok
 
 
       def initialize(client, id)
         super(client)
 
-        @id              = id
-        @queues_cache    = Array.new
-        @exchanges_cache = Array.new
+        @id                            = id
 
-        # stores queues that were deleted
-        # so that we can run callbacks for them
-        # when queue.delete-ok arrives.
-        @deleted_queues    = Array.new
-
-        @deleted_exchanges = Array.new
-        @purged_queues     = Array.new
-        @bound_queues      = Array.new
-        @unbound_queues    = Array.new
-        @queues_awaiting_consume_ok = Array.new
+        reset_state!
 
         channel_max = client.connection.channel_max
 
@@ -59,6 +47,23 @@ module AMQ
         @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
         self.callbacks[:close] = block
       end
+
+
+
+      def reset_state!
+        @queues_awaiting_declare_ok    = Array.new
+        @exchanges_awaiting_declare_ok = Array.new
+
+        @queues_awaiting_delete_ok     = Array.new
+
+        @exchanges_awaiting_delete_ok  = Array.new
+        @queues_awaiting_purge_ok      = Array.new
+        @queues_awaiting_bind_ok       = Array.new
+        @queues_awaiting_unbind_ok     = Array.new
+        @queues_awaiting_consume_ok    = Array.new
+      end # reset_state!
+
+
 
       def handle_open_ok
         self.status = :opened
