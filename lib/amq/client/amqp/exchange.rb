@@ -53,7 +53,7 @@ module AMQ
 
 
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        data = Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, nil, nowait, arguments)
+        data = Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments)
         @client.send(data)
 
         self.callbacks[:declare] = block
