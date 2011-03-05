@@ -32,8 +32,10 @@ module AMQ
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
-        self.callbacks[:declare] = block
-        @channel.queues_awaiting_declare_ok.push(self)
+        unless nowait
+          self.callbacks[:declare] = block
+          @channel.queues_awaiting_declare_ok.push(self)
+        end
 
         if @client.sync?
           @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
@@ -46,10 +48,12 @@ module AMQ
       def delete(if_unused = false, if_empty = false, nowait = false, &block)
         @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
 
-        self.callbacks[:delete] = block
+        unless nowait
+          self.callbacks[:delete] = block
 
-        # TODO: delete itself from queues cache
-        @channel.queues_awaiting_delete_ok.push(self)
+          # TODO: delete itself from queues cache
+          @channel.queues_awaiting_delete_ok.push(self)
+        end
 
         self
       end # delete(channel, queue, if_unused, if_empty, nowait, &block)
@@ -65,10 +69,13 @@ module AMQ
                         end
 
         @client.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
-        self.callbacks[:bind] = block
 
-        # TODO: handle channel & connection-level exceptions
-        @channel.queues_awaiting_bind_ok.push(self)
+        unless nowait
+          self.callbacks[:bind] = block
+
+          # TODO: handle channel & connection-level exceptions
+          @channel.queues_awaiting_bind_ok.push(self)
+        end
 
         self
       end
@@ -84,8 +91,8 @@ module AMQ
                         end
 
         @client.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
-        self.callbacks[:unbind] = block
 
+        self.callbacks[:unbind] = block
         # TODO: handle channel & connection-level exceptions
         @channel.queues_awaiting_unbind_ok.push(self)
 
@@ -104,21 +111,25 @@ module AMQ
 
         @client.consumers[@consumer_tag] = self
 
-        # TODO: consider supporting multiple consumers in the same Ruby process here.
-        self.callbacks[:consume]         = block
+        unless nowait
+          # TODO: consider supporting multiple consumers in the same Ruby process here.
+          self.callbacks[:consume]         = block
 
-        @channel.queues_awaiting_consume_ok.push(self)
+          @channel.queues_awaiting_consume_ok.push(self)
+        end
 
         self
       end
 
 
       def purge(nowait = false, &block)
-        self.callbacks[:purge] = block
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
-        # TODO: handle channel & connection-level exceptions
-        @channel.queues_awaiting_purge_ok.push(self)
+        unless nowait
+          self.callbacks[:purge] = block
+          # TODO: handle channel & connection-level exceptions
+          @channel.queues_awaiting_purge_ok.push(self)
+        end
 
         self
       end # purge(nowait = false, &block)

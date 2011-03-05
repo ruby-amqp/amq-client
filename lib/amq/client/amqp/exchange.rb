@@ -55,14 +55,14 @@ module AMQ
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
         @client.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
-        self.callbacks[:declare] = block
+        unless nowait
+          self.callbacks[:declare] = block
+          @channel.exchanges_awaiting_declare_ok.push(self)
+        end
 
-        @channel.exchanges_awaiting_declare_ok.push(self)
 
         if @client.sync?
-          unless nowait
-            @client.read_until_receives(Protocol::Exchange::DeclareOk)
-          end
+          @client.read_until_receives(Protocol::Exchange::DeclareOk) unless nowait
         end
 
         self
@@ -72,10 +72,12 @@ module AMQ
       def delete(if_unused = false, nowait = false, &block)
         @client.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
 
-        self.callbacks[:delete] = block
+        unless nowait
+          self.callbacks[:delete] = block
 
-        # TODO: delete itself from exchanges cache
-        @channel.exchanges_awaiting_delete_ok.push(self)
+          # TODO: delete itself from exchanges cache
+          @channel.exchanges_awaiting_delete_ok.push(self)
+        end
 
         self
       end # delete(if_unused = false, nowait = false)
