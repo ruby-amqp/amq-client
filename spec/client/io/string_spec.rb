@@ -44,7 +44,7 @@ describe AMQ::Client::StringAdapter do
     subject.decode(@string).payload.should eql("\x00\n\x00(\x01/\x00\x00")
   end
 
-  xit "should raise an error if the frame length is miscalculated" do
+  it "should raise an error if the frame length is miscalculated" do
     data = @string[0..-2] + "too long" + "\xCE"
     string   = String.new(data)
     lambda { subject.decode(string) }.should raise_error(AMQ::Client::BadLengthError)
