@@ -59,7 +59,6 @@ module AMQ
         self.callbacks[:declare] = block
         self.execute_callback(:declare) if nowait
 
-        @channel ||= client.get_random_channel
         @channel.exchanges_cache << self
 
         if @client.sync?

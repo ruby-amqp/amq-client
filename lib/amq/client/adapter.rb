@@ -285,12 +285,6 @@ module AMQ
         end
       end
 
-      def get_random_channel
-        keys = self.connection.keys
-        random_key = keys[rand(keys.length)]
-        self.connection.channels[random_key]
-      end
-
       # @see .sync?
       # @api plugin
       # @see AMQ::Client::Adapter
