@@ -20,7 +20,7 @@ module AMQ
 
 
       attr_reader :deleted_exchanges
-      attr_reader :deleted_queues, :bound_queues, :purged_queues
+      attr_reader :deleted_queues, :bound_queues, :unbound_queues, :purged_queues
 
 
       def initialize(client, id)
@@ -38,6 +38,7 @@ module AMQ
         @deleted_exchanges = Array.new
         @purged_queues     = Array.new
         @bound_queues      = Array.new
+        @unbound_queues    = Array.new
 
         channel_max = client.connection.channel_max
 

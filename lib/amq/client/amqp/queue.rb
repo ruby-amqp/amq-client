@@ -77,6 +77,27 @@ module AMQ
       end
 
 
+
+      def unbind(exchange, routing_key = AMQ::Protocol::EMPTY_STRING, arguments = nil, &block)
+        exchange_name = if exchange.respond_to?(:name)
+                          exchange.name
+                        else
+
+                          exchange
+                        end
+
+        @client.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
+        self.callbacks[:unbind] = block
+
+        # TODO: handle channel & connection-level exceptions
+        @channel.unbound_queues.push(self)
+
+        self
+      end
+
+
+
+
       # Basic.Consume
       def consume(no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
@@ -121,6 +142,10 @@ module AMQ
         self.exec_callback(:bind)
       end # handle_bind_ok(method)
 
+      def handle_unbind_ok(method)
+        self.exec_callback(:unbind)
+      end # handle_unbind_ok(method)
+
 
 
       # === Handlers ===
@@ -149,6 +174,15 @@ module AMQ
 
         queue.handle_bind_ok(frame.decode_payload)
       end
+
+
+      self.handle(Protocol::Queue::UnbindOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.unbound_queues.shift
+
+        queue.handle_unbind_ok(frame.decode_payload)
+      end
+
 
       self.handle(Protocol::Basic::ConsumeOk) do |client, frame|
         # TODO
