@@ -25,11 +25,6 @@ EM.run do
         puts "Queue #{queue.name.inspect} is now declared!"
       end
 
-      # exchange = AMQ::Client::Exchange.new(client, channel, "amqclient.exchange2", :fanout)
-      # exchange.declare do
-      #   puts "Exchange #{queue.name.inspect} (fanout) is now declared!"
-      # end
-
       queue.bind("amq.fanout") do
         puts "Queue #{queue.name} is now bound to amq.fanout"
       end
