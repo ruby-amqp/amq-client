@@ -241,7 +241,7 @@ module AMQ
       end
 
       def send(frame)
-        if self.connection.opened?
+        if self.connection.opened? || self.connection.opening?
           self.send_raw(frame.encode)
         else
           raise ConnectionClosedError.new

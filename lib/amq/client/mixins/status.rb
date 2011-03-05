@@ -28,6 +28,8 @@ module AMQ
         @status == :closed
       end
 
+
+
       def opening?
         @status == :opening
       end
@@ -35,6 +37,25 @@ module AMQ
       def closing?
         @status == :closing
       end
+
+
+      def opened!
+        @status = :opened
+      end # opened!
+
+      def closed!
+        @status = :closed
+      end # closed!
+
+
+
+      def opening!
+        @status = :opening
+      end # opening!
+
+      def closing!
+        @status = :closing
+      end # closing!
     end
   end
 end

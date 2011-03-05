@@ -11,6 +11,19 @@ module AMQ
     #
     # AMQP connection has multiple channels accessible via {Connection#channels} reader.
     class Connection < Entity
+
+      #
+      # Behaviors
+      #
+
+      include StatusMixin
+
+
+      #
+      # API
+      #
+
+      # TODO: make it possible to override these from, say, amqp gem or bunny
       CLIENT_PROPERTIES = {
         :platform => ::RUBY_DESCRIPTION,
         :product  => "AMQ Client",
@@ -64,9 +77,7 @@ module AMQ
       attr_reader :known_hosts
 
 
-      #
-      # API
-      #
+
 
       def initialize(client, mechanism, response, locale)
         @mechanism = mechanism
@@ -92,6 +103,10 @@ module AMQ
       #
 
       def start_ok
+        # it's not clear whether we should transition to :opening state here
+        # or in #open but in case authentication fails, it would be strange to have
+        # @status undefined. So lets do this. MK.
+        opening!
         @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
       end
 
@@ -118,6 +133,7 @@ module AMQ
       def handle_open_ok(method)
         @known_hosts = method.known_hosts
 
+        opened!
         # async adapters need this callback to proceed with
         # Adapter.connect block evaluation
         @client.connection_successful if @client.respond_to?(:connection_successful)
@@ -129,19 +145,9 @@ module AMQ
       def handle_close(method)
         self.channels.each { |key, value| value.status = :closed }
 
-        @closed = true
+        closed!
         # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
         self.error RuntimeError.new(method.reply_text)
-      end
-
-      # @returns [Boolean] true if this connection is closed.
-      def closed?
-        @closed
-      end
-
-      # @returns [Boolean] true if this connection is open.
-      def opened?
-        !self.closed?
       end
 
       # Sends Connection.Close to the server.
@@ -150,9 +156,11 @@ module AMQ
       # @todo Set @closing, await for Connection.Close-Ok, currently not thread-safe. {http://github.com/michaelklishin MK}.
       def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
+        closing!
       end
 
       def close_ok(method)
+        closed!
         @client.disconnection_successful
       end # close_ok(method)
 
