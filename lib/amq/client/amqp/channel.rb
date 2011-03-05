@@ -12,6 +12,9 @@ module AMQ
         end
       end
 
+
+      DEFAULT_REPLY_TEXT = "Goodbye".freeze
+
       attr_reader :id
       attr_reader :queues_cache, :exchanges_cache
 
@@ -47,9 +50,8 @@ module AMQ
         self.callbacks[:open] = block
       end
 
-      def close(&block)
-        @client.send Protocol::Channel::Close.encode(1)
-        @client.connection.channels.delete(@id)
+      def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
+        @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
         self.callbacks[:close] = block
       end
 
@@ -78,7 +80,10 @@ module AMQ
       self.handle(Protocol::Channel::CloseOk) do |client, frame|
         method   = frame.decode_payload
         channels = client.connection.channels
+
         channel  = channels[frame.channel]
+        channels.delete(channel)
+
         channel.handle_close_ok
       end
 
