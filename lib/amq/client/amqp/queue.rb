@@ -33,7 +33,7 @@ module AMQ
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         self.callbacks[:declare] = block
-        @channel.queues_awaiting_declare_ok << self
+        @channel.queues_awaiting_declare_ok.push(self)
 
         if @client.sync?
           @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
