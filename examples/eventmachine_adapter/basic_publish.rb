@@ -25,15 +25,15 @@ EM.run do
       end
 
       exchange = AMQ::Client::Exchange.new(client, channel, "amqclient.adapters.em.exchange1", :fanout)
-      exchange.declare
+      exchange.declare do
+        100.times do
+          print "."
+          # exchange.publish("à bientôt!")
+          exchange.publish("See you soon!")
+        end
 
-      100.times do
-        print "."
-        # exchange.publish("à bientôt!")
-        exchange.publish("See you soon!")
+        $stdout.flush
       end
-
-      $stdout.flush
 
       show_stopper = Proc.new {
         client.disconnect do
