@@ -107,7 +107,7 @@ module AMQ
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
         @consumer_tag                    = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
-        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, false, false, false, nil))
+        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @client.consumers[@consumer_tag] = self
 
