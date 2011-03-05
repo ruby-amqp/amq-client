@@ -40,7 +40,7 @@ module AMQ
       end
 
       def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        data = Protocol::Exchange::Declare.encode(channel.id, @name, @type.to_s, passive, durable, exclusive, auto_delete, nowait, arguments)
+        data = Protocol::Exchange::Declare.encode(channel.id, @name, @type.to_s, passive, durable, auto_delete, nil, nowait, arguments)
         @client.send(data)
 
         self.callbacks[:declare] = block
@@ -66,11 +66,15 @@ module AMQ
       end
 
       # === Handlers ===
-      # Get the first exchange which didn't receive Exchange.Declare-Ok yet and run its declare callback. The cache includes only exchanges with {nowait: false}.
+      # Get the first exchange which didn't receive Exchange.Declare-Ok yet and run its declare callback.
+      # The cache includes only exchanges with {nowait: false}.
       self.handle(Protocol::Exchange::DeclareOk) do |client, frame|
         method = frame.decode_payload
 
-        # We should have cache API, so it'll be easy to change caching behaviour easily. So in the amq-client we don't want to cache more than just the last instance per each channel, whereas more opinionated clients might want to have every single instance in the cache, so they can iterate over it etc.
+        # We should have cache API, so it'll be easy to change caching behaviour easily.
+        # So in the amq-client we don't want to cache more than just the last instance per each channel,
+        # whereas more opinionated clients might want to have every single instance in the cache,
+        # so they can iterate over it etc.
         channel = client.connection.channels[frame.channel]
         exchange = channel.exchanges_cache.shift
 

@@ -25,8 +25,8 @@ EM.run do
         puts "Queue #{queue.name.inspect} is now declared!"
       end
 
-      # exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
-      # exchange.declare { puts "Exchange #{exchange.name.inspect} is now declared!" }
+      exchange = AMQ::Client::Exchange.new(client, "tasks", :fanout, channel)
+      exchange.declare { puts "Exchange #{exchange.name.inspect} is now declared!" }
 
       queue.consume do |msg|
         puts msg
