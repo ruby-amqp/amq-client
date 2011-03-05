@@ -7,15 +7,27 @@ require "amq/client/mixins/anonymous_entity"
 module AMQ
   module Client
     class Queue < Entity
+
+      #
+      # Behaviors
+      #
+
       include AnonymousEntityMixin
 
+
+      #
+      # API
+      #
+
       attr_reader :name
+
       def initialize(client, channel, name)
         super(client)
 
         @name    = name
         @channel = channel
       end
+
 
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
@@ -34,12 +46,26 @@ module AMQ
       end
 
 
+      def delete(if_unused = false, if_empty = false, nowait = false, &block)
+        @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
+
+        self.callbacks[:delete] = block
+
+        # TODO: delete itself from queues cache
+        @channel.deleted_queues.push(self)
+
+        self
+      end # delete(channel, queue, if_unused, if_empty, nowait, &block)
+
+
+
       def bind(channel, exchange, &block)
         data = Protocol::Queue::Bind.encode(channel, @name, exchange, routing_key, arguments)
         @client.send(data)
         self.callbacks[:bind] = block
         self
       end
+
 
       # Basic.Consume
       def consume(no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = nil, &block)
@@ -53,11 +79,20 @@ module AMQ
         @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, false, false, false, nil))
       end
 
+
+
+
       def handle_declare_ok(method)
         @name = method.queue if self.anonymous?
 
         self.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
       end
+
+      def handle_delete_ok(method)
+        self.exec_callback(:delete, method.message_count)
+      end # handle_delete_ok(method)
+
+
 
       # === Handlers ===
       # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback. The cache includes only queues with {nowait: false}.
@@ -70,6 +105,14 @@ module AMQ
 
         queue.handle_declare_ok(method)
       end
+
+
+      self.handle(Protocol::Queue::DeleteOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.deleted_queues.shift
+        queue.handle_delete_ok(frame.decode_payload)
+      end
+
 
       self.handle(Protocol::Queue::BindOk) do |client, frame|
         method = frame.decode_payload

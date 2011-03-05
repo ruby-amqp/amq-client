@@ -16,9 +16,19 @@ module AMQ
         end
       end
 
+
+      #
+      # API
+      #
+
+
       attr_reader :name, :type
-      def initialize(client, name, type = :fanout, default_channel = nil)
-        @name, @type, @default_channel = name, type, default_channel
+
+      def initialize(client, channel, name, type = :fanout)
+        @client  = client
+        @channel = channel
+        @name    = name
+        @type    = type
 
         unless TYPES.include?(type)
           raise IncompatibleExchangeTypeError.new(TYPES, type)
@@ -26,6 +36,7 @@ module AMQ
 
         super(client)
       end
+
 
       def fanout?
         @type == :fanout
@@ -39,17 +50,17 @@ module AMQ
         @type == :topic
       end
 
-      def declare(channel = @default_channel, passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        data = Protocol::Exchange::Declare.encode(channel.id, @name, @type.to_s, passive, durable, auto_delete, nil, nowait, arguments)
+
+
+      def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
+        data = Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, nil, nowait, arguments)
         @client.send(data)
 
         self.callbacks[:declare] = block
-
         self.execute_callback(:declare) if nowait
 
-        channel ||= client.get_random_channel
-
-        channel.exchanges_cache << self
+        @channel ||= client.get_random_channel
+        @channel.exchanges_cache << self
 
         if @client.sync?
           unless nowait
@@ -60,10 +71,30 @@ module AMQ
         self
       end
 
+
+      def delete(if_unused = false, nowait = false, &block)
+        @client.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
+
+        self.callbacks[:delete] = block
+
+        # TODO: delete itself from exchanges cache
+        @channel.deleted_exchanges.push(self)
+
+        self
+      end # delete(if_unused = false, nowait = false)
+
+
+
       def handle_declare_ok(method)
         @name = method.exchange if self.anonymous?
         self.exec_callback(:declare, method)
       end
+
+      def handle_delete_ok(method)
+        self.exec_callback(:delete)
+      end # handle_delete_ok(method)
+
+
 
       # === Handlers ===
       # Get the first exchange which didn't receive Exchange.Declare-Ok yet and run its declare callback.
@@ -79,7 +110,15 @@ module AMQ
         exchange = channel.exchanges_cache.shift
 
         exchange.handle_declare_ok(method)
-      end
-    end
-  end
-end
+      end # handle
+
+
+      self.handle(Protocol::Exchange::DeleteOk) do |client, frame|
+        channel  = client.connection.channels[frame.channel]
+        exchange = channel.deleted_exchanges.shift
+        exchange.handle_delete_ok(frame.decode_payload)
+      end # handle
+
+    end # Exchange
+  end # Client
+end # AMQ

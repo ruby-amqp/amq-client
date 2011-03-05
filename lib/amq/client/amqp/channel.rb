@@ -15,13 +15,27 @@ module AMQ
       attr_reader :id
       attr_reader :queues_cache, :exchanges_cache
 
+
+      attr_reader :deleted_queues, :deleted_exchanges
+
+
       def initialize(client, id)
         super(client)
-        @id = id
-        @queues_cache, @exchanges_cache = Array.new, Array.new
+
+        @id              = id
+        @queues_cache    = Array.new
+        @exchanges_cache = Array.new
+
+        # stores queues that were deleted
+        # so that we can run callbacks for them
+        # when queue.delete-ok arrives.
+        @deleted_queues    = Array.new
+        # ditto for exchanges
+        @deleted_exchanges = Array.new
 
         channel_max = client.connection.channel_max
-        if channel_max != 0 && ! (0..channel_max).include?(id)
+
+        if channel_max != 0 && !(0..channel_max).include?(id)
           raise ChannelOutOfBadError.new(channel_max, id)
         end
       end

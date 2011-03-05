@@ -104,8 +104,8 @@ module AMQ
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
       # @todo Do not hardcode vhost we send to the broker. {http://github.com/michaelklishin MK}.
-      def open
-        @client.send Protocol::Connection::Open.encode("/")
+      def open(vhost = "/")
+        @client.send Protocol::Connection::Open.encode(vhost)
       end
 
       # Handles Connection.Open-Ok
@@ -157,25 +157,21 @@ module AMQ
       #
 
       self.handle(Protocol::Connection::Start) do |client, frame|
-        method = frame.decode_payload
-        client.connection.server_properties = method.server_properties
+        client.connection.server_properties = frame.decode_payload.server_properties
         client.connection.start_ok
       end
 
       self.handle(Protocol::Connection::Tune) do |client, frame|
-        method = frame.decode_payload
-        client.connection.tune_ok(method)
-        client.connection.open
+        client.connection.tune_ok(frame.decode_payload)
+        client.connection.open(client.settings[:vhost] || "/")
       end
 
       self.handle(Protocol::Connection::OpenOk) do |client, frame|
-        method = frame.decode_payload
-        client.connection.handle_open_ok(method)
+        client.connection.handle_open_ok(frame.decode_payload)
       end
 
       self.handle(Protocol::Connection::Close) do |client, frame|
-        method = frame.decode_payload
-        client.connection.handle_close(method)
+        client.connection.handle_close(frame.decode_payload)
       end
 
       self.handle(Protocol::Connection::CloseOk) do |client, frame|
