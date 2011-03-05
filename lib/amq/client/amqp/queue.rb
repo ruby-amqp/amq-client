@@ -33,9 +33,6 @@ module AMQ
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         self.callbacks[:declare] = block
-        self.execute_callback(:declare) if nowait
-
-
         @channel.queues_awaiting_declare_ok << self
 
         if @client.sync?
