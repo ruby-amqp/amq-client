@@ -59,10 +59,20 @@ module AMQ
 
 
 
-      def bind(channel, exchange, &block)
-        data = Protocol::Queue::Bind.encode(channel, @name, exchange, routing_key, arguments)
-        @client.send(data)
+      def bind(exchange, routing_key = AMQ::Protocol::EMPTY_STRING, nowait = false, arguments = nil, &block)
+        exchange_name = if exchange.respond_to?(:name)
+                          exchange.name
+                        else
+
+                          exchange
+                        end
+
+        @client.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
         self.callbacks[:bind] = block
+
+        # TODO: handle channel & connection-level exceptions
+        @channel.bound_queues.push(self)
+
         self
       end
 
@@ -81,8 +91,8 @@ module AMQ
 
 
       def purge(nowait = false, &block)
-        @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
         self.callbacks[:purge] = block
+        @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         # TODO: handle channel & connection-level exceptions
         @channel.purged_queues.push(self)
@@ -107,6 +117,10 @@ module AMQ
         self.exec_callback(:purge, method.message_count)
       end # handle_purge_ok(method)
 
+      def handle_bind_ok(method)
+        self.exec_callback(:bind)
+      end # handle_bind_ok(method)
+
 
 
       # === Handlers ===
@@ -130,8 +144,10 @@ module AMQ
 
 
       self.handle(Protocol::Queue::BindOk) do |client, frame|
-        method = frame.decode_payload
-        # TODO
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.bound_queues.shift
+
+        queue.handle_bind_ok(frame.decode_payload)
       end
 
       self.handle(Protocol::Basic::ConsumeOk) do |client, frame|
