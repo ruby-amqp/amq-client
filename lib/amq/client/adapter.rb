@@ -240,13 +240,18 @@ module AMQ
         self.send_raw(AMQ::Protocol::PREAMBLE)
       end
 
-      def send(frame) # TODO: log frames
+      def send(frame)
         if self.connection.opened?
           self.send_raw(frame.encode)
         else
           raise ConnectionClosedError.new
         end
       end
+
+      def send_frameset(frames)
+        frames.each { |frame| self.send(frame) }
+      end # send_frameset(frames)
+
 
       # Sends opaque data to AMQ broker over active connection.
       #

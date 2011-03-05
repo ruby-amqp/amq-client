@@ -84,6 +84,15 @@ module AMQ
       end # delete(if_unused = false, nowait = false)
 
 
+      def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }, mandatory = false, immediate = false, frame_size = nil)
+        @client.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, user_headers, @name, routing_key, mandatory, immediate, (frame_size || @client.connection.frame_max)))
+
+        self
+      end
+
+
+
+
 
       def handle_declare_ok(method)
         @name = method.exchange if self.anonymous?

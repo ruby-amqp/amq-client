@@ -43,6 +43,7 @@ module AMQ
 
           # 1) the size is miscalculated
           if payload.bytesize != size
+            p "BadLengthError on #{self.new(type, payload, channel).method_class}"
             raise BadLengthError.new(size, payload.bytesize)
           end
 

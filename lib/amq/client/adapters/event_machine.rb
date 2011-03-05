@@ -65,7 +65,7 @@ module AMQ
         # an intentional no-op
       end
 
-      alias send_raw   send_data
+      alias send_raw send_data
 
 
 
