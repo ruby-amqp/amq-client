@@ -152,12 +152,15 @@ module AMQ
 
       # Sends Connection.Close to the server.
       #
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.5)
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
       def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         closing!
       end
 
+      # Handles connection.close-ok
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
       def close_ok(method)
         closed!
         @client.disconnection_successful
