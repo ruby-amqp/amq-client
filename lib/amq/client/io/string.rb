@@ -35,6 +35,12 @@ module AMQ
           type, channel, size = self.decode_header(header)
           data                = string[7..-1]
           payload             = data[0..-2]
+
+          # TODO: we need to really investigate why we are getting payloads that are longer
+          #       than advertised (this seem to happen only when we declare exchanges and only for
+          #       channel.open-ok. MK.
+          payload             = payload.slice(0, size) if payload.bytesize > size
+
           frame_end           = if RUBY_VERSION =~ /^1.8/
                                   data.slice(-1, 1)
                                 else
@@ -43,7 +49,7 @@ module AMQ
 
           # 1) the size is miscalculated
           if payload.bytesize != size
-            p "BadLengthError on #{self.new(type, payload, channel).method_class}"
+            p "BadLengthError on #{self.new(type, payload, channel).method_class} (payload: #{payload.inspect}), channel: #{channel}"
             raise BadLengthError.new(size, payload.bytesize)
           end
 
