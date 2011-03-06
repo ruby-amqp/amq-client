@@ -27,8 +27,10 @@ amq_client_example "Set a queue up for message delivery" do |client|
     puts "Subscribed for messages routed to #{queue.name}, consumer tag is #{consumer_tag}, using no-ack mode"
     puts
 
-    queue.on_delivery do |_, payload|
-      puts "Got a delivery: #{payload.inspect}"
+    queue.on_delivery do |_, header, payload|
+      puts "Got a delivery:"
+      puts "    Header:  #{header.inspect}"
+      puts "    Payload: #{payload.inspect}"
     end
 
     puts "Now lets publish a few hundreds of messages there, shall we"

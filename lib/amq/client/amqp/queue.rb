@@ -167,6 +167,9 @@ module AMQ
         self.exec_callback(:unbind)
       end # handle_unbind_ok(method)
 
+      def handle_delivery(header, payload)
+        self.exec_callback(:delivery, header, payload)
+      end
 
 
       # === Handlers ===
@@ -218,8 +221,9 @@ module AMQ
         queue    = client.consumers[method.consumer_tag]
 
         puts "content_frames are: #{content_frames.inspect}"
-
-        # queue.exec_callback(:delivery, "A payload")
+        header = content_frames[0]
+        body   = content_frames[1..-1].map {|frame| frame.payload }.join
+        queue.handle_delivery(header, body)
         # TODO: ack if necessary
       end
 
