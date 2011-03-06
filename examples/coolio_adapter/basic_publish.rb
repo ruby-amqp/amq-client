@@ -26,7 +26,7 @@ amq_client_example "Publish 100 messages using basic.publish" do |client|
     client.disconnect do
       puts
       puts "AMQP connection is now properly closed"
-      EM.stop
+      Coolio::Loop.default.stop
     end
   }
 

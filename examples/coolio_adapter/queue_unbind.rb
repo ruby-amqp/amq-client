@@ -29,7 +29,7 @@ amq_client_example "Bind and then unbind a queue to amq.fanout" do |client|
         client.disconnect do
           puts
           puts "AMQP connection is now properly closed"
-          EM.stop
+          Coolio::Loop.default.stop
         end
       end
     end

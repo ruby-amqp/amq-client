@@ -19,7 +19,7 @@ amq_client_example "Declare a new fanout exchange" do |client|
     client.disconnect do
       puts
       puts "AMQP connection is now properly closed"
-      EM.stop
+      Coolio::Loop.default.stop
     end
   }
 

@@ -25,7 +25,7 @@ amq_client_example "Purge a queue and announce how many messages it had" do |cli
       client.disconnect do
         puts
         puts "AMQP connection is now properly closed"
-        EM.stop
+        Coolio::Loop.default.stop
       end
     end
   end

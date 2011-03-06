@@ -5,7 +5,7 @@ __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "example_helper")
 
 amq_client_example "Set a queue up for message delivery" do |client|
-  p client
+  #p client
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open do
     puts "Channel #{channel.id} is now open!"
@@ -43,7 +43,7 @@ amq_client_example "Set a queue up for message delivery" do |client|
     client.disconnect do
       puts
       puts "AMQP connection is now properly closed"
-      EM.stop
+      Coolio::Loop.default.stop
     end
   }
 

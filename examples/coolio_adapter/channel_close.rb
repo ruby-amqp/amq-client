@@ -17,7 +17,7 @@ amq_client_example "Open and then close AMQ channel" do |client|
       client.disconnect do
         puts
         puts "AMQP connection is now properly closed"
-        EM.stop
+        Coolio::Loop.default.stop
       end
     end
   end

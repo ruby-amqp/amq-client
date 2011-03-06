@@ -17,8 +17,11 @@ amq_client_example "Set a queue up for message delivery" do |client|
     puts "Queue #{queue.name} is now bound to amq.fanout"
   end
 
-  EM.add_periodic_timer(0.1) do
-    $stdout.flush
+  Coolio::TimerWatcher.new(0.1, true).tap do |timer|
+    timer.on_timer do
+      $stdout.flush
+    end
+    Coolio::Loop.default.attach(timer)
   end
 
   queue.consume do |_, consumer_tag|
@@ -43,7 +46,7 @@ amq_client_example "Set a queue up for message delivery" do |client|
     client.disconnect do
       puts
       puts "AMQP connection is now properly closed"
-      EM.stop
+      Coolio::Loop.default.stop
     end
   }
 

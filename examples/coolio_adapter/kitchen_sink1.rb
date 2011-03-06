@@ -37,7 +37,7 @@ amq_client_example "An example that combines several AMQ operations" do |client|
         client.disconnect do
           puts
           puts "AMQP connection is now properly closed"
-          EM.stop
+          Coolio::Loop.default.stop
         end
       end
     end
