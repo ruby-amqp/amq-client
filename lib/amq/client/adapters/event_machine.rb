@@ -86,9 +86,8 @@ module AMQ
       #
       def receive_data(chunk)        
         @chunk_buffer << chunk        
-        if valid_frame?(chunk)
-          self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(@chunk_buffer))
-          @chunk_buffer = ""
+        while frame = get_next_frame
+          self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(frame))
         end
       end
 
@@ -135,13 +134,10 @@ module AMQ
         "\0guest\0guest"
       end # encode_credentials(username, password)
       
-      def valid_frame?(chunk)
-        frame_end           = if RUBY_VERSION =~ /^1.8/
-                                chunk.slice(-1, 1)
-                              else
-                                chunk.slice(-1, 1).force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
-                              end
-        frame_end == AMQ::Protocol::Frame::FINAL_OCTET
+      def get_next_frame
+        if pos = @chunk_buffer.index(AMQ::Protocol::Frame::FINAL_OCTET)
+          @chunk_buffer.slice!(0, pos + 1)
+        end
       end
     end # EventMachineClient
   end # Client
