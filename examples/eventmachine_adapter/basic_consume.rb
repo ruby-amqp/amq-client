@@ -34,8 +34,6 @@ amq_client_example "Set a queue up for message delivery" do |client|
     100.times do |i|
       exchange.publish("Message ##{i}")
     end
-
-    $stdout.flush
   end
 
   show_stopper = Proc.new {
