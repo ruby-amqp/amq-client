@@ -1,5 +1,6 @@
-PATH
-  remote: vendor/amq-protocol
+GIT
+  remote: git://github.com/ruby-amqp/amq-protocol.git
+  revision: 486b21575ace38b1c6ac55ea154d7de5ab8ae914
   specs:
     amq-protocol (0.0.1)
 
@@ -10,7 +11,6 @@ GEM
     ZenTest (4.5.0)
     autotest (4.4.6)
       ZenTest (>= 4.4.1)
-    changelog (0.6.1)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     rspec (2.5.0)
@@ -30,7 +30,6 @@ DEPENDENCIES
   RedCloth
   amq-protocol!
   autotest
-  changelog
   eventmachine
   rspec (>= 2.0.0)
   yard

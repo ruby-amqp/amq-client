@@ -2,7 +2,7 @@
 
 source "http://gemcutter.org"
 
-gem "amq-protocol", :path => "vendor/amq-protocol"
+gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git"
 
 group :development do
   gem "yard"
@@ -10,7 +10,6 @@ group :development do
   gem "RedCloth"
 
   gem "eventmachine"
-  gem "changelog"
 end
 
 group :test do
