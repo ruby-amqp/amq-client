@@ -1,3 +1,6 @@
 [submodule "vendor/amq-protocol"]
 	path = vendor/amq-protocol
-	url = git://github.com/ruby-amqp/amq-protocol.git
+	url = https://github.com/ruby-amqp/amq-protocol.git
+[submodule "vendor/cool.io"]
+	path = vendor/cool.io
+	url = https://github.com/tarcieri/cool.io.git
