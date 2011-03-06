@@ -128,10 +128,6 @@ module AMQ
         @chunk_buffer = ""
       end
 
-      def encode_credentials(username, password)
-        "\0guest\0guest"
-      end # encode_credentials(username, password)
-
       def get_next_frame
         if pos = @chunk_buffer.index(AMQ::Protocol::Frame::FINAL_OCTET)
           @chunk_buffer.slice!(0, pos + 1)
