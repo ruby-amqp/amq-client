@@ -34,7 +34,7 @@ module AMQ
         def on_close
           adapter.on_socket_disconnect
         end
-        
+
         def send_raw(data)
           # puts "Sending data"
           # puts_data(data)
@@ -90,9 +90,8 @@ module AMQ
         post_init
       end
 
-      # triggered after socket is disconnected prematurely
+      # triggered after socket is closed
       def on_socket_disconnect
-        puts "Normally I'd never happen"
       end
 
       def send_raw(data)
@@ -114,11 +113,16 @@ module AMQ
       end
 
       # called by AMQ::Client::Connection after we receive connection.close-ok.
-      def disconnection_successful
+      def disconnection_successful        
         @callbacks[:disconnect].call(self) if @callbacks[:disconnect]
+        close_connection
+      end
+      
+      def close_connection
+        @socket.close
       end
 
-      protected      
+      protected
       def post_init
         reset
         handshake
