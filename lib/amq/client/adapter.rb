@@ -263,11 +263,11 @@ module AMQ
 
       def receive_frame(frame)
         @frames << frame
-        if frame.final?
+        if frameset_complete?(@frames)
           receive_frameset(@frames)
           @frames.clear
         else
-          puts "#{frame.inspect} is NOT final"
+          # puts "#{frame.inspect} is NOT final"
         end
       end
 
@@ -286,7 +286,6 @@ module AMQ
           raise MissingHandlerError.new(frames.first)
         end
       end
-
       # @see .sync?
       # @api plugin
       # @see AMQ::Client::Adapter
@@ -300,6 +299,26 @@ module AMQ
       def async?
         self.class.async?
       end
+
+      protected
+
+      # Utility methods
+
+      # Determines, whether the received frameset is ready to be further processed
+      def frameset_complete?(frames)
+        return false if frames.empty?
+        first_frame = frames[0]
+        first_frame.final? || (first_frame.method_class.has_content? && content_complete?(frames[1..-1]))
+      end
+
+      # Determines, whether given frame array contains full content body
+      def content_complete?(frames)
+        return false if frames.empty?
+        header = frames[0]
+        raise "Not a content header frame first: #{header.inspect}" unless header.kind_of?(AMQ::Protocol::HeadersFrame)
+        header.body_size == frames[1..-1].inject(0) {|sum, frame| sum + frame.payload.size }
+      end
+
     end # Adapter
   end # Client
 end # AMQ
