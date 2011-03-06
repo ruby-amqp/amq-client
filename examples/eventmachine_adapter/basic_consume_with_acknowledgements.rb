@@ -11,27 +11,28 @@ amq_client_example "Set a queue up for message delivery" do |client|
   end
 
   queue = AMQ::Client::Queue.new(client, channel)
-  queue.declare(false, false, false, true) do
-    puts "Server-named, auto-deletable Queue #{queue.name.inspect} is ready"
-  end
+  queue.declare
 
   queue.bind("amq.fanout") do
     puts "Queue #{queue.name} is now bound to amq.fanout"
   end
 
-  queue.consume(true) do |_, consumer_tag|
-    puts "Subscribed for messages routed to #{queue.name}, consumer tag is #{consumer_tag}, using no-ack mode"
+  EM.add_periodic_timer(0.1) do
+    $stdout.flush
+  end
+
+  queue.consume do |_, consumer_tag|
+    puts "Subscribed for messages routed to #{queue.name}, consumer tag is #{consumer_tag}, will be sending acknowledgements"
     puts
 
-    queue.on_delivery do |_, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-      puts "Got a delivery:"
-      puts "    Delivery tag: #{delivery_tag}"
-      puts "    Header:  #{header.inspect}"
-      puts "    Payload: #{payload.inspect}"
+    queue.on_delivery do |qu, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+      puts "Got a delivery: #{payload} (delivery tag: #{delivery_tag}), acknowledging..."
+
+      qu.acknowledge(delivery_tag)
     end
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-    100.times do |i|
+    10.times do |i|
       exchange.publish("Message ##{i}")
     end
 

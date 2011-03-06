@@ -28,11 +28,29 @@ module AMQ
         @channel = channel
       end
 
+      def durable?
+        @durable
+      end # durable?
+
+      def exclusive?
+        @exclusive
+      end # exclusive?
+
+      def auto_delete?
+        @auto_delete
+      end # auto_delete?
+
+
 
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
+        @durable     = durable
+        @exclusive   = exclusive
+        @auto_delete = auto_delete
+
+        nowait = true unless block
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
-        unless nowait
+        if !nowait
           self.callbacks[:declare] = block
           @channel.queues_awaiting_declare_ok.push(self)
         end
@@ -46,9 +64,10 @@ module AMQ
 
 
       def delete(if_unused = false, if_empty = false, nowait = false, &block)
+        nowait = true unless block
         @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
 
-        unless nowait
+        if !nowait
           self.callbacks[:delete] = block
 
           # TODO: delete itself from queues cache
@@ -61,6 +80,7 @@ module AMQ
 
 
       def bind(exchange, routing_key = AMQ::Protocol::EMPTY_STRING, nowait = false, arguments = nil, &block)
+        nowait = true unless block
         exchange_name = if exchange.respond_to?(:name)
                           exchange.name
                         else
@@ -70,7 +90,7 @@ module AMQ
 
         @client.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
 
-        unless nowait
+        if !nowait
           self.callbacks[:bind] = block
 
           # TODO: handle channel & connection-level exceptions
@@ -101,18 +121,22 @@ module AMQ
 
 
 
+      def no_ack?
+        @no_ack
+      end # no_ack?
 
       # Basic.Consume
       def consume(no_ack = false, exclusive = false, nowait = false, no_local = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
-        @consumer_tag                    = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        nowait        = true unless block
+        @consumer_tag = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
         @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @client.consumers[@consumer_tag] = self
+        @no_ack          = no_ack
 
-        unless nowait
-          # TODO: consider supporting multiple consumers in the same Ruby process here.
+        if !nowait
           self.callbacks[:consume]         = block
 
           @channel.queues_awaiting_consume_ok.push(self)
@@ -125,7 +149,7 @@ module AMQ
       def purge(nowait = false, &block)
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
-        unless nowait
+        if !nowait && block
           self.callbacks[:purge] = block
           # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_purge_ok.push(self)
@@ -135,9 +159,18 @@ module AMQ
       end # purge(nowait = false, &block)
 
 
+
       def on_delivery(&block)
-        self.callbacks[:delivery] = block
+        self.callbacks[:delivery] = block if block
       end # on_delivery(&block)
+
+      def acknowledge(delivery_tag, multiple = false)
+        @client.send(Protocol::Basic::Ack.encode(@channel.id, delivery_tag, multiple))
+      end # acknowledge(delivery_tag, multiple = false)
+
+      def reject(delivery_tag, requeue = true)
+        @client.send(Protocol::Basic::Reject.encode(@channel.id, delivery_tag, requeue))
+      end # reject(delivery_tag, requeue = true)
 
 
 
@@ -167,9 +200,9 @@ module AMQ
         self.exec_callback(:unbind)
       end # handle_unbind_ok(method)
 
-      def handle_delivery(header, payload)
-        self.exec_callback(:delivery, header, payload)
-      end
+      def handle_delivery(method, header, payload)
+        self.exec_callback(:delivery, header, payload, method.consumer_tag, method.delivery_tag, method.redelivered, method.exchange, method.routing_key)
+      end # def handle_delivery
 
 
       # === Handlers ===
@@ -220,10 +253,9 @@ module AMQ
         method   = method_frame.decode_payload
         queue    = client.consumers[method.consumer_tag]
 
-        puts "content_frames are: #{content_frames.inspect}"
-        header = content_frames[0]
-        body   = content_frames[1..-1].map {|frame| frame.payload }.join
-        queue.handle_delivery(header, body)
+        header = content_frames.shift
+        body   = content_frames.map {|frame| frame.payload }.join
+        queue.handle_delivery(method, header, body)
         # TODO: ack if necessary
       end
 

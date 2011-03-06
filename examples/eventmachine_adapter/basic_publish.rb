@@ -15,7 +15,6 @@ amq_client_example "Publish 100 messages using basic.publish" do |client|
   exchange = AMQ::Client::Exchange.new(client, channel, "amqclient.adapters.em.exchange1", :fanout)
   exchange.declare do
     100.times do
-      print "."
       # exchange.publish("à bientôt!")
       exchange.publish("See you soon!")
     end
