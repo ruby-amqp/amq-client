@@ -21,7 +21,7 @@ module AMQ
 
         def on_connect
           #puts "On connect"
-          adapter.on_connect
+          adapter.on_socket_connect
         end
 
         def on_read(data)
@@ -30,8 +30,15 @@ module AMQ
           adapter.on_read(data)
         end
 
+        # This handler should never trigger in normal circumstances
         def on_close
-          puts "Cool.io hit EOF"
+          adapter.on_socket_disconnect
+        end
+        
+        def send_raw(data)
+          # puts "Sending data"
+          # puts_data(data)
+          write(data)
         end
 
         protected
@@ -61,7 +68,6 @@ module AMQ
           instance.on_connection(&block)
           instance
         end
-
       end
 
       def initialize
@@ -80,23 +86,17 @@ module AMQ
       end
 
       # triggered when socket is connected but before handshake is done
-      def on_connect
+      def on_socket_connect
         post_init
       end
 
-
-      # triggered after socket is disconnected
-      def on_disconnect
-      end
-
-      def post_init
-        reset
-        handshake
+      # triggered after socket is disconnected prematurely
+      def on_socket_disconnect
+        puts "Normally I'd never happen"
       end
 
       def send_raw(data)
-        puts "Sending raw: #{[data, data.bytes.to_a].inspect}"
-        socket.write data
+        socket.send_raw data
       end
 
       # The story about the buffering is kinda similar to EventMachine,
@@ -118,7 +118,12 @@ module AMQ
         @callbacks[:disconnect].call(self) if @callbacks[:disconnect]
       end
 
-      protected
+      protected      
+      def post_init
+        reset
+        handshake
+      end
+
       def reset
         @chunk_buffer = ""
       end
