@@ -55,7 +55,7 @@ module AMQ
 
       def initialize(*args)
         super(*args)
-
+        @chunk_buffer             = ""
         @connection_deferrable    = Deferrable.new
         @disconnection_deferrable = Deferrable.new
       end # initialize(*args)
@@ -80,8 +80,16 @@ module AMQ
         self.handshake
       end # post_init
 
-      def receive_data(chunk)
-        self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(chunk))
+      #
+      # EventMachine receives data in chunks, sometimes those chunks are smaller
+      # than the size of AMQP frame. That's why you need to add some kind of buffer.
+      #
+      def receive_data(chunk)        
+        @chunk_buffer << chunk        
+        if valid_frame?(chunk)
+          self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(@chunk_buffer))
+          @chunk_buffer = ""
+        end
       end
 
 
@@ -126,6 +134,15 @@ module AMQ
       def encode_credentials(username, password)
         "\0guest\0guest"
       end # encode_credentials(username, password)
+      
+      def valid_frame?(chunk)
+        frame_end           = if RUBY_VERSION =~ /^1.8/
+                                chunk.slice(-1, 1)
+                              else
+                                chunk.slice(-1, 1).force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
+                              end
+        frame_end == AMQ::Protocol::Frame::FINAL_OCTET
+      end
     end # EventMachineClient
   end # Client
 end # AMQ
