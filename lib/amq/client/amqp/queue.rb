@@ -146,10 +146,26 @@ module AMQ
       end
 
 
+
+      def cancel(nowait = false, &block)
+        @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
+
+        if !nowait
+          self.callbacks[:consume] = block
+
+          @channel.queues_awaiting_cancel_ok.push(self)
+        else
+          @consumer_tag            = nil
+        end
+      end # cancel(&block)
+
+
+
       def purge(nowait = false, &block)
+        nowait        = true unless block
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
-        if !nowait && block
+        if !nowait
           self.callbacks[:purge] = block
           # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_purge_ok.push(self)
@@ -204,15 +220,22 @@ module AMQ
         self.exec_callback(:delivery, header, payload, method.consumer_tag, method.delivery_tag, method.redelivered, method.exchange, method.routing_key)
       end # def handle_delivery
 
+      def handle_cancel_ok(method)
+        @consumer_tag            = nil
+        self.exec_callback(:cancel, method.consumer_tag)
+      end # handle_cancel_ok(method)
+
+
+
 
       # === Handlers ===
-      # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback. The cache includes only queues with {nowait: false}.
+      # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback.
+      # The cache includes only queues with {nowait: false}.
       self.handle(Protocol::Queue::DeclareOk) do |client, frame|
-        method = frame.decode_payload
+        method  = frame.decode_payload
 
-        # We should have cache API, so it'll be easy to change caching behaviour easily. So in the amq-client we don't want to cache more than just the last instance per each channel, whereas more opinionated clients might want to have every single instance in the cache, so they can iterate over it etc.
         channel = client.connection.channels[frame.channel]
-        queue = channel.queues_awaiting_declare_ok.shift
+        queue   = channel.queues_awaiting_declare_ok.shift
 
         queue.handle_declare_ok(method)
       end
@@ -247,6 +270,15 @@ module AMQ
 
         queue.handle_consume_ok(frame.decode_payload)
       end
+
+
+      self.handle(Protocol::Basic::CancelOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.queues_awaiting_cancel_ok.shift
+
+        queue.handle_consume_ok(frame.decode_payload)
+      end
+
 
       # Basic.Deliver
       self.handle(Protocol::Basic::Deliver) do |client, method_frame, content_frames|
