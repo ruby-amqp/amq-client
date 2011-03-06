@@ -25,13 +25,18 @@ module AMQ
       attr_reader :name, :type
 
       def initialize(client, channel, name, type = :fanout)
+        unless TYPES.include?(type)
+          raise IncompatibleExchangeTypeError.new(TYPES, type)
+        end
+
         @client  = client
         @channel = channel
         @name    = name
         @type    = type
 
-        unless TYPES.include?(type)
-          raise IncompatibleExchangeTypeError.new(TYPES, type)
+        # register pre-declared exchanges
+        if @name == AMQ::Protocol::EMPTY_STRING || @name =~ /^amq\.(fanout|topic)/
+          @channel.register_exchange(self)
         end
 
         super(client)
@@ -83,18 +88,25 @@ module AMQ
       end # delete(if_unused = false, nowait = false)
 
 
-      def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }, mandatory = false, immediate = false, frame_size = nil)
-        @client.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, user_headers, @name, routing_key, mandatory, immediate, (frame_size || @client.connection.frame_max)))
+      def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = {}, mandatory = false, immediate = false, frame_size = nil)
+        headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }.merge(user_headers)
+        @client.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @client.connection.frame_max)))
 
         self
       end
 
+
+      def on_return(&block)
+        self.callbacks[:return] = block if block
+      end # on_return(&block)
 
 
 
 
       def handle_declare_ok(method)
         @name = method.exchange if self.anonymous?
+        @channel.register_exchange(self)
+
         self.exec_callback(:declare, method)
       end
 
@@ -126,6 +138,15 @@ module AMQ
         exchange = channel.exchanges_awaiting_delete_ok.shift
         exchange.handle_delete_ok(frame.decode_payload)
       end # handle
+
+
+      self.handle(Protocol::Basic::Return) do |client, frame|
+        channel  = client.connection.channels[frame.channel]
+        method   = frame.decode_payload
+        exchange = channel.find_exchange(method.exchange)
+
+        exchange.exec_callback(:return, method.reply_code, method.reply_text, method.exchange, method.routing_key)
+      end
 
     end # Exchange
   end # Client

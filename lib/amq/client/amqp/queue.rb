@@ -298,7 +298,6 @@ module AMQ
 
         queue.handle_purge_ok(frame.decode_payload)
       end
-
     end # Queue
   end # Client
 end # AMQ

@@ -6,6 +6,12 @@ require "amq/client/adapter"
 module AMQ
   module Client
     class Channel < Entity
+
+      #
+      # API
+      #
+
+
       class ChannelOutOfBadError < StandardError # TODO: inherit from some AMQP error class defined in amq-protocol or use it straight away.
         def initialize(max, given)
           super("Channel max is #{max}, #{given} given.")
@@ -26,6 +32,7 @@ module AMQ
         super(client)
 
         @id                            = id
+        @exchanges                     = Hash.new
 
         reset_state!
 
@@ -49,6 +56,16 @@ module AMQ
       end
 
 
+      def register_exchange(exchange)
+        raise ArgumentError, "argument is nil!" if exchange.nil?
+
+        @exchanges[exchange.name] = exchange
+      end # register_exchange(exchange)
+
+      def find_exchange(name)
+        @exchanges[name]
+      end
+
 
       def reset_state!
         @queues_awaiting_declare_ok    = Array.new
@@ -65,6 +82,10 @@ module AMQ
       end # reset_state!
 
 
+
+        #
+        # Implementation
+        #
 
       def handle_open_ok
         self.status = :opened
