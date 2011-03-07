@@ -15,6 +15,8 @@ GEM
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     iobuffer (1.0.0)
+    nake (0.0.8)
+      term-ansicolor
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -23,6 +25,7 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
+    term-ansicolor (1.0.5)
     yard (0.6.4)
 
 PLATFORMS
@@ -34,5 +37,6 @@ DEPENDENCIES
   autotest
   cool.io
   eventmachine
+  nake
   rspec (>= 2.0.0)
   yard

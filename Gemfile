@@ -9,6 +9,7 @@ group :development do
   gem "cool.io" # , :path => "vendor/cool.io"
   gem "amq-protocol", :path => "vendor/amq-protocol"
   gem "eventmachine"
+  gem "nake"
 end
 
 group :test do
