@@ -10,6 +10,7 @@ group :development do
   gem "amq-protocol", :path => "vendor/amq-protocol"
   gem "eventmachine"
   gem "nake"
+  gem "contributors"
 end
 
 group :test do
