@@ -31,7 +31,9 @@ module AMQ
 
           # broker
           # if you want to load broker-specific extensions
-          :broker => nil
+          :broker => nil,
+
+          :frame_max => 131072
         }
       end
 
