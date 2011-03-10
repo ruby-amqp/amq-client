@@ -43,6 +43,11 @@ module AMQ
         end
       end
 
+      def connection
+        @client.connection
+      end # connection
+
+
       def open(&block)
         @client.send Protocol::Channel::Open.encode(@id, "")
         @client.connection.channels[@id] = self
@@ -50,10 +55,20 @@ module AMQ
         self.callbacks[:open] = block
       end
 
+
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
         @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
         self.callbacks[:close] = block
       end
+
+      # note RabbitMQ as of 2.3.1 does not support prefetch_size.
+      def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
+        @client.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
+
+        self.callbacks[:qos] = block
+        self.connection.channels_awaiting_qos_ok.push(self)
+      end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
+
 
 
       def register_exchange(exchange)
@@ -128,6 +143,11 @@ module AMQ
         channel  = channels[frame.channel]
         channel.handle_close(method)
       end
-    end
-  end
-end
+
+      self.handle Protocol::Basic::QosOk do |client, frame|
+        channel  = client.connection.channels_awaiting_qos_ok.shift
+        channel.exec_callback(:qos)
+      end
+    end # Channel
+  end # Client
+end # AMQ

@@ -76,6 +76,8 @@ module AMQ
 
       attr_reader :known_hosts
 
+      attr_reader :channels_awaiting_qos_ok
+
 
 
 
@@ -85,6 +87,9 @@ module AMQ
         @locale    = locale
 
         @channels  = Hash.new
+
+        reset_state!
+
         super(client)
 
         # Default errback.
@@ -110,13 +115,6 @@ module AMQ
         @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
       end
 
-      def tune_ok(method)
-        @channel_max = method.channel_max
-        @frame_max   = method.frame_max
-        @heartbeat   = method.heartbeat
-
-        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat)
-      end
 
       # Sends Connection.Open to the server.
       #
@@ -124,6 +122,21 @@ module AMQ
       def open(vhost = "/")
         @client.send Protocol::Connection::Open.encode(vhost)
       end
+
+
+      # Sends Connection.Close to the server.
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
+      def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
+        @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
+        closing!
+      end
+
+
+      def reset_state!
+        @channels_awaiting_qos_ok = Array.new
+      end # reset_state!
+
 
       # Handles Connection.Open-Ok
       #
@@ -138,6 +151,16 @@ module AMQ
         @client.connection_successful if @client.respond_to?(:connection_successful)
       end
 
+
+      def tune_ok(method)
+        @channel_max = method.channel_max
+        @frame_max   = method.frame_max
+        @heartbeat   = method.heartbeat
+
+        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat)
+      end
+
+
       # Handles Connection.Close-Ok
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.6)
@@ -149,14 +172,6 @@ module AMQ
         self.error RuntimeError.new(method.reply_text)
       end
 
-      # Sends Connection.Close to the server.
-      #
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
-      def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
-        @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
-        closing!
-      end
-
       # Handles connection.close-ok
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
@@ -164,6 +179,7 @@ module AMQ
         closed!
         @client.disconnection_successful
       end # close_ok(method)
+
 
 
       #
