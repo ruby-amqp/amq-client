@@ -193,7 +193,7 @@ module AMQ
         @frame_max          = method.frame_max
         @heartbeat_interval = @client.heartbeat_interval || method.heartbeat
 
-        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat_interval)
+        @client.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
       end # handle_tune_ok(method)
 
 
@@ -218,7 +218,7 @@ module AMQ
 
 
       def on_connection_interruption
-        @channels.each { |c| c.on_connection_interruption }
+        @channels.each { |n, c| c.on_connection_interruption }
       end # on_connection_interruption
 
 
