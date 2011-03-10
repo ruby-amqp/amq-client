@@ -145,6 +145,7 @@ module AMQ
         @frames  = Array.new
       end
 
+      # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
       def encode_credentials(username, password)
         "\0#{username}\0#{password}"
       end # encode_credentials(username, password)

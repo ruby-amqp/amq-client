@@ -107,16 +107,8 @@ module AMQ
       # Connection class methods
       #
 
-      def start_ok
-        # it's not clear whether we should transition to :opening state here
-        # or in #open but in case authentication fails, it would be strange to have
-        # @status undefined. So lets do this. MK.
-        opening!
-        @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
-      end
 
-
-      # Sends Connection.Open to the server.
+      # Sends connection.open to the server.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
       def open(vhost = "/")
@@ -124,7 +116,7 @@ module AMQ
       end
 
 
-      # Sends Connection.Close to the server.
+      # Sends connection.close to the server.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
       def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
@@ -143,9 +135,26 @@ module AMQ
       end # reset_state!
 
 
-      # Handles Connection.Open-Ok
+
+      #
+      # Implementation
       #
 
+
+      # Handles connection.open
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
+      def handle_start_ok
+        # it's not clear whether we should transition to :opening state here
+        # or in #open but in case authentication fails, it would be strange to have
+        # @status undefined. So lets do this. MK.
+        opening!
+        @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
+      end
+
+
+      # Handles connection.open-Ok
+      #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
       def handle_open_ok(method)
         @known_hosts = method.known_hosts
@@ -156,19 +165,21 @@ module AMQ
         @client.connection_successful if @client.respond_to?(:connection_successful)
       end
 
-
-      def tune_ok(method)
+      # Handles connection.tune-ok
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
+      def handle_tune_ok(method)
         @channel_max = method.channel_max
         @frame_max   = method.frame_max
         @heartbeat   = method.heartbeat
 
         @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat)
-      end
+      end # handle_tune_ok(method)
 
 
-      # Handles Connection.Close
+      # Handles connection.close
       #
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.6)
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
       def handle_close(method)
         self.channels.each { |key, value| value.status = :closed }
 
@@ -180,10 +191,10 @@ module AMQ
       # Handles connection.close-ok
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
-      def close_ok(method)
+      def handle_close_ok(method)
         closed!
         @client.disconnection_successful
-      end # close_ok(method)
+      end # handle_close_ok(method)
 
 
 
@@ -193,11 +204,11 @@ module AMQ
 
       self.handle(Protocol::Connection::Start) do |client, frame|
         client.connection.server_properties = frame.decode_payload.server_properties
-        client.connection.start_ok
+        client.connection.handle_start_ok
       end
 
       self.handle(Protocol::Connection::Tune) do |client, frame|
-        client.connection.tune_ok(frame.decode_payload)
+        client.connection.handle_tune_ok(frame.decode_payload)
         client.connection.open(client.settings[:vhost] || "/")
       end
 
@@ -210,7 +221,7 @@ module AMQ
       end
 
       self.handle(Protocol::Connection::CloseOk) do |client, frame|
-        client.connection.close_ok(frame.decode_payload)
+        client.connection.handle_close_ok(frame.decode_payload)
       end
     end
   end
