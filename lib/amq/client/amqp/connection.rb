@@ -31,10 +31,15 @@ module AMQ
         :homepage => "https://github.com/ruby-amqp/amq-client"
       }.freeze
 
-      # Authentication mechanism used.
+      # Client capabilities
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2.1)
+      attr_accessor :client_properties
+
+      # Server capabilities
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
-      attr_accessor :server_properties
+      attr_reader :server_properties
 
       # Authentication mechanism used.
       #
@@ -81,12 +86,18 @@ module AMQ
 
 
 
-      def initialize(client, mechanism, response, locale)
-        @mechanism = mechanism
-        @response  = response
-        @locale    = locale
+      def initialize(client, mechanism, response, locale, client_properties = nil)
+        @mechanism         = mechanism
+        @response          = response
+        @locale            = locale
 
-        @channels  = Hash.new
+        @channels          = Hash.new
+        @client_properties = client_properties || {
+          :platform    => "Ruby #{RUBY_VERSION}",
+          :product     => "AMQ Client",
+          :information => "http://github.com/ruby-amqp/amq-client",
+          :version     => AMQ::Client::VERSION
+        }
 
         reset_state!
 
@@ -101,6 +112,7 @@ module AMQ
           raise exception
         end
       end
+
 
 
       #
@@ -144,12 +156,14 @@ module AMQ
       # Handles connection.open
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
-      def handle_start_ok
+      def handle_start_ok(method)
+        @server_properties = method.server_properties
+
         # it's not clear whether we should transition to :opening state here
         # or in #open but in case authentication fails, it would be strange to have
         # @status undefined. So lets do this. MK.
         opening!
-        @client.send Protocol::Connection::StartOk.encode({}, self.mechanism, self.response, self.locale)
+        @client.send Protocol::Connection::StartOk.encode(@client_properties, @mechanism, @response, @locale)
       end
 
 
@@ -203,8 +217,7 @@ module AMQ
       #
 
       self.handle(Protocol::Connection::Start) do |client, frame|
-        client.connection.server_properties = frame.decode_payload.server_properties
-        client.connection.handle_start_ok
+        client.connection.handle_start_ok(frame.decode_payload)
       end
 
       self.handle(Protocol::Connection::Tune) do |client, frame|
