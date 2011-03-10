@@ -184,10 +184,22 @@ module AMQ
         @client.send(Protocol::Basic::Ack.encode(@channel.id, delivery_tag, multiple))
       end # acknowledge(delivery_tag, multiple = false)
 
+
       def reject(delivery_tag, requeue = true)
         @client.send(Protocol::Basic::Reject.encode(@channel.id, delivery_tag, requeue))
       end # reject(delivery_tag, requeue = true)
 
+
+      # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
+      # to be redelivered.
+      #
+      # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
+      def recover(requeue = true, &block)
+        @client.send(Protocol::Basic::Recover.encode(@channel.id, requeue))
+
+        self.callbacks[:recover] = block
+        @channel.queues_awaiting_recover_ok.push(self)
+      end # recover(requeue = false, &block)
 
 
 
@@ -332,6 +344,14 @@ module AMQ
         queue   = channel.queues_awaiting_get_response.shift
 
         queue.handle_get_empty(frame.decode_payload)
+      end
+
+
+      self.handle(Protocol::Basic::RecoverOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.queues_awaiting_recover_ok.shift
+
+        queue.exec_callback(:recover)
       end
     end # Queue
   end # Client
