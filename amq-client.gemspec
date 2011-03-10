@@ -6,7 +6,8 @@ require "base64"
 Gem::Specification.new do |s|
   s.name = "amq-client"
   s.version = "0.2.0"
-  s.authors = ["Jakub Stastny"]
+  s.authors = ["Jakub Stastny", "Michael S. Klishin"]
+  s.email   = ["michael@novemberain.com"]
   s.homepage = "http://github.com/ruby-amqp/amq-client"
   s.summary = "Low-level AMQP 0.9.1 client agnostic to the used IO library."
   s.description = "Very low-level AMQP 0.9.1 client which is supposed to be used for implementing more high-level AMQP libraries rather than to be used by the end users."
