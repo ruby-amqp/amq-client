@@ -76,6 +76,30 @@ module AMQ
         self.connection.channels_awaiting_flow_ok.push(self)
       end # flow(active = false, &block)
 
+      def tx_select(&block)
+        @client.send Protocol::Tx::Select.encode(@id)
+
+        self.callbacks[:tx_select] = block
+        self.connection.channels_awaiting_tx_select_ok.push(self)
+      end # tx_select(&block)
+
+      def tx_commit(&block)
+        @client.send Protocol::Tx::Commit.encode(@id)
+
+        self.callbacks[:tx_commit] = block
+        self.connection.channels_awaiting_tx_commit_ok.push(self)
+      end # tx_commit(&block)
+
+      def tx_rollback(&block)
+        @client.send Protocol::Tx::Rollback.encode(@id)
+
+        self.callbacks[:tx_rollback] = block
+        self.connection.channels_awaiting_tx_rollback_ok.push(self)
+      end # tx_rollback(&block)
+
+
+
+
 
       def register_exchange(exchange)
         raise ArgumentError, "argument is nil!" if exchange.nil?
@@ -158,6 +182,21 @@ module AMQ
       self.handle Protocol::Channel::FlowOk do |client, frame|
         channel  = client.connection.channels_awaiting_flow_ok.shift
         channel.exec_callback(:flow, frame.decode_payload.active)
+      end
+
+      self.handle Protocol::Tx::SelectOk do |client, frame|
+        channel  = client.connection.channels_awaiting_tx_select_ok.shift
+        channel.exec_callback(:tx_select)
+      end
+
+      self.handle Protocol::Tx::CommitOk do |client, frame|
+        channel  = client.connection.channels_awaiting_tx_commit_ok.shift
+        channel.exec_callback(:tx_commit)
+      end
+
+      self.handle Protocol::Tx::RollbackOk do |client, frame|
+        channel  = client.connection.channels_awaiting_tx_rollback_ok.shift
+        channel.exec_callback(:tx_rollback)
       end
     end # Channel
   end # Client
