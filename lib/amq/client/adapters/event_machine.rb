@@ -67,6 +67,13 @@ module AMQ
         # succeeds when connection is open, that is, vhost is selected
         # and client is given green light to proceed.
         @connection_opened_deferrable = Deferrable.new
+
+        @tcp_connection_established   = false
+
+        if self.heartbeat_interval > 0
+          @last_server_heartbeat = Time.now
+          EM.add_periodic_timer(self.heartbeat_interval, &method(:send_heartbeat))
+        end
       end # initialize(*args)
 
 
@@ -81,6 +88,9 @@ module AMQ
         @authenticating
       end # authenticating?
 
+      def tcp_connection_established?
+        @tcp_connection_established
+      end # tcp_connection_established?
 
 
       #
@@ -90,6 +100,8 @@ module AMQ
       def post_init
         begin
           reset
+
+          @tcp_connection_established = true
 
           self.handshake
         rescue Exception => e
@@ -114,6 +126,8 @@ module AMQ
         # in the authentication stage. If so, it is likely to signal an authentication
         # issue. Java client behaves the same way. MK.
         raise PossibleAuthenticationFailureError.new(@settings) if authenticating?
+
+        @tcp_connection_established = false
 
         @connections.each { |c| c.on_connection_interruption }
         @disconnection_deferrable.succeed

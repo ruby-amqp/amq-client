@@ -279,13 +279,30 @@ module AMQ
       # method.
       def receive_frameset(frames)
         frame = frames.first
-        callable = AMQ::Client::Entity.handlers[frame.method_class]
-        if callable
-          callable.call(self, frames.first, frames[1..-1])
+
+        if Protocol::HeartbeatFrame === frame
+          @last_server_heartbeat = Time.now
         else
-          raise MissingHandlerError.new(frames.first)
+          callable = AMQ::Client::Entity.handlers[frame.method_class]
+          if callable
+            callable.call(self, frames.first, frames[1..-1])
+          else
+            raise MissingHandlerError.new(frames.first)
+          end
         end
       end
+
+      def send_heartbeat
+        if tcp_connection_established?
+          if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2))
+            logger.error "Reconnecting due to missing server heartbeats"
+            # TODO: reconnect
+          end
+          send(Protocol::HeartbeatFrame)
+        end
+      end # send_heartbeat
+
+
       # @see .sync?
       # @api plugin
       # @see AMQ::Client::Adapter
@@ -306,7 +323,7 @@ module AMQ
       # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
       def heartbeat_interval
-        @settings[:heartbeat] || @settings[:heartbeat_interval]
+        @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
       end # heartbeat_interval
 
       protected
