@@ -4,7 +4,7 @@
 __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "example_helper")
 
-amq_client_example "Set a queue up for message delivery" do |client|
+amq_client_example "Notify broker about consumer recovery using basic.recover" do |client|
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open do
     AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
