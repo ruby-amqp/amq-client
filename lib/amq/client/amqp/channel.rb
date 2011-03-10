@@ -25,7 +25,7 @@ module AMQ
 
 
       attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
-      attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok
+      attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response
 
 
       def initialize(client, id)
@@ -79,6 +79,8 @@ module AMQ
         @queues_awaiting_unbind_ok     = Array.new
         @queues_awaiting_consume_ok    = Array.new
         @queues_awaiting_cancel_ok     = Array.new
+
+        @queues_awaiting_get_response  = Array.new
       end # reset_state!
 
 

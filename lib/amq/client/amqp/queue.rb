@@ -121,10 +121,6 @@ module AMQ
 
 
 
-      def no_ack?
-        @no_ack
-      end # no_ack?
-
       # Basic.Consume
       def consume(no_ack = false, exclusive = false, nowait = false, no_local = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
@@ -134,7 +130,6 @@ module AMQ
         @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @client.consumers[@consumer_tag] = self
-        @no_ack          = no_ack
 
         if !nowait
           self.callbacks[:consume]         = block
@@ -144,6 +139,17 @@ module AMQ
 
         self
       end
+
+
+
+      def get(no_ack = false, &block)
+        @client.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
+
+        self.callbacks[:get] = block
+        @channel.queues_awaiting_get_response.push(self)
+
+        self
+      end # get(no_ack = false, &block)
 
 
 
@@ -227,6 +233,13 @@ module AMQ
         self.exec_callback(:cancel, method.consumer_tag)
       end # handle_cancel_ok(method)
 
+      def handle_get_ok(method, header, payload)
+        self.exec_callback(:get, header, payload, method.delivery_tag, method.redelivered, method.exchange, method.routing_key, method.message_count)
+      end # handle_get_ok(method, header, payload)
+
+      def handle_get_empty(method)
+        self.exec_callback(:get)
+      end # handle_get_empty(method)
 
 
 
@@ -299,6 +312,26 @@ module AMQ
         queue   = channel.queues_awaiting_purge_ok.shift
 
         queue.handle_purge_ok(frame.decode_payload)
+      end
+
+
+      self.handle(Protocol::Basic::GetOk) do |client, frame, content_frames|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.queues_awaiting_get_response.shift
+        method  = frame.decode_payload
+
+        header  = content_frames.shift
+        body    = content_frames.map {|frame| frame.payload }.join
+
+        queue.handle_get_ok(method, header, body)
+      end
+
+
+      self.handle(Protocol::Basic::GetEmpty) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        queue   = channel.queues_awaiting_get_response.shift
+
+        queue.handle_get_empty(frame.decode_payload)
       end
     end # Queue
   end # Client
