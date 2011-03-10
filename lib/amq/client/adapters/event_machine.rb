@@ -98,6 +98,9 @@ module AMQ
         end
       end
 
+      def unbind
+      end # unbind
+
 
 
       def on_connection(&block)
@@ -128,6 +131,8 @@ module AMQ
       def handshake(mechanism = "PLAIN", response = nil, locale = "en_GB")
         username = @settings[:user] || @settings[:username]
         password = @settings[:pass] || @settings[:password]
+
+        self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
 
         self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
 

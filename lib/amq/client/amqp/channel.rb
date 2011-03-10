@@ -152,7 +152,7 @@ module AMQ
       end
 
       def handle_close(method)
-        p method
+        raise method.inspect
       end
 
       # === Handlers ===
