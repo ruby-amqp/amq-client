@@ -300,6 +300,15 @@ module AMQ
         self.class.async?
       end
 
+      # Returns heartbeat interval this client uses, in seconds.
+      # This value may or may not be used depending on broker capabilities.
+      #
+      # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
+      def heartbeat_interval
+        @settings[:heartbeat] || @settings[:heartbeat_interval]
+      end # heartbeat_interval
+
       protected
 
       # Utility methods
