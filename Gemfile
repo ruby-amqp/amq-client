@@ -2,13 +2,14 @@
 
 source :rubygems
 
+gem "eventmachine", "0.12.10" #, "1.0.0.beta.3"
+gem "amq-protocol", :path    => "vendor/amq-protocol"
+
 group :development do
   gem "yard"
   # yard tags this buddy along
   gem "RedCloth"
   gem "cool.io" # , :path => "vendor/cool.io"
-  gem "amq-protocol", :path => "vendor/amq-protocol"
-  gem "eventmachine"
 
   gem "nake",          :platform => :ruby_19
   gem "contributors",  :platform => :ruby_19
