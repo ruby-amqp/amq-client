@@ -55,8 +55,8 @@ module AMQ
       def self.configure(settings = nil)
         case settings
         when Hash then
-          if password = settings.delete(:username)
-            settings[:user] ||= password
+          if username = settings.delete(:username)
+            settings[:user] ||= username
           end
 
           if password = settings.delete(:password)
