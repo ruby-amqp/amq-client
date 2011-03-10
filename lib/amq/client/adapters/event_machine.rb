@@ -32,9 +32,7 @@ module AMQ
 
       def self.connect(settings = nil, &block)
         settings          = AMQ::Client::Settings.configure(settings)
-
-        instance          = EM.connect(settings[:host], settings[:port], self)
-        instance.settings = settings
+        instance          = EM.connect(settings[:host], settings[:port], self, settings)
 
         if block.nil?
           instance
@@ -55,6 +53,11 @@ module AMQ
 
       def initialize(*args)
         super(*args)
+
+        # EventMachine::Connection's and Adapter's constructors arity
+        # make it easier to use *args. MK.
+        @settings                 = args.first
+
         @chunk_buffer             = ""
         @connection_deferrable    = Deferrable.new
         @disconnection_deferrable = Deferrable.new
@@ -75,9 +78,13 @@ module AMQ
       #
 
       def post_init
-        reset
+        begin
+          reset
 
-        self.handshake
+          self.handshake
+        rescue Exception => e
+          raise e
+        end
       end # post_init
 
       #
@@ -86,7 +93,7 @@ module AMQ
       #
       def receive_data(chunk)
         @chunk_buffer << chunk
-        while frame = get_next_frame
+        while frame = next_frame
           self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(frame))
         end
       end
@@ -118,8 +125,11 @@ module AMQ
 
       protected
 
-      def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
-        self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
+      def handshake(mechanism = "PLAIN", response = nil, locale = "en_GB")
+        username = @settings[:user] || @settings[:username]
+        password = @settings[:pass] || @settings[:password]
+
+        self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
 
         self.send_preamble
       end
@@ -131,10 +141,10 @@ module AMQ
       end
 
       def encode_credentials(username, password)
-        "\0guest\0guest"
+        "\0#{username}\0#{password}"
       end # encode_credentials(username, password)
 
-      def get_next_frame
+      def next_frame
         if pos = @chunk_buffer.index(AMQ::Protocol::Frame::FINAL_OCTET)
           @chunk_buffer.slice!(0, pos + 1)
         end
