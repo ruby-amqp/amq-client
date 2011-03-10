@@ -171,7 +171,7 @@ module AMQ
       def handle_tune_ok(method)
         @channel_max        = method.channel_max
         @frame_max          = method.frame_max
-        @heartbeat_interval = method.heartbeat
+        @heartbeat_interval = @client.heartbeat_interval || method.heartbeat
 
         @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat_interval)
       end # handle_tune_ok(method)
