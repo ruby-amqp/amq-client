@@ -18,7 +18,7 @@ end
 
 def amq_client_example(description = "", &block)
   EM.run do
-    AMQ::Client::EventMachineClient.connect(:port => 5672, :vhost => "/amq_client_testbed") do |client|
+    AMQ::Client::EventMachineClient.connect(:port => 5672, :vhost => "/amq_client_testbed", :frame_max => 65536) do |client|
       begin
         puts
         puts
