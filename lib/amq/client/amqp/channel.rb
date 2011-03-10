@@ -98,6 +98,10 @@ module AMQ
       end # tx_rollback(&block)
 
 
+      def flow_is_active?
+        @flow_is_active
+      end # flow_is_active?
+
 
 
 
@@ -113,6 +117,8 @@ module AMQ
 
 
       def reset_state!
+        @flow_is_active                = true
+
         @queues_awaiting_declare_ok    = Array.new
         @exchanges_awaiting_declare_ok = Array.new
 
@@ -180,8 +186,10 @@ module AMQ
       end
 
       self.handle Protocol::Channel::FlowOk do |client, frame|
-        channel  = client.connection.channels_awaiting_flow_ok.shift
-        channel.exec_callback(:flow, frame.decode_payload.active)
+        channel         = client.connection.channels_awaiting_flow_ok.shift
+        flow_activity   = frame.decode_payload.active
+        @flow_is_active = flow_activity
+        channel.exec_callback(:flow, flow_activity)
       end
 
       self.handle Protocol::Tx::SelectOk do |client, frame|
