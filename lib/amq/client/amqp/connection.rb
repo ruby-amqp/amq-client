@@ -72,7 +72,7 @@ module AMQ
       # Zero means the server does not want a heartbeat.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.5.3)
-      attr_accessor :heartbeat
+      attr_accessor :heartbeat_interval
 
       attr_reader :known_hosts
 
@@ -169,11 +169,11 @@ module AMQ
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
       def handle_tune_ok(method)
-        @channel_max = method.channel_max
-        @frame_max   = method.frame_max
-        @heartbeat   = method.heartbeat
+        @channel_max        = method.channel_max
+        @frame_max          = method.frame_max
+        @heartbeat_interval = method.heartbeat
 
-        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat)
+        @client.send Protocol::Connection::TuneOk.encode(@channel_max, @frame_max, @heartbeat_interval)
       end # handle_tune_ok(method)
 
 
