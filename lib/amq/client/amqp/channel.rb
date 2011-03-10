@@ -69,6 +69,12 @@ module AMQ
         self.connection.channels_awaiting_qos_ok.push(self)
       end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
+      def flow(active = false, &block)
+        @client.send Protocol::Channel::Flow.encode(@id, active)
+
+        self.callbacks[:flow] = block
+        self.connection.channels_awaiting_flow_ok.push(self)
+      end # flow(active = false, &block)
 
 
       def register_exchange(exchange)
@@ -147,6 +153,11 @@ module AMQ
       self.handle Protocol::Basic::QosOk do |client, frame|
         channel  = client.connection.channels_awaiting_qos_ok.shift
         channel.exec_callback(:qos)
+      end
+
+      self.handle Protocol::Channel::FlowOk do |client, frame|
+        channel  = client.connection.channels_awaiting_flow_ok.shift
+        channel.exec_callback(:flow, frame.decode_payload.active)
       end
     end # Channel
   end # Client

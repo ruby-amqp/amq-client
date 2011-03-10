@@ -76,7 +76,7 @@ module AMQ
 
       attr_reader :known_hosts
 
-      attr_reader :channels_awaiting_qos_ok
+      attr_reader :channels_awaiting_qos_ok, :channels_awaiting_flow_ok
 
 
 
@@ -134,7 +134,8 @@ module AMQ
 
 
       def reset_state!
-        @channels_awaiting_qos_ok = Array.new
+        @channels_awaiting_qos_ok  = Array.new
+        @channels_awaiting_flow_ok = Array.new
       end # reset_state!
 
 
