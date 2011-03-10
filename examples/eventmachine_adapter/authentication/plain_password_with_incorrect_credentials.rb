@@ -5,22 +5,16 @@ __dir = File.join(File.dirname(File.expand_path(__FILE__)), "..")
 require File.join(__dir, "example_helper")
 
 EM.run do
-  AMQ::Client::EventMachineClient.connect(:port     => 5672,
-                                          :vhost    => "/amq_client_testbed",
-                                          :user     => "amq_client_gem",
-                                          :password => "a password that is incorrect #{Time.now.to_i}") do |client|
-    raise "Should not really be executed"
+  begin
+    AMQ::Client::EventMachineClient.connect(:port     => 5672,
+                                            :vhost    => "/amq_client_testbed",
+                                            :user     => "amq_client_gem",
+                                            :password => "a password that is incorrect #{Time.now.to_i}") do |client|
+      raise "Should not really be executed"
+    end
+  rescue AMQ::Client::PossibleAuthenticationFailureError => e
+    puts "Authentication exception was raised, as expected: #{e.message}"
 
-
-    show_stopper = Proc.new {
-      client.disconnect do
-        puts
-        puts "AMQP connection is now properly closed"
-        EM.stop
-      end
-    }
-
-    Signal.trap "INT",  show_stopper
-    Signal.trap "TERM", show_stopper
+    EM.stop
   end
 end

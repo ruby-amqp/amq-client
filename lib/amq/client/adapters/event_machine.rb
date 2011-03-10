@@ -47,9 +47,8 @@ module AMQ
       end
 
 
-      #
-      # API
-      #
+      attr_reader :connections
+
 
       def initialize(*args)
         super(*args)
@@ -57,10 +56,17 @@ module AMQ
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
         @settings                 = args.first
+        @connections              = Array.new
 
         @chunk_buffer             = ""
         @connection_deferrable    = Deferrable.new
         @disconnection_deferrable = Deferrable.new
+
+        @authenticating           = false
+
+        # succeeds when connection is open, that is, vhost is selected
+        # and client is given green light to proceed.
+        @connection_opened_deferrable = Deferrable.new
       end # initialize(*args)
 
 
@@ -70,6 +76,10 @@ module AMQ
 
       alias send_raw send_data
 
+
+      def authenticating?
+        @authenticating
+      end # authenticating?
 
 
 
@@ -99,6 +109,14 @@ module AMQ
       end
 
       def unbind
+        # since AMQP spec dictates that authentication failure is a protocol exception
+        # and protocol exceptions result in connection closure, check whether we are
+        # in the authentication stage. If so, it is likely to signal an authentication
+        # issue. Java client behaves the same way. MK.
+        raise PossibleAuthenticationFailureError.new(@settings) if authenticating?
+
+        @connections.each { |c| c.on_connection_interruption }
+        @disconnection_deferrable.succeed
       end # unbind
 
 
@@ -112,6 +130,15 @@ module AMQ
         @connection_deferrable.succeed
       end # connection_successful
 
+
+      def on_open(&block)
+        @connection_opened_deferrable.callback(&block)
+      end # on_open(&block)
+
+      def open_successful
+        @authenticating = false
+        @connection_opened_deferrable.succeed
+      end # open_successful
 
 
       def on_disconnection(&block)
@@ -136,6 +163,7 @@ module AMQ
 
         self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
 
+        @authenticating = true
         self.send_preamble
       end
 

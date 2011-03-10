@@ -136,6 +136,10 @@ module AMQ
       end # reset_state!
 
 
+      def on_conection_interruption
+        self.reset_state!
+      end # on_conection_interruption
+
 
         #
         # Implementation

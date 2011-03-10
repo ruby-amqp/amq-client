@@ -103,6 +103,8 @@ module AMQ
 
         super(client)
 
+        @client.connections.push(self)
+
         # Default errback.
         # You might want to override it, otherwise it'll
         # crash your program. It's the expected behaviour
@@ -113,6 +115,10 @@ module AMQ
         end
       end
 
+
+      def settings
+        @client.settings
+      end # settings
 
 
       #
@@ -156,7 +162,7 @@ module AMQ
       # Handles connection.open
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
-      def handle_start_ok(method)
+      def start_ok(method)
         @server_properties = method.server_properties
 
         # it's not clear whether we should transition to :opening state here
@@ -211,17 +217,23 @@ module AMQ
       end # handle_close_ok(method)
 
 
+      def on_connection_interruption
+        @channels.each { |c| c.on_connection_interruption }
+      end # on_connection_interruption
+
 
       #
       # Handlers
       #
 
       self.handle(Protocol::Connection::Start) do |client, frame|
-        client.connection.handle_start_ok(frame.decode_payload)
+        client.connection.start_ok(frame.decode_payload)
       end
 
       self.handle(Protocol::Connection::Tune) do |client, frame|
         client.connection.handle_tune_ok(frame.decode_payload)
+
+        client.open_successful
         client.connection.open(client.settings[:vhost] || "/")
       end
 

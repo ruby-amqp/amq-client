@@ -59,5 +59,17 @@ module AMQ
         end
       end
     end # Logging
+
+
+    class PossibleAuthenticationFailureError < StandardError
+
+      #
+      # API
+      #
+
+      def initialize(settings)
+        super("AMQP broker closed TCP connection before authentication succeeded: this usually means authentication failure due to misconfiguration. Settings are #{settings.inspect}")
+      end # initialize(settings)
+    end # PossibleAuthenticationFailureError
   end # Client
 end # AMQ
