@@ -174,12 +174,6 @@ module AMQ
         self
       end # purge(nowait = false, &block)
 
-
-
-      def on_delivery(&block)
-        self.callbacks[:delivery] = block if block
-      end # on_delivery(&block)
-
       def acknowledge(delivery_tag, multiple = false)
         @client.send(Protocol::Basic::Ack.encode(@channel.id, delivery_tag, multiple))
       end # acknowledge(delivery_tag, multiple = false)
@@ -187,6 +181,14 @@ module AMQ
       def reject(delivery_tag, requeue = true)
         @client.send(Protocol::Basic::Reject.encode(@channel.id, delivery_tag, requeue))
       end # reject(delivery_tag, requeue = true)
+
+
+
+
+      def on_delivery(&block)
+        self.callbacks[:delivery] = block if block
+      end # on_delivery(&block)
+
 
 
 
