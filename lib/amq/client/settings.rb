@@ -54,6 +54,15 @@ module AMQ
       def self.configure(settings = nil)
         case settings
         when Hash then
+          if password = settings.delete(:username)
+            settings[:user] ||= password
+          end
+
+          if password = settings.delete(:password)
+            settings[:pass] ||= password
+          end
+
+
           self.default.merge(settings)
         when String then
           settings = self.parse_amqp_url(settings)
