@@ -38,7 +38,7 @@ DEPENDENCIES
   autotest
   contributors
   cool.io
-  eventmachine
+  eventmachine (= 0.12.10)
   nake
   rspec (>= 2.0.0)
   yard
