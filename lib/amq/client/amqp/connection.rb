@@ -166,7 +166,7 @@ module AMQ
       end
 
 
-      # Handles Connection.Close-Ok
+      # Handles Connection.Close
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.6)
       def handle_close(method)
