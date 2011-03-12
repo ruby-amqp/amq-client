@@ -30,17 +30,16 @@ module AMQ
   module Client
     module StringAdapter
       class Frame < AMQ::Protocol::Frame
+        ENCODINGS_SUPPORTED = defined? Encoding
+        
         def self.decode(string)
           header              = string[0..6]
           type, channel, size = self.decode_header(header)
           data                = string[7..-1]
           payload             = data[0..-2]
+          frame_end           = data.slice(-1, 1)
 
-          frame_end           = if RUBY_VERSION =~ /^1.8/
-                                  data.slice(-1, 1)
-                                else
-                                  data.slice(-1, 1).force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding)
-                                end
+          frame_end.force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding) if ENCODINGS_SUPPORTED
 
           # 1) the size is miscalculated
           if payload.bytesize != size
