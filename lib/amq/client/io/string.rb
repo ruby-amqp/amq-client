@@ -31,13 +31,16 @@ module AMQ
     module StringAdapter
       class Frame < AMQ::Protocol::Frame
         ENCODINGS_SUPPORTED = defined? Encoding
+        HEADER_SLICE = (0..6).freeze
+        DATA_SLICE = (7..-1).freeze
+        PAYLOAD_SLICE = (0..-2).freeze
         
         def self.decode(string)
-          header              = string[0..6]
+          header              = string[HEADER_SLICE]
           type, channel, size = self.decode_header(header)
-          data                = string[7..-1]
-          payload             = data[0..-2]
-          frame_end           = data.slice(-1, 1)
+          data                = string[DATA_SLICE]
+          payload             = data[PAYLOAD_SLICE]
+          frame_end           = data[-1, 1]
 
           frame_end.force_encoding(AMQ::Protocol::Frame::FINAL_OCTET.encoding) if ENCODINGS_SUPPORTED
 
