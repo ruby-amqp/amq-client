@@ -12,7 +12,6 @@ describe AMQ::Client::EventMachineClient do
       @received_messages = []
       em do
         em_amqp_connect do |client|
-          puts "HELLO"
           channel = AMQ::Client::Channel.new(client, 1)
           channel.open do end
           queue = AMQ::Client::Queue.new(client, channel)
