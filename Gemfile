@@ -20,4 +20,5 @@ end
 group :test do
   gem "rspec", ">=2.0.0"
   gem "autotest"
+  gem "evented-spec", :path => "vendor/evented-spec"
 end
