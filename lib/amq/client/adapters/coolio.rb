@@ -56,6 +56,7 @@ module AMQ
       # API
       attr_accessor :socket
       attr_accessor :callbacks
+      attr_accessor :connections
 
       class <<self
         def connect(settings, &block)
@@ -72,6 +73,7 @@ module AMQ
 
       def initialize
         @callbacks = {}
+        @connections = []
         super
       end
 
@@ -84,6 +86,28 @@ module AMQ
       def on_disconnection(&block)
         @callbacks[:disconnect] = block
       end
+
+      def on_open(&block)
+        @callbacks[:open] = block
+      end # on_open(&block)
+
+
+      # called by AMQ::Client::Connection after we receive connection.open-ok.
+      def connection_successful
+        @callbacks[:connect].call(self) if @callbacks[:connect]
+      end
+
+      # called by AMQ::Client::Connection after we receive connection.close-ok.
+      def disconnection_successful
+        @callbacks[:disconnect].call(self) if @callbacks[:disconnect]
+        close_connection
+      end
+
+      def open_successful
+        @authenticating = false
+        @callbacks[:open].call(self) if @callbacks[:open]
+      end # open_successful
+
 
       # triggered when socket is connected but before handshake is done
       def on_socket_connect
@@ -107,17 +131,6 @@ module AMQ
         end
       end
 
-      # called by AMQ::Client::Connection after we receive connection.open-ok.
-      def connection_successful
-        @callbacks[:connect].call(self) if @callbacks[:connect]
-      end
-
-      # called by AMQ::Client::Connection after we receive connection.close-ok.
-      def disconnection_successful        
-        @callbacks[:disconnect].call(self) if @callbacks[:disconnect]
-        close_connection
-      end
-      
       def close_connection
         @socket.close
       end
