@@ -147,12 +147,12 @@ module AMQ
 
       def handle_open_ok
         self.status = :opened
-        self.exec_callback(:open)
+        self.exec_callback_once(:open)
       end
 
       def handle_close_ok
         self.status = :closed
-        self.exec_callback(:close)
+        self.exec_callback_once(:close)
       end
 
       def handle_close(method)
