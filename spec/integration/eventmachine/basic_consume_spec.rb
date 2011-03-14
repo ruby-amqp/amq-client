@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'integration/coolio/spec_helper'
+require 'integration/eventmachine/spec_helper'
 
-describe AMQ::Client::Coolio do
+describe AMQ::Client::EventMachineClient do
   include EventedSpec::SpecHelper
   default_timeout 2
 
@@ -10,8 +10,9 @@ describe AMQ::Client::Coolio do
 
     it "should receive all the messages" do
       @received_messages = []
-      coolio do
-        coolio_amqp_connect do |client|
+      em do
+        em_amqp_connect do |client|
+          puts "HELLO"
           channel = AMQ::Client::Channel.new(client, 1)
           channel.open do end
           queue = AMQ::Client::Queue.new(client, channel)
@@ -42,8 +43,8 @@ describe AMQ::Client::Coolio do
 
     it "should receive all the messages" do
       @received_messages = []
-      coolio do
-        coolio_amqp_connect do |client|
+      em do
+        em_amqp_connect do |client|
           channel = AMQ::Client::Channel.new(client, 1)
           channel.open do end
           queue = AMQ::Client::Queue.new(client, channel)
