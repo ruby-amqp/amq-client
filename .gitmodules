@@ -4,3 +4,6 @@
 [submodule "vendor/cool.io"]
 	path = vendor/cool.io
 	url = https://github.com/tarcieri/cool.io.git
+[submodule "vendor/evented-spec"]
+	path = vendor/evented-spec
+	url = git://github.com/markiz/evented-spec.git
