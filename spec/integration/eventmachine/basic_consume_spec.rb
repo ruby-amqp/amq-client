@@ -36,7 +36,6 @@ describe AMQ::Client::EventMachineClient do
 
   end
 
-  # @todo: investigate, why this fails and the other does not.
   context "sending 1000 messages" do
     let(:messages) { (0..999).map {|i| "Message #{i}" } }
 
