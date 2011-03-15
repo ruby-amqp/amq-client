@@ -54,7 +54,7 @@ module AMQ
       #
       # @api public
       def open(&block)
-        @client.send Protocol::Channel::Open.encode(@id, "")
+        @client.send Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING)
         @client.connection.channels[@id] = self
         self.status = :opening
         self.callbacks[:open] = block
