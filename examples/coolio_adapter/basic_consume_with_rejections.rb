@@ -17,11 +17,11 @@ amq_client_example "Set a queue up for message delivery" do |client|
     puts "Queue #{queue.name} is now bound to amq.fanout"
   end
 
-  queue.consume do |_, consumer_tag|
-    queue.on_delivery do |qu, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+  queue.consume do |consumer_tag|
+    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
       puts "Got a delivery: #{payload} (delivery tag: #{delivery_tag}), rejecting..."
 
-      qu.reject(delivery_tag, false)
+      queue.reject(delivery_tag, false)
     end
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)

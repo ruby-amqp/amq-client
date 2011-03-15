@@ -10,12 +10,12 @@ amq_client_example "Activate or deactivate channel delivery using channel.flow" 
     AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
       puts "flow is now #{channel.flow_is_active? ? 'on' : 'off'}"
 
-      channel.flow(false) do |_, flow_activity|
+      channel.flow(false) do |flow_activity|
         puts "flow is now #{flow_activity ? 'on' : 'off'}"
       end
 
       sleep 0.1
-      channel.flow(true) do |_, flow_activity|
+      channel.flow(true) do |flow_activity|
         puts "flow is now #{flow_activity ? 'on' : 'off'}"
       end
     end

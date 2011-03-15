@@ -40,13 +40,25 @@ module AMQ
 
       def exec_callback(name, *args, &block)
         callback = self.callbacks[name]
-        callback.call(self, *args, &block) if callback
+        callback.call(*args, &block) if callback
       end
 
       def exec_callback_once(name, *args, &block)
         callback = self.callbacks.delete(name)
+        callback.call(*args, &block) if callback
+      end
+
+      def exec_callback_yielding_self(name, *args, &block)
+        callback = self.callbacks[name]
         callback.call(self, *args, &block) if callback
       end
+
+      def exec_callback_once_yielding_self(name, *args, &block)
+        callback = self.callbacks.delete(name)
+        callback.call(self, *args, &block) if callback
+      end
+
+
 
       def error(exception)
         if client.sync? # DO NOT DO THIS, just add a default errback to do exactly this, so if someone wants to use begin/rescue, he'll just ignore the errbacks.

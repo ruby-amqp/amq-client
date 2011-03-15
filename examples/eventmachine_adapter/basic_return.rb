@@ -10,7 +10,7 @@ amq_client_example "Set a queue up for message delivery" do |client|
     queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-    exchange.on_return do |_, reply_code, reply_text, exchange_name, routing_key|
+    exchange.on_return do |reply_code, reply_text, exchange_name, routing_key|
       puts "Handling a returned messages: reply_code=#{reply_code}, reply_text=#{reply_text}"
     end
 

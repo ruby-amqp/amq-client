@@ -15,11 +15,11 @@ amq_client_example "Purge a queue and announce how many messages it had" do |cli
     puts "Queue #{queue.name.inspect} is now declared!"
   end
 
-  queue.purge do |_, message_count|
+  queue.purge do |message_count|
     puts "Queue #{queue.name} is now purged. It had #{message_count} messages."
     puts
     puts "Deleting queue #{queue.name}"
-    queue.delete do |_, message_count|
+    queue.delete do |message_count|
       puts "Deleted."
       puts
       client.disconnect do

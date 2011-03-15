@@ -26,7 +26,7 @@ amq_client_example "Set a queue up for message delivery" do |client|
   sleep 0.1
 
   100.times do |i|
-    queue.get(true) do |_, header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+    queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
       puts "basic.get callback has fired"
       puts
       puts "Payload is #{payload}"

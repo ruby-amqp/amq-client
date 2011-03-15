@@ -17,8 +17,8 @@ amq_client_example "Set a queue up for message delivery" do |client|
     puts "Queue #{queue.name} is now bound to amq.fanout"
   end
 
-  queue.consume(true) do |_, consumer_tag|
-    queue.on_delivery do |_, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+  queue.consume(true) do |consumer_tag|
+    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
       puts "Received #{payload}"
     end
 

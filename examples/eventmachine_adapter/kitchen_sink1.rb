@@ -28,7 +28,7 @@ amq_client_example "An example that combines several AMQ operations" do |client|
   show_stopper = Proc.new {
     puts
     puts "Deleting queue #{queue.name}"
-    queue.delete do |_, message_count|
+    queue.delete do |message_count|
       puts
       puts "Deleted #{queue.name}. It had #{message_count} messages in it."
       puts
