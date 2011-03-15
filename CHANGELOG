@@ -2,3 +2,4 @@
   * [FEATURE] Settings.
   * [FEATURE] IO adapters.
   * [FEATURE] Basic AMQP API.
+  * [FEATURE] Support for Basic.Nack extension of RabbitMQ.
