@@ -68,6 +68,24 @@ module AMQ
         self.callbacks[:close] = block
       end
 
+      # Acknowledge one or all messages on the channel.
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
+      def acknowledge(delivery_tag, multiple = false)
+        @client.send(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
+
+        self
+      end # acknowledge(delivery_tag, multiple = false)
+
+      # Reject a message with given delivery tag.
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
+      def reject(delivery_tag, requeue = true)
+        @client.send(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
+      end # reject(delivery_tag, requeue = true)
+
       # Requests a specific quality of service. The QoS can be specified for the current channel
       # or for all channels on the connection.
       #
