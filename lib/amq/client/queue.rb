@@ -202,6 +202,8 @@ module AMQ
         else
           @consumer_tag            = nil
         end
+
+        self
       end # cancel(&block)
 
       #
@@ -229,6 +231,8 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
       def acknowledge(delivery_tag, multiple = false)
         @client.send(Protocol::Basic::Ack.encode(@channel.id, delivery_tag, multiple))
+
+        self
       end # acknowledge(delivery_tag, multiple = false)
 
       #
@@ -238,6 +242,8 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
         @client.send(Protocol::Basic::Reject.encode(@channel.id, delivery_tag, requeue))
+
+        self
       end # reject(delivery_tag, requeue = true)
 
 
@@ -253,6 +259,8 @@ module AMQ
 
         self.callbacks[:recover] = block
         @channel.queues_awaiting_recover_ok.push(self)
+
+        self
       end # recover(requeue = false, &block)
 
       # @api public
