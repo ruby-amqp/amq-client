@@ -24,17 +24,10 @@ describe AMQ::Client::Entity do
       @called.should be_true
     end
 
-    it "should pass itself as the first argument" do
-      subject.callbacks[:init] = begin
-        Proc.new { |entity, *args| entity }
-      end
-
-      subject.exec_callback(:init).should eql(subject)
-    end
 
     it "should pass arguments to the callback" do
       subject.callbacks[:init] = begin
-        Proc.new { |entity, *args| args }
+        Proc.new { |*args| args }
       end
 
       subject.exec_callback(:init, 1).should eql([1])
