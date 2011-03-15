@@ -43,11 +43,16 @@ module AMQ
         end
       end
 
+      # AMQP connection this channel belongs to.
+      #
+      # @return [AMQ::Client::Connection] Connection this channel belongs to.
       def connection
         @client.connection
       end # connection
 
-
+      # Opens AMQP channel.
+      #
+      # @api public
       def open(&block)
         @client.send Protocol::Channel::Open.encode(@id, "")
         @client.connection.channels[@id] = self
@@ -55,13 +60,19 @@ module AMQ
         self.callbacks[:open] = block
       end
 
-
+      # Closes AMQP channel.
+      #
+      # @api public
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
         @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
         self.callbacks[:close] = block
       end
 
-      # note RabbitMQ as of 2.3.1 does not support prefetch_size.
+      # Requests a specific quality of service. The QoS can be specified for the current channel
+      # or for all channels on the connection.
+      #
+      # @note RabbitMQ as of 2.3.1 does not support prefetch_size.
+      # @api public
       def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
         @client.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
 
@@ -69,6 +80,16 @@ module AMQ
         self.connection.channels_awaiting_qos_ok.push(self)
       end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
+      # Asks the peer to pause or restart the flow of content data sent to a consumer.
+      # This is a simple flow­control mechanism that a peer can use to avoid overflowing its
+      # queues or otherwise finding itself receiving more messages than it can process. Note that
+      # this method is not intended for window control. It does not affect contents returned to
+      # Queue#get callers.
+      #
+      # @param [Boolean] Desired flow state.
+      #
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.3.)
+      # @api public
       def flow(active = false, &block)
         @client.send Protocol::Channel::Flow.encode(@id, active)
 
@@ -76,6 +97,10 @@ module AMQ
         self.connection.channels_awaiting_flow_ok.push(self)
       end # flow(active = false, &block)
 
+      # Sets the channel to use standard transactions. One must use this method at least
+      # once on a channel before using #tx_tommit or tx_rollback methods.
+      #
+      # @api public
       def tx_select(&block)
         @client.send Protocol::Tx::Select.encode(@id)
 
@@ -83,6 +108,9 @@ module AMQ
         self.connection.channels_awaiting_tx_select_ok.push(self)
       end # tx_select(&block)
 
+      # Commits AMQP transaction.
+      #
+      # @api public
       def tx_commit(&block)
         @client.send Protocol::Tx::Commit.encode(@id)
 
@@ -90,6 +118,9 @@ module AMQ
         self.connection.channels_awaiting_tx_commit_ok.push(self)
       end # tx_commit(&block)
 
+      # Rolls AMQP transaction back.
+      #
+      # @api public
       def tx_rollback(&block)
         @client.send Protocol::Tx::Rollback.encode(@id)
 
@@ -97,13 +128,18 @@ module AMQ
         self.connection.channels_awaiting_tx_rollback_ok.push(self)
       end # tx_rollback(&block)
 
-
+      # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
+      #
+      # @api public
       def flow_is_active?
         @flow_is_active
       end # flow_is_active?
 
 
 
+      #
+      # Implementation
+      #
 
       def register_exchange(exchange)
         raise ArgumentError, "argument is nil!" if exchange.nil?
@@ -139,11 +175,6 @@ module AMQ
       def on_connection_interruption
         self.reset_state!
       end # on_connection_interruption
-
-
-        #
-        # Implementation
-        #
 
       def handle_open_ok
         self.status = :opened
