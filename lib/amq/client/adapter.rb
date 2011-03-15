@@ -237,6 +237,7 @@ module AMQ
         closing!
         self.connection.close(reply_code, reply_text)
       end
+      alias close disconnect
 
       # Sends AMQ protocol header (also known as preamble).
       #
