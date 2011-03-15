@@ -21,6 +21,10 @@ module AMQ
 
       attr_reader :name
 
+      # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
+      # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.
+      # @param  [String]                Queue name. Please note that AMQP spec does not require brokers to support Unicode for queue names.
+      # @api public
       def initialize(client, channel, name = AMQ::Protocol::EMPTY_STRING)
         super(client)
 
@@ -28,20 +32,32 @@ module AMQ
         @channel = channel
       end
 
+      # @return [Boolean] true if this queue was declared as durable (will survive broker restart).
+      # @api public
       def durable?
         @durable
       end # durable?
 
+      # @return [Boolean] true if this queue was declared as exclusive (limited to just one consumer)
+      # @api public
       def exclusive?
         @exclusive
       end # exclusive?
 
+      # @return [Boolean] true if this queue was declared as automatically deleted (deleted as soon as last consumer unbinds).
+      # @api public
       def auto_delete?
         @auto_delete
       end # auto_delete?
 
 
-
+      # Declares this queue.
+      #
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.1.)
       def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
         @durable     = durable
         @exclusive   = exclusive
@@ -62,7 +78,15 @@ module AMQ
         self
       end
 
-
+      # Deletes this queue.
+      #
+      # @param [Boolean] if_unused  delete only if queue has no consumers (subscribers).
+      # @param [Boolean] if_empty   delete only if queue has no messages in it.
+      # @param [Boolean] nowait     Don't wait for reply from broker.
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.9.)
       def delete(if_unused = false, if_empty = false, nowait = false, &block)
         nowait = true unless block
         @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
@@ -77,8 +101,11 @@ module AMQ
         self
       end # delete(channel, queue, if_unused, if_empty, nowait, &block)
 
-
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.3.)
       def bind(exchange, routing_key = AMQ::Protocol::EMPTY_STRING, nowait = false, arguments = nil, &block)
         nowait = true unless block
         exchange_name = if exchange.respond_to?(:name)
@@ -100,8 +127,11 @@ module AMQ
         self
       end
 
-
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.5.)
       def unbind(exchange, routing_key = AMQ::Protocol::EMPTY_STRING, arguments = nil, &block)
         exchange_name = if exchange.respond_to?(:name)
                           exchange.name
@@ -120,8 +150,11 @@ module AMQ
       end
 
 
-
-      # Basic.Consume
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.3.)
       def consume(no_ack = false, exclusive = false, nowait = false, no_local = false, arguments = nil, &block)
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
@@ -140,8 +173,11 @@ module AMQ
         self
       end
 
-
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.10.)
       def get(no_ack = false, &block)
         @client.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
 
@@ -151,8 +187,11 @@ module AMQ
         self
       end # get(no_ack = false, &block)
 
-
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.5.)
       def cancel(nowait = false, &block)
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
 
@@ -165,8 +204,11 @@ module AMQ
         end
       end # cancel(&block)
 
-
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.7.)
       def purge(nowait = false, &block)
         nowait        = true unless block
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
@@ -180,11 +222,20 @@ module AMQ
         self
       end # purge(nowait = false, &block)
 
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
       def acknowledge(delivery_tag, multiple = false)
         @client.send(Protocol::Basic::Ack.encode(@channel.id, delivery_tag, multiple))
       end # acknowledge(delivery_tag, multiple = false)
 
-
+      #
+      # @return [Queue]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
         @client.send(Protocol::Basic::Reject.encode(@channel.id, delivery_tag, requeue))
       end # reject(delivery_tag, requeue = true)
@@ -193,7 +244,10 @@ module AMQ
       # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
       # to be redelivered.
       #
+      # @return [Queue]  self
+      #
       # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
       def recover(requeue = true, &block)
         @client.send(Protocol::Basic::Recover.encode(@channel.id, requeue))
 
@@ -201,14 +255,17 @@ module AMQ
         @channel.queues_awaiting_recover_ok.push(self)
       end # recover(requeue = false, &block)
 
-
-
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.8.3.9)
       def on_delivery(&block)
         self.callbacks[:delivery] = block if block
       end # on_delivery(&block)
 
 
 
+      #
+      # Implementation
+      #
 
       def handle_declare_ok(method)
         @name = method.queue if self.anonymous?
@@ -255,7 +312,6 @@ module AMQ
 
 
 
-      # === Handlers ===
       # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback.
       # The cache includes only queues with {nowait: false}.
       self.handle(Protocol::Queue::DeclareOk) do |client, frame|
