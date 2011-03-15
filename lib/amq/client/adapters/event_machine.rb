@@ -34,9 +34,7 @@ module AMQ
         settings          = AMQ::Client::Settings.configure(settings)
         instance          = EM.connect(settings[:host], settings[:port], self, settings)
 
-        if block.nil?
-          instance
-        else
+        unless block.nil?
           # delay calling block we were given till after we receive
           # connection.open-ok. Connection will notify us when
           # that happens.
@@ -44,6 +42,8 @@ module AMQ
             block.call(instance)
           end
         end
+
+        instance
       end
 
 
