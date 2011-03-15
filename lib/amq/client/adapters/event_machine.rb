@@ -127,10 +127,14 @@ module AMQ
         # issue. Java client behaves the same way. MK.
         raise PossibleAuthenticationFailureError.new(@settings) if authenticating?
 
+        closing!
+
         @tcp_connection_established = false
 
         @connections.each { |c| c.on_connection_interruption }
         @disconnection_deferrable.succeed
+
+        closed!
       end # unbind
 
 
@@ -152,6 +156,8 @@ module AMQ
       def open_successful
         @authenticating = false
         @connection_opened_deferrable.succeed
+
+        opened!
       end # open_successful
 
 
@@ -164,6 +170,7 @@ module AMQ
         @disconnection_deferrable.succeed
 
         self.close_connection
+        closed!
       end # disconnection_successful
 
 

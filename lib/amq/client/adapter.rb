@@ -178,6 +178,12 @@ module AMQ
       end # ClassMethods
 
 
+      #
+      # Behaviors
+      #
+
+      include AMQ::Client::StatusMixin
+
 
       #
       # API
@@ -228,6 +234,7 @@ module AMQ
       # @see  #close_connection
       def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
         self.on_disconnection(&block)
+        closing!
         self.connection.close(reply_code, reply_text)
       end
 
