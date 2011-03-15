@@ -146,8 +146,17 @@ module AMQ
       end
 
       def get_next_frame
-        if pos = @chunk_buffer.index(AMQ::Protocol::Frame::FINAL_OCTET)
-          @chunk_buffer.slice!(0, pos + 1)
+        return nil unless @chunk_buffer.size > 7 # otherwise, cannot read the length
+        # octet + short
+        offset = 1 + 2
+        # length
+        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
+        # 4 bytes for long payload length, 1 byte final octet
+        frame_length = offset + 4 + payload_length + 1
+        if frame_length <= @chunk_buffer.size
+          @chunk_buffer.slice!(0, frame_length)
+        else
+          nil
         end
       end
     end
