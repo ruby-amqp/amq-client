@@ -2,9 +2,9 @@
 
 require "socket"
 require "amq/client"
-require "amq/client/amqp/channel"
-require "amq/client/amqp/exchange"
-require "amq/client/amqp/queue"
+require "amq/client/channel"
+require "amq/client/exchange"
+require "amq/client/queue"
 require "amq/client/io/io"
 
 module AMQ

@@ -6,8 +6,8 @@ Bundler.require(:default)
 $LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
 
 require "amq/client/adapters/coolio"
-require "amq/client/amqp/queue"
-require "amq/client/amqp/exchange"
+require "amq/client/queue"
+require "amq/client/exchange"
 
 
 if RUBY_VERSION.to_s =~ /^1.9/

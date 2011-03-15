@@ -3,7 +3,7 @@
 require "amq/client/logging"
 require "amq/client/settings"
 require "amq/client/entity"
-require "amq/client/amqp/connection"
+require "amq/client/connection"
 
 module AMQ
   # For overview of AMQP client adapters API, see {AMQ::Client::Adapter}
@@ -275,7 +275,7 @@ module AMQ
       # given method frame, it's supposed to call this method.
       # It calls handler for method class of the first (method)
       # frame with all the other frames as arguments. Handlers
-      # are defined in amq/client/amqp/* by the handle(klass, &block)
+      # are defined in amq/client/* by the handle(klass, &block)
       # method.
       def receive_frameset(frames)
         frame = frames.first
@@ -349,4 +349,4 @@ module AMQ
   end # Client
 end # AMQ
 
-require "amq/client/amqp/channel"
+require "amq/client/channel"

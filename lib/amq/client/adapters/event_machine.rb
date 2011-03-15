@@ -1,8 +1,8 @@
 # encoding: utf-8
 
 require "amq/client"
-require "amq/client/amqp/channel"
-require "amq/client/amqp/exchange"
+require "amq/client/channel"
+require "amq/client/exchange"
 require "amq/client/io/string"
 
 require "eventmachine"
