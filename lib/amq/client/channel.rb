@@ -36,7 +36,7 @@ module AMQ
 
         reset_state!
 
-        channel_max = client.connection.channel_max
+        channel_max = client.connection.channel_max || 65536
 
         if channel_max != 0 && !(0..channel_max).include?(id)
           raise ChannelOutOfBadError.new(channel_max, id)
