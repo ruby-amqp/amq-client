@@ -16,7 +16,7 @@ describe AMQ::Client::Coolio do
       queue.declare(false, false, false, true)
       queue.bind("amq.fanout")
       queue.consume(true) do |_, consumer_tag|
-        queue.on_delivery do |_, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+        queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
           @received_message = payload
           done
         end
@@ -44,7 +44,7 @@ describe AMQ::Client::EventMachineClient do
       queue.declare(false, false, false, true)
       queue.bind("amq.fanout")
       queue.consume(true) do |_, consumer_tag|
-        queue.on_delivery do |_, header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+        queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
           @received_message = payload
           done
         end
