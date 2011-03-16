@@ -36,6 +36,17 @@ module AMQ
         @channel = channel
       end
 
+      def dup
+        if @name.empty?
+          raise RuntimeError.new("You can't clone anonymous queue until it receives back the name in Queue.Declare-Ok response. Move the code with #dup to the callback for the #declare method.") # TODO: that's not true in all cases, imagine the user didn't call #declare yet.
+        end
+
+        o = super
+        o.reset_consumer_tag!
+        o
+      end
+
+
       # @return [Boolean] true if this queue was declared as durable (will survive broker restart).
       # @api public
       def durable?
@@ -176,6 +187,18 @@ module AMQ
 
         self
       end
+
+      # Resets consumer tag by setting it to nil.
+      # @return [String]  Consumer tag this queue previously used.
+      #
+      # @api plugin
+      def reset_consumer_tag!
+        ct = @consumer_tag.dup
+        @consumer_tag = nil
+
+        ct
+      end
+
 
       #
       # @return [Queue]  self
