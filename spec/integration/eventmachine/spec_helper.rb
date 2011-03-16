@@ -1,6 +1,6 @@
 require "amq/client/adapters/event_machine"
-require "amq/client/amqp/queue"
-require "amq/client/amqp/exchange"
+require "amq/client/queue"
+require "amq/client/exchange"
 require "evented-spec"
 
 def em_amqp_connect(&block)

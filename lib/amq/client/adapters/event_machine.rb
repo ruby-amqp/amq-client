@@ -115,7 +115,7 @@ module AMQ
       #
       def receive_data(chunk)
         @chunk_buffer << chunk
-        while frame = next_frame
+        while frame = get_next_frame
           self.receive_frame(AMQ::Client::Framing::String::Frame.decode(frame))
         end
       end
