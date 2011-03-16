@@ -19,7 +19,11 @@ module AMQ
       # API
       #
 
-      attr_reader :name, :channel
+      # Qeueue name. May be server-generated or assigned directly.
+      attr_reader :name
+
+      # Channel this queue belongs to.
+      attr_reader :channel
 
       # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
       # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.

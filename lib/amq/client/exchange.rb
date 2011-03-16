@@ -21,8 +21,14 @@ module AMQ
       # API
       #
 
+      # Channel this exchange belongs to.
+      attr_reader :channel
 
-      attr_reader :name, :type
+      # Exchange name. May be server-generated or assigned directly.
+      attr_reader :name
+
+      # @return [Symbol] One of :direct, :fanout, :topic, :headers
+      attr_reader :type
 
       def initialize(client, channel, name, type = :fanout)
         unless TYPES.include?(type)
