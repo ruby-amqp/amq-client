@@ -5,7 +5,7 @@
 require "cool.io"
 require "amq/client"
 
-require "amq/client/io/string"
+require "amq/client/framing/string/frame"
 
 module AMQ
   module Client
@@ -103,7 +103,7 @@ module AMQ
       def on_read(chunk)
         @chunk_buffer << chunk
         while frame = get_next_frame
-          receive_frame(AMQ::Client::StringAdapter::Frame.decode(frame))
+          receive_frame(AMQ::Client::Framing::String::Frame.decode(frame))
         end
       end
 

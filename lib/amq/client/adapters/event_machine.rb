@@ -3,7 +3,7 @@
 require "amq/client"
 require "amq/client/channel"
 require "amq/client/exchange"
-require "amq/client/io/string"
+require "amq/client/framing/string/frame"
 
 require "eventmachine"
 
@@ -116,7 +116,7 @@ module AMQ
       def receive_data(chunk)
         @chunk_buffer << chunk
         while frame = next_frame
-          self.receive_frame(AMQ::Client::StringAdapter::Frame.decode(frame))
+          self.receive_frame(AMQ::Client::Framing::String::Frame.decode(frame))
         end
       end
 

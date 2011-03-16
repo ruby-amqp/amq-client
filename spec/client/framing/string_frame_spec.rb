@@ -12,11 +12,11 @@ require "amq/protocol/frame"
 
 # We have to use Kernel#load so extensions to the
 # Logging module from client.rb will be overridden.
-load "amq/client/io/string.rb"
+load "amq/client/framing/string/frame.rb"
 
-describe AMQ::Client::StringAdapter do
+describe AMQ::Client::Framing::String do
   subject do
-    AMQ::Client::StringAdapter::Frame
+    AMQ::Client::Framing::String::Frame
   end
 
   # Created by:

@@ -5,7 +5,7 @@ require "amq/client"
 require "amq/client/channel"
 require "amq/client/exchange"
 require "amq/client/queue"
-require "amq/client/io/io"
+require "amq/client/framing/io/frame"
 
 module AMQ
   module Client
@@ -60,7 +60,7 @@ module AMQ
       end
 
       def receive
-        frame = AMQ::Client::IOAdapter::Frame.decode(@socket)
+        frame = AMQ::Client::Framing::IO::Frame.decode(@socket)
         self.receive_frame(frame)
         frame
       end
