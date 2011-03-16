@@ -3,7 +3,7 @@
 source :rubygems
 
 gem "eventmachine", "0.12.10" #, "1.0.0.beta.3"
-gem "amq-protocol", :path    => "vendor/amq-protocol"
+gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git", :branch => "master"
 
 group :development do
   gem "yard"
