@@ -277,6 +277,7 @@ module AMQ
 
       def handle_declare_ok(method)
         @name = method.queue if self.anonymous?
+        @channel.register_queue(self)
 
         self.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
       end

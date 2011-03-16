@@ -23,6 +23,7 @@ module AMQ
 
       attr_reader :id
 
+      attr_reader :exchanges, :queues
 
       attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
       attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response, :queues_awaiting_recover_ok
@@ -31,11 +32,15 @@ module AMQ
       def initialize(client, id)
         super(client)
 
-        @id                            = id
-        @exchanges                     = Hash.new
+        @id        = id
+        @exchanges = Hash.new
+        @queues    = Hash.new
 
         reset_state!
 
+        # 65536 is here for cases when channel is opened without passing a callback in,
+        # otherwise channel_mix would be nil and it causes a lot of needless headaches. 
+        # lets just have this default. MK.
         channel_max = client.connection.channel_max || 65536
 
         if channel_max != 0 && !(0..channel_max).include?(id)
@@ -167,6 +172,16 @@ module AMQ
 
       def find_exchange(name)
         @exchanges[name]
+      end
+
+      def register_queue(queue)
+        raise ArgumentError, "argument is nil!" if queue.nil?
+
+        @queues[queue.name] = queue
+      end # register_queue(queue)
+
+      def find_queue(name)
+        @queues[name]
       end
 
 
