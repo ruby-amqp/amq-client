@@ -19,7 +19,7 @@ module AMQ
       # API
       #
 
-      attr_reader :name
+      attr_reader :name, :channel
 
       # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
       # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.
@@ -230,7 +230,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
       def acknowledge(delivery_tag)
-        self.channel.acknowledge(delivery_tag)
+        @channel.acknowledge(delivery_tag)
 
         self
       end # acknowledge(delivery_tag)
@@ -241,7 +241,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
-        self.channel.reject(delivery_tag, requeue)
+        @channel.reject(delivery_tag, requeue)
 
         self
       end # reject(delivery_tag, requeue = true)
