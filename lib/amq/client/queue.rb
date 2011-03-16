@@ -78,7 +78,7 @@ module AMQ
         @exclusive   = exclusive
         @auto_delete = auto_delete
 
-        nowait = true unless block
+        nowait = true if !block && !@name.empty?
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         if !nowait
