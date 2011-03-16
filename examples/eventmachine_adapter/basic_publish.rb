@@ -17,6 +17,7 @@ amq_client_example "Publish 100 messages using basic.publish" do |client|
     100.times do
       # exchange.publish("à bientôt!")
       exchange.publish("See you soon!")
+      print "."
     end
 
     $stdout.flush
@@ -29,6 +30,8 @@ amq_client_example "Publish 100 messages using basic.publish" do |client|
       EM.stop
     end
   }
+
+  EM.add_periodic_timer(1, show_stopper)
 
   Signal.trap "INT",  show_stopper
   Signal.trap "TERM", show_stopper
