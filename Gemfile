@@ -20,5 +20,5 @@ end
 group :test do
   gem "rspec", ">=2.0.0"
   gem "autotest"
-  gem "evented-spec", :path => "vendor/evented-spec"
+  gem "evented-spec", :git => "git://github.com/markiz/evented-spec.git", :branch => "master"
 end
