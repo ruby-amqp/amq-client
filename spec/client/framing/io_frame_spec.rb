@@ -1,4 +1,4 @@
-# encoding: utf-8
+# encoding: binary
 
 require "spec_helper"
 require "stringio"
