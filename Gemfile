@@ -17,7 +17,7 @@ group :development do
   gem "contributors",  :platform => :ruby_19
 
   # excludes Windows and JRuby
-  gem "perftools.rb",  :platform => :ruby
+  gem "perftools.rb",  :platform => :mri
 end
 
 group :test do
