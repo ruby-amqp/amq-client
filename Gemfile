@@ -9,16 +9,19 @@ group :development do
   gem "yard"
   # yard tags this buddy along
   gem "RedCloth"
-  gem "cool.io" # , :path => "vendor/cool.io"
+  # cool.io uses iobuffer that won't compile on JRuby
+  # (and, probably, Windows)
+  gem "cool.io",       :platform => :ruby
 
   gem "nake",          :platform => :ruby_19
   gem "contributors",  :platform => :ruby_19
 
-  gem "perftools.rb"
+  # excludes Windows and JRuby
+  gem "perftools.rb",  :platform => :ruby
 end
 
 group :test do
   gem "rspec", ">=2.0.0"
   gem "autotest"
-  gem "evented-spec", :git => "git://github.com/markiz/evented-spec.git", :branch => "master"
+  gem "evented-spec", :git => "git://github.com/ruby-amqp/evented-spec.git", :branch => "master"
 end
