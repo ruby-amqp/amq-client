@@ -23,8 +23,6 @@ module AMQ
 
       attr_reader :id
 
-      attr_reader :exchanges, :queues
-
       attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
       attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response, :queues_awaiting_recover_ok
 
@@ -47,6 +45,17 @@ module AMQ
           raise ChannelOutOfBadError.new(channel_max, id)
         end
       end
+
+      # @return  [Array<Queue>]   Collection of queues that were declared on this channel.
+      def queues
+        @queues.values
+      end
+
+      # @return  [Array<Exchange>]  Collection of exchanges that were declared on this channel.
+      def exchanges
+        @exchanges.values
+      end
+
 
       # AMQP connection this channel belongs to.
       #
