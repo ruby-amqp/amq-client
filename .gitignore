@@ -1,5 +1,6 @@
 /*.gem
 .bundle
+vendor/cache
 vendor/bundle
 .yardoc/*
 doc/*
