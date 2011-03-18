@@ -31,7 +31,7 @@ module AMQ
       attr_reader :type
 
       def initialize(client, channel, name, type = :fanout)
-        unless TYPES.include?(type)
+        unless TYPES.include?(type.to_sym)
           raise IncompatibleExchangeTypeError.new(TYPES, type)
         end
 
