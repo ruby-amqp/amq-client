@@ -23,5 +23,7 @@ amq_client_example "Alter prefetching settings using basic.qos" do |client|
 
     Signal.trap "INT",  show_stopper
     Signal.trap "TERM", show_stopper
+
+    EM.add_timer(1, show_stopper)
   end
 end
