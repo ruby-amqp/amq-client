@@ -6,7 +6,7 @@ require File.expand_path("../lib/amq/client/version", __FILE__)
 
 Gem::Specification.new do |s|
   s.name = "amq-client"
-  s.version = "0.3.0"
+  s.version = AMQ::Client::VERSION.dup
   s.authors = ["Jakub Stastny", "Michael S. Klishin"]
   s.email   = [Base64.decode64("c3Rhc3RueUAxMDFpZGVhcy5jeg==\n"), "michael@novemberain.com"]
   s.homepage = "http://github.com/ruby-amqp/amq-client"
