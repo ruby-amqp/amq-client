@@ -120,6 +120,7 @@ module AMQ
       #
       # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
+      # @api public
       def recover(requeue = true, &block)
         @client.send(Protocol::Basic::Recover.encode(@id, requeue))
 
