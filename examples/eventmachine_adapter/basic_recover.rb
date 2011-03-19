@@ -8,7 +8,7 @@ amq_client_example "Notify broker about consumer recovery using basic.recover" d
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open do
     AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
-      channel.find_queue(q).recover do |_|
+      channel.recover do |_|
         puts "basic.recover callback has fired"
       end
     end

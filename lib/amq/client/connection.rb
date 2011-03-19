@@ -81,7 +81,8 @@ module AMQ
 
       attr_reader :known_hosts
 
-      attr_reader :channels_awaiting_qos_ok, :channels_awaiting_flow_ok, :channels_awaiting_tx_select_ok, :channels_awaiting_tx_commit_ok, :channels_awaiting_tx_rollback_ok
+      attr_reader :channels_awaiting_qos_ok, :channels_awaiting_flow_ok, :channels_awaiting_recover_ok
+      attr_reader :channels_awaiting_tx_select_ok, :channels_awaiting_tx_commit_ok, :channels_awaiting_tx_rollback_ok
 
 
 
@@ -150,6 +151,8 @@ module AMQ
         @channels_awaiting_tx_select_ok   = Array.new
         @channels_awaiting_tx_commit_ok   = Array.new
         @channels_awaiting_tx_rollback_ok = Array.new
+
+        @channels_awaiting_recover_ok     = Array.new
       end # reset_state!
 
 

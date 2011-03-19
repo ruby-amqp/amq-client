@@ -24,7 +24,7 @@ module AMQ
       attr_reader :id
 
       attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
-      attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response, :queues_awaiting_recover_ok
+      attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response
 
 
       def initialize(client, id)
@@ -82,6 +82,7 @@ module AMQ
         self.callbacks[:close] = block
       end
 
+
       # Acknowledge one or all messages on the channel.
       #
       # @api public
@@ -112,6 +113,22 @@ module AMQ
         self.connection.channels_awaiting_qos_ok.push(self)
       end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
+      # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
+      # to be redelivered.
+      #
+      # @return [Queue]  self
+      #
+      # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
+      def recover(requeue = true, &block)
+        @client.send(Protocol::Basic::Recover.encode(@id, requeue))
+
+        self.callbacks[:recover] = block
+        self.connection.channels_awaiting_recover_ok.push(self)
+
+        self
+      end # recover(requeue = false, &block)
+
       # Asks the peer to pause or restart the flow of content data sent to a consumer.
       # This is a simple flow­control mechanism that a peer can use to avoid overflowing its
       # queues or otherwise finding itself receiving more messages than it can process. Note that
@@ -128,6 +145,7 @@ module AMQ
         self.callbacks[:flow] = block
         self.connection.channels_awaiting_flow_ok.push(self)
       end # flow(active = false, &block)
+
 
       # Sets the channel to use standard transactions. One must use this method at least
       # once on a channel before using #tx_tommit or tx_rollback methods.
@@ -210,7 +228,6 @@ module AMQ
         @queues_awaiting_cancel_ok     = Array.new
 
         @queues_awaiting_get_response  = Array.new
-        @queues_awaiting_recover_ok    = Array.new
       end # reset_state!
 
 
@@ -260,6 +277,10 @@ module AMQ
       self.handle Protocol::Basic::QosOk do |client, frame|
         channel  = client.connection.channels_awaiting_qos_ok.shift
         channel.exec_callback(:qos)
+      end
+
+      self.handle(Protocol::Basic::RecoverOk) do |client, frame|
+        client.connection.channels[frame.channel].exec_callback(:recover)
       end
 
       self.handle Protocol::Channel::FlowOk do |client, frame|
