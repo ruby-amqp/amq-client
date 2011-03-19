@@ -1,11 +1,6 @@
 # encoding: utf-8
 
-module AMQ
-  module Client
-    VERSION = "0.2.0".freeze
-  end
-end
-
+require "amq/client/version"
 require "amq/client/exceptions"
 require "amq/client/adapter"
 

@@ -2,10 +2,11 @@
 # encoding: utf-8
 
 require "base64"
+require File.expand_path("../lib/amq/client/version", __FILE__)
 
 Gem::Specification.new do |s|
   s.name = "amq-client"
-  s.version = "0.2.0"
+  s.version = "0.3.0"
   s.authors = ["Jakub Stastny", "Michael S. Klishin"]
   s.email   = [Base64.decode64("c3Rhc3RueUAxMDFpZGVhcy5jeg==\n"), "michael@novemberain.com"]
   s.homepage = "http://github.com/ruby-amqp/amq-client"
