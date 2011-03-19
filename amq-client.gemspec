@@ -7,13 +7,16 @@ Gem::Specification.new do |s|
   s.name = "amq-client"
   s.version = "0.2.0"
   s.authors = ["Jakub Stastny", "Michael S. Klishin"]
-  s.email   = ["michael@novemberain.com"]
+  s.email   = [Base64.decode64("c3Rhc3RueUAxMDFpZGVhcy5jeg==\n"), "michael@novemberain.com"]
   s.homepage = "http://github.com/ruby-amqp/amq-client"
-  s.summary = "Low-level AMQP 0.9.1 client agnostic to the used IO library."
-  s.description = "Very low-level AMQP 0.9.1 client which is supposed to be used for implementing more high-level AMQP libraries rather than to be used by the end users."
+  s.summary = "Low-level AMQP 0.9.1 client"
+  s.description = <<-DESC
+  amq-client supports multiple networking adapters (EventMachine, TCP sockets, cool.io) and
+  supposed to back more opinionated AMQP clients (such as amqp gem, bunny, et cetera) or be used directly
+  in cases when access to more advanced AMQP 0.9.1 features is more important that convenient APIs
+  DESC
   s.cert_chain = nil
-  s.email = Base64.decode64("c3Rhc3RueUAxMDFpZGVhcy5jeg==\n")
-  s.has_rdoc = true
+  s.has_rdoc   = true
 
   # files
   s.files = `git ls-files`.split("\n").reject {|file| file =~ /^vendor\// }
