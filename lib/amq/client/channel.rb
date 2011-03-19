@@ -116,7 +116,7 @@ module AMQ
       # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
       # to be redelivered.
       #
-      # @return [Queue]  self
+      # @return [Channel]  self
       #
       # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
