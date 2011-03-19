@@ -99,6 +99,8 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
         @client.send(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
+
+        self
       end # reject(delivery_tag, requeue = true)
 
       # Requests a specific quality of service. The QoS can be specified for the current channel
@@ -110,7 +112,7 @@ module AMQ
         @client.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
 
         self.callbacks[:qos] = block
-        self.connection.channels_awaiting_qos_ok.push(self)
+        self
       end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
       # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
@@ -125,8 +127,6 @@ module AMQ
         @client.send(Protocol::Basic::Recover.encode(@id, requeue))
 
         self.callbacks[:recover] = block
-        self.connection.channels_awaiting_recover_ok.push(self)
-
         self
       end # recover(requeue = false, &block)
 
@@ -144,7 +144,7 @@ module AMQ
         @client.send Protocol::Channel::Flow.encode(@id, active)
 
         self.callbacks[:flow] = block
-        self.connection.channels_awaiting_flow_ok.push(self)
+        self
       end # flow(active = false, &block)
 
 
@@ -157,6 +157,7 @@ module AMQ
 
         self.callbacks[:tx_select] = block
         self.connection.channels_awaiting_tx_select_ok.push(self)
+        self
       end # tx_select(&block)
 
       # Commits AMQP transaction.
@@ -167,6 +168,7 @@ module AMQ
 
         self.callbacks[:tx_commit] = block
         self.connection.channels_awaiting_tx_commit_ok.push(self)
+        self
       end # tx_commit(&block)
 
       # Rolls AMQP transaction back.
@@ -177,6 +179,7 @@ module AMQ
 
         self.callbacks[:tx_rollback] = block
         self.connection.channels_awaiting_tx_rollback_ok.push(self)
+        self
       end # tx_rollback(&block)
 
       # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
@@ -276,8 +279,7 @@ module AMQ
       end
 
       self.handle Protocol::Basic::QosOk do |client, frame|
-        channel  = client.connection.channels_awaiting_qos_ok.shift
-        channel.exec_callback(:qos)
+        client.connection.channels[frame.channel].exec_callback(:qos)
       end
 
       self.handle(Protocol::Basic::RecoverOk) do |client, frame|
@@ -285,9 +287,10 @@ module AMQ
       end
 
       self.handle Protocol::Channel::FlowOk do |client, frame|
-        channel         = client.connection.channels_awaiting_flow_ok.shift
+        channel         = client.connection.channels[frame.channel]
         flow_activity   = frame.decode_payload.active
         @flow_is_active = flow_activity
+
         channel.exec_callback(:flow, flow_activity)
       end
 
