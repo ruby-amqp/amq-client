@@ -2,7 +2,7 @@
 require 'spec_helper'
 require 'integration/eventmachine/spec_helper'
 
-describe AMQ::Client::EventMachineClient, "Basic.Consume" do
+describe AMQ::Client::EventMachineClient, "Basic.Publish" do
   include EventedSpec::SpecHelper
   default_timeout 2
 

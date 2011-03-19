@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'spec_helper'
 require 'integration/coolio/spec_helper'
 
@@ -5,8 +6,8 @@ describe AMQ::Client::Coolio, "Basic.Consume" do
   include EventedSpec::SpecHelper
   default_timeout 2
 
-  context "sending 100 messages" do
-    let(:messages) { (0..99).map {|i| "Message #{i}" } }
+  context "sending ASCII messages" do
+    let(:messages) { (0..999).map {|i| "Message #{i}" } }
 
     it "should receive all the messages" do
       @received_messages = []
@@ -34,8 +35,8 @@ describe AMQ::Client::Coolio, "Basic.Consume" do
 
   end
 
-  context "sending 1000 messages" do
-    let(:messages) { (0..999).map {|i| "Message #{i}" } }
+  context "sending unicode messages" do
+    let(:messages) { (0..999).map {|i| "à bientôt! #{i}" } }
 
     it "should receive all the messages" do
       @received_messages = []
@@ -47,6 +48,12 @@ describe AMQ::Client::Coolio, "Basic.Consume" do
         queue.bind("amq.fanout")
         queue.consume(true) do |_, consumer_tag|
           queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+            if RUBY_VERSION =~ /1\.9/
+              # We are receiving binary bytestream, thus we cannot force
+              # UTF-8 or any other encoding except ASCII-8BIT, aka BINARY,
+              # by default
+              payload = payload.force_encoding("UTF-8")
+            end
             @received_messages << payload
             done if @received_messages.size == messages.size
           end
