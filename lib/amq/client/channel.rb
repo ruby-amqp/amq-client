@@ -156,7 +156,6 @@ module AMQ
         @client.send Protocol::Tx::Select.encode(@id)
 
         self.callbacks[:tx_select] = block
-        self.connection.channels_awaiting_tx_select_ok.push(self)
         self
       end # tx_select(&block)
 
@@ -167,7 +166,6 @@ module AMQ
         @client.send Protocol::Tx::Commit.encode(@id)
 
         self.callbacks[:tx_commit] = block
-        self.connection.channels_awaiting_tx_commit_ok.push(self)
         self
       end # tx_commit(&block)
 
@@ -178,7 +176,6 @@ module AMQ
         @client.send Protocol::Tx::Rollback.encode(@id)
 
         self.callbacks[:tx_rollback] = block
-        self.connection.channels_awaiting_tx_rollback_ok.push(self)
         self
       end # tx_rollback(&block)
 
@@ -256,9 +253,7 @@ module AMQ
       # === Handlers ===
 
       self.handle(Protocol::Channel::OpenOk) do |client, frame|
-        channels = client.connection.channels
-        channel = channels[frame.channel]
-        channel.handle_open_ok
+        client.connection.channels[frame.channel].handle_open_ok
       end
 
       self.handle(Protocol::Channel::CloseOk) do |client, frame|
@@ -295,18 +290,16 @@ module AMQ
       end
 
       self.handle Protocol::Tx::SelectOk do |client, frame|
-        channel  = client.connection.channels_awaiting_tx_select_ok.shift
-        channel.exec_callback(:tx_select)
+        puts frame.channel.inspect
+        client.connection.channels[frame.channel].exec_callback(:tx_select)
       end
 
       self.handle Protocol::Tx::CommitOk do |client, frame|
-        channel  = client.connection.channels_awaiting_tx_commit_ok.shift
-        channel.exec_callback(:tx_commit)
+        client.connection.channels[frame.channel].exec_callback(:tx_commit)
       end
 
       self.handle Protocol::Tx::RollbackOk do |client, frame|
-        channel  = client.connection.channels_awaiting_tx_rollback_ok.shift
-        channel.exec_callback(:tx_rollback)
+        client.connection.channels[frame.channel].exec_callback(:tx_rollback)
       end
     end # Channel
   end # Client
