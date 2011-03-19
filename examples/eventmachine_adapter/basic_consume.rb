@@ -46,4 +46,6 @@ amq_client_example "Set a queue up for message delivery" do |client|
 
   Signal.trap "INT",  show_stopper
   Signal.trap "TERM", show_stopper
+
+    EM.add_timer(1, show_stopper)
 end

@@ -7,30 +7,28 @@ require File.join(__dir, "example_helper")
 amq_client_example "Set a queue up for message delivery" do |client|
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open do
+    queue = AMQ::Client::Queue.new(client, channel)
+    queue.declare(false, false, false, true)
 
-  end
-
-  queue = AMQ::Client::Queue.new(client, channel)
-  queue.declare(false, false, false, true)
-
-  queue.bind("amq.fanout") do
-    puts "Queue #{queue.name} is now bound to amq.fanout"
-  end
-
-  queue.consume(true) do |consumer_tag|
-    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-      puts "Received #{payload}"
+    queue.bind("amq.fanout") do
+      puts "Queue #{queue.name} is now bound to amq.fanout"
     end
 
-    exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-    100.times do |i|
-      exchange.publish("Message ##{i}")
-    end
+    queue.consume(true) do |consumer_tag|
+      queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+        puts "Received #{payload}"
+      end
 
-
-    queue.cancel do
+      exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
       100.times do |i|
-        exchange.publish("Message ##{i} that MUST NOT have been routed to #{queue.name}")
+        exchange.publish("Message ##{i}")
+      end
+
+
+      queue.cancel do
+        100.times do |i|
+          exchange.publish("Message ##{i} that MUST NOT have been routed to #{queue.name}")
+        end
       end
     end
   end
@@ -46,4 +44,6 @@ amq_client_example "Set a queue up for message delivery" do |client|
 
   Signal.trap "INT",  show_stopper
   Signal.trap "TERM", show_stopper
+
+    EM.add_timer(1, show_stopper)
 end
