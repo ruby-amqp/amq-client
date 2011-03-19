@@ -30,5 +30,7 @@ amq_client_example "Activate or deactivate channel delivery using channel.flow" 
 
     Signal.trap "INT",  show_stopper
     Signal.trap "TERM", show_stopper
+
+    EM.add_timer(1, show_stopper)
   end
 end

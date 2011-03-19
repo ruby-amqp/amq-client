@@ -40,4 +40,6 @@ amq_client_example "Acknowledge a message using basic.ack" do |client|
 
   Signal.trap "INT",  show_stopper
   Signal.trap "TERM", show_stopper
+
+  EM.add_timer(1, show_stopper)
 end

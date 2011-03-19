@@ -45,4 +45,6 @@ amq_client_example "An example that combines several AMQ operations" do |client|
 
   Signal.trap "INT",  show_stopper
   Signal.trap "TERM", show_stopper
+
+  EM.add_timer(1, show_stopper)
 end

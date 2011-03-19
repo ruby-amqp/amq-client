@@ -26,7 +26,7 @@ amq_client_example "Purge a queue and announce how many messages it had" do |cli
     queue.declare(false, false, false, true) do
       puts "Queue #{queue.name.inspect} is now declared!"
 
-      puts "Channel is aware of the following queues: #{channel.queues.keys.join(', ')}"
+      puts "Channel is aware of the following queues: #{channel.queues.map { |q| q.name }.join(', ')}"
 
       client.disconnect { EM.stop }
     end
