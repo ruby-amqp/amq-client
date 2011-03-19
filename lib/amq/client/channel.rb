@@ -33,6 +33,7 @@ module AMQ
         @id        = id
         @exchanges = Hash.new
         @queues    = Hash.new
+        @consumers = Hash.new
 
         reset_state!
 
@@ -45,6 +46,10 @@ module AMQ
           raise ChannelOutOfBadError.new(channel_max, id)
         end
       end
+
+      def consumers
+        @consumers
+      end # consumers
 
       # @return  [Array<Queue>]   Collection of queues that were declared on this channel.
       def queues

@@ -204,10 +204,6 @@ module AMQ
         @frames       = Array.new
       end
 
-      def consumers
-        @consumers ||= Hash.new
-      end # consumers
-
 
 
       # Establish socket connection to the server.

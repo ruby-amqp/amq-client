@@ -179,7 +179,7 @@ module AMQ
         @consumer_tag = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
         @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
-        @client.consumers[@consumer_tag] = self
+        @channel.consumers[@consumer_tag] = self
 
         if !nowait
           self.callbacks[:consume]         = block
@@ -388,8 +388,9 @@ module AMQ
 
       # Basic.Deliver
       self.handle(Protocol::Basic::Deliver) do |client, method_frame, content_frames|
+        channel  = client.connection.channels[method_frame.channel]
         method   = method_frame.decode_payload
-        queue    = client.consumers[method.consumer_tag]
+        queue    = channel.consumers[method.consumer_tag]
 
         header = content_frames.shift
         body   = content_frames.map {|frame| frame.payload }.join
