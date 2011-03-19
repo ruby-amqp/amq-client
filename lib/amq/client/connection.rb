@@ -145,14 +145,13 @@ module AMQ
 
 
       def reset_state!
-        @channels_awaiting_qos_ok    = Array.new
-        @channels_awaiting_flow_ok   = Array.new
+        @channels_awaiting_qos_ok     = Array.new
+        @channels_awaiting_flow_ok    = Array.new
+        @channels_awaiting_recover_ok = Array.new
 
         @channels_awaiting_tx_select_ok   = Array.new
         @channels_awaiting_tx_commit_ok   = Array.new
         @channels_awaiting_tx_rollback_ok = Array.new
-
-        @channels_awaiting_recover_ok     = Array.new
       end # reset_state!
 
 
