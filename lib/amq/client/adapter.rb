@@ -345,7 +345,7 @@ module AMQ
       def content_complete?(frames)
         return false if frames.empty?
         header = frames[0]
-        raise "Not a content header frame first: #{header.inspect}" unless header.kind_of?(AMQ::Protocol::HeadersFrame)
+        raise "Not a content header frame first: #{header.inspect}" unless header.kind_of?(AMQ::Protocol::HeaderFrame)
         header.body_size == frames[1..-1].inject(0) {|sum, frame| sum + frame.payload.size }
       end
 
