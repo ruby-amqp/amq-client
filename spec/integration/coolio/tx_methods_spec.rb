@@ -9,6 +9,7 @@ describe AMQ::Client::Coolio, "Tx.*" do
   context "Tx.Commit" do
     let(:message) { "Hello, world!" }
     it "should confirm transaction completeness" do
+      received_messages = []
       coolio_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
@@ -20,16 +21,17 @@ describe AMQ::Client::Coolio, "Tx.*" do
           end
 
           channel.tx_select do
-            exchange.publish(message)
-            channel.tx_commit do
-              queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
-                payload.should == message
-                done
-              end
+            queue.consume(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+              received_messages << message
+              done
             end
+
+            exchange.publish(message)
+            channel.tx_commit
           end
-       end
+        end
       end
+      received_messages.should == [message]
     end
   end
 
@@ -37,6 +39,7 @@ describe AMQ::Client::Coolio, "Tx.*" do
   context "Tx.Rollback" do
     let(:message) { "Hello, world!" }
     it "should cancel all the changes done during transaction" do
+      received_messages = []
       coolio_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
@@ -48,16 +51,17 @@ describe AMQ::Client::Coolio, "Tx.*" do
           end
 
           channel.tx_select do
-            exchange.publish(message)
-            channel.tx_rollback do
-              queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
-                payload.should == nil
-                done
-              end
+            done(0.1)
+            queue.consume(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+              received_messages << message
             end
+
+            exchange.publish(message)
+            channel.tx_rollback
           end
-       end
+        end
       end
+      received_messages.should == []
     end
   end
 end
