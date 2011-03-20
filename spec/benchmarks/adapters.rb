@@ -4,8 +4,8 @@ $LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
 
 require "amq/client/adapters/coolio"
 require "amq/client/adapters/event_machine"
-require "amq/client/amqp/queue"
-require "amq/client/amqp/exchange"
+require "amq/client/queue"
+require "amq/client/exchange"
 
 TOTAL_MESSAGES = 10000
 # Short messages
