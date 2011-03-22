@@ -45,11 +45,6 @@ module AMQ
 
       def exec_callback_once(name, *args, &block)
         callback = self.callbacks.delete(name)
-        callback.call(self, *args, &block) if callback
-      end
-
-      def exec_callback_once(name, *args, &block)
-        callback = self.callbacks.delete(name)
         callback.call(*args, &block) if callback
       end
 
