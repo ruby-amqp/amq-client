@@ -5,6 +5,8 @@
 # Thanks to this extension, broker sends Basic.Ack when the message
 # is processed by the broker. In case of persistent messages, it must
 # be written to disk or ack'd on all the queues it was delivered to.
+# However it doesn't have to be necessarily 1:1, because the broker
+# can send Basic.Ack with multi flag to acknowledge multiple messages.
 #
 # So it provides clients a lightweight way of keeping track of which
 # messages have been processed by the broker and which would need
