@@ -26,16 +26,16 @@ amq_client_example "Set a queue up for message delivery" do |client|
   sleep 0.1
 
   100.times do |i|
-    queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+    queue.get(true) do |method, header, payload|
       puts "basic.get callback has fired"
       puts
       puts "Payload is #{payload}"
       puts "header is #{header.decode_payload.inspect}"
-      puts "delivery_tag is #{delivery_tag}"
-      puts "redelivered is #{redelivered}"
-      puts "exchange is #{exchange}"
-      puts "routing_key is #{routing_key}"
-      puts "message_count is #{message_count}"
+      puts "delivery_tag is #{method.delivery_tag}"
+      puts "redelivered is #{method.redelivered}"
+      puts "exchange is #{method.exchange}"
+      puts "routing_key is #{method.routing_key}"
+      puts "message_count is #{method.message_count}"
     end
   end
 
