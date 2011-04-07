@@ -31,8 +31,8 @@ module AMQ
       #
 
       def self.connect(settings = nil, &block)
-        settings          = AMQ::Client::Settings.configure(settings)
-        instance          = EM.connect(settings[:host], settings[:port], self, settings)
+        settings = AMQ::Client::Settings.configure(settings)
+        instance = EM.connect(settings[:host], settings[:port], self, settings)
 
         unless block.nil?
           # delay calling block we were given till after we receive
@@ -92,21 +92,18 @@ module AMQ
         @tcp_connection_established
       end # tcp_connection_established?
 
-
       #
       # Implementation
       #
 
       def post_init
-        begin
-          reset
+        reset
 
-          @tcp_connection_established = true
+        @tcp_connection_established = true
 
-          self.handshake
-        rescue Exception => e
-          raise e
-        end
+        self.handshake
+      rescue Exception => error
+        raise error
       end # post_init
 
       #
@@ -200,13 +197,13 @@ module AMQ
       end # encode_credentials(username, password)
 
       def get_next_frame
-        return nil unless @chunk_buffer.size > 7 # otherwise, cannot read the length
+        return unless @chunk_buffer.size > 7 # otherwise, cannot read the length
         # octet + short
-        offset = 1 + 2
+        offset = 3 # 1 + 2
         # length
         payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
-        # 4 bytes for long payload length, 1 byte final octet
-        frame_length = offset + 4 + payload_length + 1
+        # 5: 4 bytes for long payload length, 1 byte final octet
+        frame_length = offset + 5 + payload_length
         if frame_length <= @chunk_buffer.size
           @chunk_buffer.slice!(0, frame_length)
         else
