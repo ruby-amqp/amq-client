@@ -3,6 +3,7 @@
 require "amq/client/entity"
 require "amq/client/adapter"
 require "amq/client/mixins/anonymous_entity"
+require "amq/client/protocol/get_response"
 
 module AMQ
   module Client
@@ -326,11 +327,13 @@ module AMQ
       end # handle_cancel_ok(method)
 
       def handle_get_ok(method, header, payload)
+        method = Protocol::GetResponse.new(method)
         self.exec_callback(:get, method, header, payload)
       end # handle_get_ok(method, header, payload)
 
       def handle_get_empty(method)
-        self.exec_callback(:get)
+        method = Protocol::GetResponse.new(method)
+        self.exec_callback(:get, method)
       end # handle_get_empty(method)
 
 
