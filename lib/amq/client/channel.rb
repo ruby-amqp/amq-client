@@ -38,7 +38,7 @@ module AMQ
         reset_state!
 
         # 65536 is here for cases when channel is opened without passing a callback in,
-        # otherwise channel_mix would be nil and it causes a lot of needless headaches. 
+        # otherwise channel_mix would be nil and it causes a lot of needless headaches.
         # lets just have this default. MK.
         channel_max = client.connection.channel_max || 65536
 
@@ -187,6 +187,8 @@ module AMQ
       # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
       #
       # @api public
+
+      # FIXME: I don't believe this can work, the handler sets @flow_is_active for the class, not for the instance!
       def flow_is_active?
         @flow_is_active
       end # flow_is_active?
@@ -241,16 +243,18 @@ module AMQ
         self.reset_state!
       end # on_connection_interruption
 
-      def handle_open_ok
+      def handle_open_ok(method)
         self.status = :opened
-        self.exec_callback_once(:open)
+        self.exec_callback_once(:open, method)
       end
 
-      def handle_close_ok
+      def handle_close_ok(method)
         self.status = :closed
-        self.exec_callback_once(:close)
+        self.exec_callback_once(:close, method)
       end
 
+      # TODO: it should be something like:
+      # raise AMQ::Protocol::SomeException.new(method.message)
       def handle_close(method)
         raise method.inspect
       end
@@ -258,7 +262,8 @@ module AMQ
       # === Handlers ===
 
       self.handle(Protocol::Channel::OpenOk) do |client, frame|
-        client.connection.channels[frame.channel].handle_open_ok
+        channel = client.connection.channels[frame.channel]
+        channel.handle_open_ok(frame.decode_payload)
       end
 
       self.handle(Protocol::Channel::CloseOk) do |client, frame|
@@ -268,7 +273,7 @@ module AMQ
         channel  = channels[frame.channel]
         channels.delete(channel)
 
-        channel.handle_close_ok
+        channel.handle_close_ok(method)
       end
 
       self.handle(Protocol::Channel::Close) do |client, frame|
@@ -278,33 +283,37 @@ module AMQ
         channel.handle_close(method)
       end
 
-      self.handle Protocol::Basic::QosOk do |client, frame|
-        client.connection.channels[frame.channel].exec_callback(:qos)
+      self.handle(Protocol::Basic::QosOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        channel.exec_callback(:qos, frame.decode_payload)
       end
 
       self.handle(Protocol::Basic::RecoverOk) do |client, frame|
-        client.connection.channels[frame.channel].exec_callback(:recover)
+        channel = client.connection.channels[frame.channel]
+        channel.exec_callback(:recover, frame.decode_payload)
       end
 
-      self.handle Protocol::Channel::FlowOk do |client, frame|
-        channel         = client.connection.channels[frame.channel]
-        flow_activity   = frame.decode_payload.active
-        @flow_is_active = flow_activity
+      self.handle(Protocol::Channel::FlowOk) do |client, frame|
+        channel  = client.connection.channels[frame.channel]
+        method   = frame.decode_payload
+        @flow_is_active = flow_activity # FIXME: this can't work, this is for the class, not for the instance, rework using channel.flow_is_active = method.active or so.
 
-        channel.exec_callback(:flow, flow_activity)
+        channel.exec_callback(:flow, method)
       end
 
-      self.handle Protocol::Tx::SelectOk do |client, frame|
-        puts frame.channel.inspect
-        client.connection.channels[frame.channel].exec_callback(:tx_select)
+      self.handle(Protocol::Tx::SelectOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        channel.exec_callback(:tx_select, frame.decode_payload)
       end
 
-      self.handle Protocol::Tx::CommitOk do |client, frame|
-        client.connection.channels[frame.channel].exec_callback(:tx_commit)
+      self.handle(Protocol::Tx::CommitOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        channel.exec_callback(:tx_commit, frame.decode_payload)
       end
 
-      self.handle Protocol::Tx::RollbackOk do |client, frame|
-        client.connection.channels[frame.channel].exec_callback(:tx_rollback)
+      self.handle(Protocol::Tx::RollbackOk) do |client, frame|
+        channel = client.connection.channels[frame.channel]
+        channel.exec_callback(:tx_rollback, frame.decode_payload)
       end
     end # Channel
   end # Client

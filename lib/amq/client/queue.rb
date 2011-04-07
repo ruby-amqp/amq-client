@@ -293,19 +293,19 @@ module AMQ
         @name = method.queue if self.anonymous?
         @channel.register_queue(self)
 
-        self.exec_callback(:declare, method.queue, method.consumer_count, method.message_count)
+        self.exec_callback(:declare, method)
       end
 
       def handle_delete_ok(method)
-        self.exec_callback(:delete, method.message_count)
+        self.exec_callback(:delete, method)
       end # handle_delete_ok(method)
 
       def handle_consume_ok(method)
-        self.exec_callback(:consume, method.consumer_tag)
+        self.exec_callback(:consume, method)
       end # handle_consume_ok(method)
 
       def handle_purge_ok(method)
-        self.exec_callback(:purge, method.message_count)
+        self.exec_callback(:purge, method)
       end # handle_purge_ok(method)
 
       def handle_bind_ok(method)
@@ -317,16 +317,16 @@ module AMQ
       end # handle_unbind_ok(method)
 
       def handle_delivery(method, header, payload)
-        self.exec_callback(:delivery, header, payload, method.consumer_tag, method.delivery_tag, method.redelivered, method.exchange, method.routing_key)
+        self.exec_callback(:delivery, method, header, payload)
       end # def handle_delivery
 
       def handle_cancel_ok(method)
-        @consumer_tag            = nil
-        self.exec_callback(:cancel, method.consumer_tag)
+        @consumer_tag = nil
+        self.exec_callback(:cancel, method)
       end # handle_cancel_ok(method)
 
       def handle_get_ok(method, header, payload)
-        self.exec_callback(:get, header, payload, method.delivery_tag, method.redelivered, method.exchange, method.routing_key, method.message_count)
+        self.exec_callback(:get, method, header, payload)
       end # handle_get_ok(method, header, payload)
 
       def handle_get_empty(method)
@@ -393,7 +393,7 @@ module AMQ
         queue    = channel.consumers[method.consumer_tag]
 
         header = content_frames.shift
-        body   = content_frames.map {|frame| frame.payload }.join
+        body   = content_frames.map { |frame| frame.payload }.join
         queue.handle_delivery(method, header, body)
         # TODO: ack if necessary
       end

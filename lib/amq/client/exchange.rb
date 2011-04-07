@@ -117,7 +117,7 @@ module AMQ
       end
 
       def handle_delete_ok(method)
-        self.exec_callback_once(:delete)
+        self.exec_callback_once(:delete, method)
       end # handle_delete_ok(method)
 
 
@@ -151,7 +151,7 @@ module AMQ
         method   = frame.decode_payload
         exchange = channel.find_exchange(method.exchange)
 
-        exchange.exec_callback(:return, method.reply_code, method.reply_text, method.exchange, method.routing_key)
+        exchange.exec_callback(:return, method)
       end
 
     end # Exchange
