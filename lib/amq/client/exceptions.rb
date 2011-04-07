@@ -48,6 +48,12 @@ module AMQ
       end
     end
 
+    class ConnectionClosedError < StandardError
+      def initialize(*args)
+        super("Trying to send frames through a closed connection.")
+      end # initialize
+    end # class ConnectionClosedError
+
     module Logging
       # Raised when logger object passed to {AMQ::Client::Adapter.logger=} does not
       # provide API it supposed to provide.
@@ -71,5 +77,6 @@ module AMQ
         super("AMQP broker closed TCP connection before authentication succeeded: this usually means authentication failure due to misconfiguration. Settings are #{settings.inspect}")
       end # initialize(settings)
     end # PossibleAuthenticationFailureError
+
   end # Client
 end # AMQ
