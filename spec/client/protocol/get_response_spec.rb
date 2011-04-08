@@ -12,7 +12,7 @@ require "amq/client/protocol/get_response"
 
 describe AMQ::Protocol::GetResponse do
   describe "when method is GetOk" do
-    before  { p @method = AMQ::Protocol::Basic::GetOk.new("dtag", true, "tasks", "foo", 1) }
+    before  { @method = AMQ::Protocol::Basic::GetOk.new("dtag", true, "tasks", "foo", 1) }
     subject { AMQ::Protocol::GetResponse.new(@method) }
 
     it "should NOT be #empty?" do
