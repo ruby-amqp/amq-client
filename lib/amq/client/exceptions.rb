@@ -49,8 +49,12 @@ module AMQ
     end
 
     class ConnectionClosedError < StandardError
-      def initialize(*args)
-        super("Trying to send frames through a closed connection.")
+      def initialize(frame)
+        if frame.respond_to?(:method_class)
+          super("Trying to send frame through a closed connection. Frame is #{frame.inspect}")
+        else
+          super("Trying to send frame through a closed connection. Frame is #{frame.inspect}, method class is #{frame.method_class}")
+        end
       end # initialize
     end # class ConnectionClosedError
 
