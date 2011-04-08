@@ -298,7 +298,7 @@ module AMQ
         method   = frame.decode_payload
 
         channel.flow_is_active = method.active
-        channel.exec_callback(:flow, method.active)
+        channel.exec_callback(:flow, method)
       end
 
       self.handle(Protocol::Tx::SelectOk) do |client, frame|
