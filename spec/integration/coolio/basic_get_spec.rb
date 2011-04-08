@@ -25,7 +25,7 @@ describe AMQ::Client::Coolio, "Basic.Get" do
         end
         sleep(0.1)
         messages.size.times do
-          queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+          queue.get(true) do |method, header, payload|
             @received_messages << payload
             done if @received_messages.size == messages.size
           end
@@ -50,12 +50,12 @@ describe AMQ::Client::Coolio, "Basic.Get" do
 
         @counter = 0
         10.times do
-          queue.get(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+          queue.get(true) do |method, header, payload|
             @counter += 1
             done if @counter == 10
             header.should be_nil
             payload.should be_nil
-            delivery_tag.should be_nil
+            method.delivery_tag.should be_nil
           end
         end
 

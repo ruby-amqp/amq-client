@@ -5,7 +5,9 @@ require 'integration/coolio/spec_helper'
 describe AMQ::Client::Coolio, "Tx.Rollback" do
   include EventedSpec::SpecHelper
   default_timeout 2
+
   let(:message) { "Hello, world!" }
+
   it "should cancel all the changes done during transaction" do
     received_messages = []
     coolio_amqp_connect do |client|
@@ -20,7 +22,7 @@ describe AMQ::Client::Coolio, "Tx.Rollback" do
 
         channel.tx_select do
           done(0.1)
-          queue.consume(true) do |header, payload, delivery_tag, redelivered, exchange, routing_key, message_count|
+          queue.consume(true) do |method, header, message|
             received_messages << message
           end
 
@@ -29,6 +31,7 @@ describe AMQ::Client::Coolio, "Tx.Rollback" do
         end
       end
     end
+
     received_messages.should == []
   end
 end
