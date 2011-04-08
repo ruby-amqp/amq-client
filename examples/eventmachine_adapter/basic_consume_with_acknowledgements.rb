@@ -18,10 +18,10 @@ amq_client_example "Acknowledge a message using basic.ack" do |client|
   end
 
   queue.consume do |consumer_tag|
-    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-      puts "Got a delivery: #{payload} (delivery tag: #{delivery_tag}), ack-ing..."
+    queue.on_delivery do |method, header, payload|
+      puts "Got a delivery: #{payload} (delivery tag: #{method.delivery_tag}), ack-ing..."
 
-      queue.acknowledge(delivery_tag)
+      queue.acknowledge(method.delivery_tag)
     end
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
