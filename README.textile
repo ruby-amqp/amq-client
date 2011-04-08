@@ -6,7 +6,6 @@ It can be used directly by applications code when performance and access to
 advanced AMQP protocol features is more important that API convenience.
 
 h2(#amqp_gems_family). How amq-client does relate to amqp gem, amq-protocol and libraries like bunny?
-<div id=""></div>
 
 <pre>
 |--------------|      |-----------------------|      |----------------------|
