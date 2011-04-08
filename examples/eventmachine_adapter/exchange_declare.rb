@@ -23,7 +23,7 @@ amq_client_example "Declare a new fanout exchange" do |client|
 
     exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
     exchange.declare do
-      puts "Channel is aware of the following exchanges: #{channel.exchanges.keys.join(', ')}"
+      puts "Channel is aware of the following exchanges: #{channel.exchanges.map { |e| e.name }.join(', ')}"
     end
 
     show_stopper = Proc.new {
