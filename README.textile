@@ -1,109 +1,60 @@
-h1. About
+h2. About amq-client
 
-Very low-level AMQP 0.9.1 client which is supposed to be used for implementing more high-level AMQP libraries rather than to be used by the end users.
+amq-client is a fully-featured, low-level AMQP 0.9.1 client. It's sweet spot is
+in serving as foundation for higher-level, more opinionated AMQP libraries.
+It can be used directly by applications code when performance and access to
+advanced AMQP protocol features is more important that API convenience.
 
-h2. The Overall AMQP Gems Architecture
+h2. How amq-client does relate to amqp gem, amq-protocol and libraries like bunny?
 
 <pre>
-|--------------|      |-----------------------|      |-------------------|
-| AMQ-Protocol |      | AMQ-Client            |      | AMQP gem & others |
-|  - Encoding  | ===> |  - IO abstraction     | ===> |  - high-level API |
-|  - Decoding  |      |  - Low-level AMQP API |      |  - opinionated    |
-|  - Framing   |      |-----------------------|      |-------------------|
+|--------------|      |-----------------------|      |----------------------|
+| AMQ-Protocol |      | AMQ-Client            |      | AMQP gem, bunny, etc |
+|  - Encoding  | ===> |  - IO abstraction     | ===> |  - high-level API    |
+|  - Decoding  |      |  - Low-level AMQP API |      |  - opinionated       |
+|  - Framing   |      |-----------------------|      |----------------------|
 |--------------|
+
 </pre>
 
-So the most low-level part is the "AMQ-Protocol gem":http://github.com/ruby-amqp/amq-protocol. Its only job is to take care about encoding, decoding and framing. Reasons for having it as a standalone gem is that it'll be easy to replace the current implementation by a different one which can be a rewrite for another AMQP version or just an optimised version written in C.
+ * At the lowest level, "AMQ-Protocol gem":http://github.com/ruby-amqp/amq-protocol takes care of encoding, decoding and framing.
+ * One level above is "AMQ-Client gem":http://github.com/ruby-amqp/amq-client that takes care of network I/O, provides uniform interface for
+various I/O libraries like "EventMachine":http://rubyeventmachine.com/, "cool.io":http://coolio.github.com/ or good old TCP sockets and implements
+AMQP protocol entities (queues, exchanges, channels and so on) with emphasis on access to every feature available over API convenience or
+conciseness.
+ * Finally, end applications use 
 
-The next piece in the puzzle is "AMQ-Client gem":http://github.com/ruby-amqp/amq-client which takes care about low-level API and IO abstraction, so it provides uniform interface for both sockets as well as for asynchronous libraries such as EventMachine and Cool.io.
+h2. Adapters
 
-The important thing about AMQ-Client is that it shouldn't do any assumptions, it should just implement AMQP API in Ruby. The only exception is the AMQP @Basic@ class which is just a bunch of methods, so I put them to the class where it makes sense to have them, so the API seems more logical and significantly easier to use.
+Version 1.0 will feature 3 adapters:
 
-On top of the AMQ-Client there can be implemented various opinionated clients which can make usage of AMQP easier. Implementing of a good AMQP abstraction isn't easy, so creating another clients should be encouraged. Typical stuff which should be taken care about on this layer: reconnecting, caching of queues / exchanges, behind-scene channel creation, simplified API, RPC ...
+ * EventMachine (asynchronous)
+ * cool.io (asynchronous)
+ * TCP sockets (synchronous)
 
-h2. AMQ-Client API
+h2. Installation
 
-h3. Adapters
+If you use Bundler and want to use the very latest version, add this to your Gemfile:
 
 <pre>
-require "amq/client/adapters/socket"
-
-AMQ::Client::SocketClient.connect(:host => "localhost") do |client|
-  # ...
-end
+gem 'amq-client', :git => 'https://github.com/ruby-amqp/amq-client.git'
 </pre>
 
-h3. Settings
-
-h4. Available Options
-
-* *host* (defaults to @"127.0.0.1"@)
-* *port* (defaults to @AMQ::Protocol::DEFAULT_PORT@)
-* *user* (defaults to "guest")
-* *pass* (defaults to "guest")
-* *vhost* (default to @"/"@)
-* *timeout* (defaults to @nil@)
-* *logging* (defaults to @false@)
-* *ssl* (defaults to @false@)
-* *broker* if you want to load broker-specific extensions (defaults to @nil@)
-
-h4. Usage
-
-<pre>
-AMQ::Client::SocketClient.connect
-AMQ::Client::SocketClient.connect(:port => 5672)
-AMQ::Client::SocketClient.connect("amqp://")
-</pre>
-
-h3. Logging
-
-<pre>
-require "logger"
-
-AMQ::Client.logging = true
-AMQ::Client.logger  = MyLogger.new(STDERR)
-</pre>
-
-If @AMQ::Client.logging@ is true but the @AMQ::Client.logger@ isn't initialized, it will require @logger@ library from the Ruby stdlib and assign an instance of this logger to @AMQ::Client.logger@.
-
-If you want to be able to log messages just from specified classes or even instances, just make the instance respond to @#logging@ and set it to desired value.
-
-h3. AMQP API
-
-<pre>
-AMQ::Client::SocketClient.connect do |client|
-  client.queue("", 1)
-end
-</pre>
-
-h1. Installation
-
-Install by @gem install amq-client@.
 
 h2. Nightly Builds
 
-You can always find nightly builds at "gems.101ideas.cz":http://gems.101ideas.cz. You can install them thusly:
+You can always find nightly builds at "gems.101ideas.cz":http://gems.101ideas.cz.
+You can install them thusly:
 
 <pre>
 wget http://gems.101ideas.cz/amq-client-nightly.gem
 gem install amq-client-nightly.gem
 </pre>
 
-If you use Bundler and want to use the very latest version, add this to your Gemfile:
+h2. See also
 
-gem 'amq-client', :git => 'https://github.com/ruby-amqp/amq-client.git'
-
-
-h2. Git Repository
-
-<pre>
-git clone git://github.com/ruby-amqp/amq-client.git
-</pre>
-
-h1. Links
-
-* "RDoc.info API Docs":http://rdoc.info/github/ruby-amqp/amq-client/master/frames
+* "API documentation":http://rdoc.info/github/ruby-amqp/amq-client/master/frames
 * "Examples":https://github.com/ruby-amqp/amq-client/tree/master/examples/
 * "Ruby AMQP mailing list":http://groups.google.com/group/ruby-amqp
-* "Bug reporting":http://github.com/ruby-amqp/amq-client/issues
-* "Jenkins CI Server":http://jenkins.101ideas.cz/job/AMQ%20Client
+* "Issue tracker":http://github.com/ruby-amqp/amq-client/issues
+* "Continous integration server":http://jenkins.101ideas.cz/job/AMQ%20Client
