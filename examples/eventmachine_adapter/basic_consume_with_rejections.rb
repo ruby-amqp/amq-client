@@ -18,10 +18,10 @@ amq_client_example "Reject a message using basic.reject" do |client|
   end
 
   queue.consume do |consumer_tag|
-    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-      puts "Got a delivery: #{payload} (delivery tag: #{delivery_tag}), rejecting..."
+    queue.on_delivery do |method, header, payload|
+      puts "Got a delivery: #{payload} (delivery tag: #{method.delivery_tag}), rejecting..."
 
-      queue.reject(delivery_tag, false)
+      queue.reject(method.delivery_tag, false)
     end
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
