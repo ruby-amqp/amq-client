@@ -10,7 +10,7 @@ module AMQ
       end
 
       def empty?
-        @method.is_a?(AMQ::Protocol::GetEmpty)
+        @method.is_a?(::AMQ::Protocol::Basic::GetEmpty)
       end
 
       # GetOk attributes
