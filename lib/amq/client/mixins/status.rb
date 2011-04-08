@@ -23,6 +23,7 @@ module AMQ
       def opened?
         @status == :opened
       end
+      alias open? opened?
 
       def closed?
         @status == :closed
