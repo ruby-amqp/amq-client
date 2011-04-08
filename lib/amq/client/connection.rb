@@ -214,6 +214,7 @@ module AMQ
       end # on_connection_interruption
 
 
+
       #
       # Handlers
       #

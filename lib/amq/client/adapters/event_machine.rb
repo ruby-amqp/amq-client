@@ -57,6 +57,7 @@ module AMQ
         # make it easier to use *args. MK.
         @settings                 = args.first
         @connections              = Array.new
+        @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
 
         @chunk_buffer             = ""
         @connection_deferrable    = Deferrable.new
@@ -118,12 +119,6 @@ module AMQ
       end
 
       def unbind
-        # since AMQP spec dictates that authentication failure is a protocol exception
-        # and protocol exceptions result in connection closure, check whether we are
-        # in the authentication stage. If so, it is likely to signal an authentication
-        # issue. Java client behaves the same way. MK.
-        raise PossibleAuthenticationFailureError.new(@settings) if authenticating?
-
         closing!
 
         @tcp_connection_established = false
@@ -132,6 +127,18 @@ module AMQ
         @disconnection_deferrable.succeed
 
         closed!
+
+        # since AMQP spec dictates that authentication failure is a protocol exception
+        # and protocol exceptions result in connection closure, check whether we are
+        # in the authentication stage. If so, it is likely to signal an authentication
+        # issue. Java client behaves the same way. MK.
+        if authenticating?
+          if sync?
+            raise PossibleAuthenticationFailureError.new(@settings)
+          else
+            @on_possible_authentication_failure.call(@settings) if @on_possible_authentication_failure
+          end
+        end
       end # unbind
 
 
@@ -169,6 +176,12 @@ module AMQ
         self.close_connection
         closed!
       end # disconnection_successful
+
+
+
+      def on_possible_authentication_failure(&block)
+        @on_possible_authentication_failure = block
+      end
 
 
       protected
