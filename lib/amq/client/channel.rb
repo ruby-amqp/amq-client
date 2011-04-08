@@ -26,6 +26,8 @@ module AMQ
       attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
       attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response
 
+      attr_accessor :flow_is_active
+
 
       def initialize(client, id)
         super(client)
@@ -187,8 +189,6 @@ module AMQ
       # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
       #
       # @api public
-
-      # FIXME: I don't believe this can work, the handler sets @flow_is_active for the class, not for the instance!
       def flow_is_active?
         @flow_is_active
       end # flow_is_active?
@@ -296,9 +296,9 @@ module AMQ
       self.handle(Protocol::Channel::FlowOk) do |client, frame|
         channel  = client.connection.channels[frame.channel]
         method   = frame.decode_payload
-        @flow_is_active = flow_activity # FIXME: this can't work, this is for the class, not for the instance, rework using channel.flow_is_active = method.active or so.
 
-        channel.exec_callback(:flow, method)
+        channel.flow_is_active = method.active
+        channel.exec_callback(:flow, method.active)
       end
 
       self.handle(Protocol::Tx::SelectOk) do |client, frame|
