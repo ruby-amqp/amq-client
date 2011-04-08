@@ -19,13 +19,13 @@ amq_client_example "Set a queue up for message delivery" do |client|
     puts "Queue #{queue.name} is now bound to amq.fanout"
   end
 
-  queue.consume(true) do |consumer_tag|
-    puts "Subscribed for messages routed to #{queue.name}, consumer tag is #{consumer_tag}, using no-ack mode"
+  queue.consume(true) do |method|
+    puts "Subscribed for messages routed to #{queue.name}, consumer tag is #{method.consumer_tag}, using no-ack mode"
     puts
 
-    queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+    queue.on_delivery do |method, header, payload|
       puts "Got a delivery:"
-      puts "    Delivery tag: #{delivery_tag}"
+      puts "    Delivery tag: #{method.delivery_tag}"
       puts "    Header:  #{header.inspect}"
       puts "    Payload: #{payload.inspect}"
     end
