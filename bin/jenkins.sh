@@ -8,7 +8,7 @@ echo -e "\n\n==== Ruby 1.9.2 Head ===="
 rvm use 1.9.2-head@ruby-amqp
 gem install bundler --no-ri --no-rdoc
 bundle install --path vendor/bundle/1.9.2 --without development; echo
-bundle update; echo
+bundle update amq-protocol evented-spec; echo
 bundle exec rspec spec
 return_status=$?
 
