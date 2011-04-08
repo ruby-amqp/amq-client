@@ -15,7 +15,7 @@ amq_client_example "Set a queue up for message delivery" do |client|
     end
 
     queue.consume(true) do |consumer_tag|
-      queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+      queue.on_delivery do |method, header, payload|
         puts "Received #{payload}"
       end
 
