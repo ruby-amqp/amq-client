@@ -23,7 +23,7 @@ describe AMQ::Client::Coolio, "Tx.Rollback" do
         channel.tx_select do
           done(0.1)
           queue.consume(true) do |method, header, message|
-            received_messages << message
+            received_messages << message unless message.nil?
           end
 
           exchange.publish(message)
