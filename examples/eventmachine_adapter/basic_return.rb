@@ -4,14 +4,14 @@
 __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "example_helper")
 
-amq_client_example "Set a queue up for message delivery" do |client|
+amq_client_example "basic.return example" do |client|
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open do
     queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-    exchange.on_return do |reply_code, reply_text, exchange_name, routing_key|
-      puts "Handling a returned messages: reply_code=#{reply_code}, reply_text=#{reply_text}"
+    exchange.on_return do |method|
+      puts "Handling a returned message: exchange = #{method.exchange}, reply_code = #{method.reply_code}, reply_text = #{method.reply_text}"
     end
 
     10.times do |i|
