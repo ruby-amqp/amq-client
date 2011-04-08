@@ -55,6 +55,7 @@ h2. See also
 
 * "API documentation":http://rdoc.info/github/ruby-amqp/amq-client/master/frames
 * "Examples":https://github.com/ruby-amqp/amq-client/tree/master/examples/
+* "Jabber room for contributors":xmpp://amqp-dev@conf.netlab.cz
 * "Ruby AMQP mailing list":http://groups.google.com/group/ruby-amqp
 * "Issue tracker":http://github.com/ruby-amqp/amq-client/issues
 * "Continous integration server":http://jenkins.101ideas.cz/job/AMQ%20Client
