@@ -239,7 +239,7 @@ module AMQ
       end # reset_state!
 
 
-      def on_connection_interruption
+      def on_connection_interruption(exception = nil)
         self.reset_state!
       end # on_connection_interruption
 
@@ -253,10 +253,9 @@ module AMQ
         self.exec_callback_once_yielding_self(:close, method)
       end
 
-      # TODO: it should be something like:
-      # raise AMQ::Protocol::SomeException.new(method.message)
-      def handle_close(method)
-        raise method.inspect
+      def handle_close(method, exception = nil)
+        self.status            = :closed
+        self.on_connection_interruption(exception)
       end
 
       # === Handlers ===
@@ -277,10 +276,21 @@ module AMQ
       end
 
       self.handle(Protocol::Channel::Close) do |client, frame|
-        method   = frame.decode_payload
+        exception = nil
+
+        begin
+          method   = frame.decode_payload
+        rescue AMQ::Protocol::Error => e
+          exception = e
+        end
         channels = client.connection.channels
         channel  = channels[frame.channel]
-        channel.handle_close(method)
+
+        if exception
+          channel.handle_close(method, exception)
+        else
+          channel.handle_close(method)
+        end
       end
 
       self.handle(Protocol::Basic::QosOk) do |client, frame|
