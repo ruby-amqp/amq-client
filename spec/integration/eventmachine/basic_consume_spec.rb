@@ -18,7 +18,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Consume" do
         queue.declare(false, false, false, true)
         queue.bind("amq.fanout")
         queue.consume(true) do |_, consumer_tag|
-          queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+          queue.on_delivery do |method, header, payload|
             @received_messages << payload
             done if @received_messages.size == messages.size
           end
@@ -47,7 +47,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Consume" do
         queue.declare(false, false, false, true)
         queue.bind("amq.fanout")
         queue.consume(true) do |_, consumer_tag|
-          queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
+          queue.on_delivery do |method, header, payload|
             if RUBY_VERSION =~ /1\.9/
               # We are receiving binary bytestream, thus we cannot force
               # UTF-8 or any other encoding except ASCII-8BIT, aka BINARY,

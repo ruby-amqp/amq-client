@@ -7,6 +7,7 @@ describe AMQ::Client::EventMachineClient, "Tx.Rollback" do
   default_timeout 2
   let(:message) { "Hello, world!" }
   it "should cancel all the changes done during transaction" do
+    pending("Need to figure out details with AMQP protocol on that matter")
     received_messages = []
     em_amqp_connect do |client|
       channel = AMQ::Client::Channel.new(client, 1)

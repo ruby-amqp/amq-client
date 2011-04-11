@@ -20,8 +20,8 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
         queue.bind("amq.fanout")
 
         queue.consume do |_, consumer_tag|
-          queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-            queue.acknowledge(delivery_tag)
+          queue.on_delivery do |method, header, payload|
+            queue.acknowledge(method.delivery_tag)
             @received_messages << payload
             done if @received_messages.size == messages.size
           end
@@ -53,8 +53,8 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
         queue.bind("amq.fanout")
 
         queue.consume do |_, consumer_tag|
-          queue.on_delivery do |header, payload, consumer_tag, delivery_tag, redelivered, exchange, routing_key|
-            queue.acknowledge(delivery_tag)
+          queue.on_delivery do |method, header, payload|
+            queue.acknowledge(method.delivery_tag)
             @received_messages << payload
             done if @received_messages.size == messages.size
           end

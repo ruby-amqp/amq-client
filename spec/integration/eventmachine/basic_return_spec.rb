@@ -16,8 +16,8 @@ describe AMQ::Client::EventMachineClient, "Basic.Return" do
           queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
           exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare
-          exchange.on_return do |reply_code, reply_text, exchange_name, routing_key|
-            @returned_messages << reply_text
+          exchange.on_return do |method|
+            @returned_messages << method.reply_text
             done if @returned_messages.size == messages.size
           end
 
