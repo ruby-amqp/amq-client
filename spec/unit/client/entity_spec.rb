@@ -13,32 +13,37 @@ describe AMQ::Client::Entity do
   end
 
   describe "#exec_callback" do
-    it "should call given callback" do
-      subject.callbacks[:init] = begin
-        Proc.new do |*args, &block|
-          @called = true
+    it "executes callback for given event" do
+      proc = Proc.new { |*args, &block|
+        @called = true
+      }
+
+      expect {
+        subject.define_callback(:init, proc)
+        subject.define_callback :init do
+          @called2 = true
         end
-      end
+      }.to change(subject.callbacks, :size).from(0).to(1)
+
+      subject.callbacks[:init].size.should == 2
 
       subject.exec_callback(:init)
+
       @called.should be_true
+      @called2.should be_true
     end
 
 
     it "should pass arguments to the callback" do
-      subject.callbacks[:init] = begin
-        Proc.new { |*args| args }
-      end
+      subject.define_callback :init, Proc.new { |*args| args.first }
 
       subject.exec_callback(:init, 1).should eql([1])
     end
 
     it "should pass block to the callback" do
-      subject.callbacks[:init] = begin
-        Proc.new { |*args, &block| block.call }
-      end
+      subject.define_callback :init, Proc.new { |*args, &block| block.call }
 
-      subject.exec_callback(:init) { "block" }.should eql("block")
+      subject.exec_callback(:init) { "block" }.should == ["block"]
     end
   end
 end

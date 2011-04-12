@@ -3,71 +3,36 @@ require 'integration/coolio/spec_helper'
 
 describe AMQ::Client::Coolio, "Basic.Ack" do
   include EventedSpec::SpecHelper
-  default_timeout 4
+  default_timeout 1
 
   context "sending 100 messages" do
     let(:messages) { (0..99).map {|i| "Message #{i}" } }
 
-    it "should receive all the messages" do
+    it "should receive & acknowledge all the messages" do
       @received_messages = []
       coolio_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
-        channel.open {  }
+        channel.open do
+          queue = AMQ::Client::Queue.new(client, channel)
+          queue.declare.bind("amq.fanout")
 
-        queue = AMQ::Client::Queue.new(client, channel)
-        queue.declare
+          queue.consume do |_, consumer_tag|
+            queue.on_delivery do |method, header, payload|
+              queue.acknowledge(method.delivery_tag)
+              @received_messages << payload
+            end
 
-        queue.bind("amq.fanout")
+            exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
+            messages.each do |message|
+              exchange.publish(message)
+            end
+          end # consume
+        end # open
 
-        queue.consume do |_, consumer_tag|
-          queue.on_delivery do |method, header, payload|
-            queue.acknowledge(method.delivery_tag)
-            @received_messages << payload
-            done if @received_messages.size == messages.size
-          end
-
-          exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-          messages.each do |message|
-            exchange.publish(message)
-          end
-        end
-      end
-
-      @received_messages.should =~ messages
-    end
-
-  end
-
-  context "sending 500 messages" do
-    let(:messages) { (0..499).map {|i| "Message #{i}" } }
-
-    it "should receive all the messages" do
-      @received_messages = []
-      coolio_amqp_connect do |client|
-        channel = AMQ::Client::Channel.new(client, 1)
-        channel.open {  }
-
-        queue = AMQ::Client::Queue.new(client, channel)
-        queue.declare
-
-        queue.bind("amq.fanout")
-
-        queue.consume do |_, consumer_tag|
-          queue.on_delivery do |method, header, payload|
-            queue.acknowledge(method.delivery_tag)
-            @received_messages << payload
-            done if @received_messages.size == messages.size
-          end
-
-          exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-          messages.each do |message|
-            exchange.publish(message)
-          end
-        end
-      end
-
-      @received_messages.should =~ messages
-    end
-
-  end
-end
+        done(0.5) {
+          @received_messages.size == messages.size
+        }
+      end # coolio_amqp_connect
+    end # it
+  end # context
+end # describe

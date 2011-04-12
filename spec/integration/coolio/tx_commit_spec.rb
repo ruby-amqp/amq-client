@@ -6,6 +6,12 @@ describe AMQ::Client::Coolio, "Tx.Commit" do
   include EventedSpec::SpecHelper
   default_timeout 2
   let(:message) { "Hello, world!" }
+
+
+  #
+  # Examples
+  #
+
   it "should confirm transaction completeness" do
     received_messages = []
     coolio_amqp_connect do |client|

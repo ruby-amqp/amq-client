@@ -8,6 +8,13 @@ describe AMQ::Client::Coolio, "Tx.Rollback" do
 
   let(:message) { "Hello, world!" }
 
+
+
+  #
+  # Examples
+  #
+
+
   it "should cancel all the changes done during transaction" do
     received_messages = []
     coolio_amqp_connect do |client|

@@ -3,9 +3,21 @@ require 'spec_helper'
 require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Tx.Commit" do
+
+  #
+  # Environment
+  #
+
   include EventedSpec::SpecHelper
   default_timeout 2
+
   let(:message) { "Hello, world!" }
+
+
+  #
+  # Examples
+  #
+
   it "should confirm transaction completeness" do
     received_messages = []
     em_amqp_connect do |client|
@@ -27,8 +39,9 @@ describe AMQ::Client::EventMachineClient, "Tx.Commit" do
           exchange.publish(message)
           channel.tx_commit
         end
-      end
+      end # em_amqp_connect
+
     end
     received_messages.should == [message]
-  end
-end
+  end # it
+end # describe

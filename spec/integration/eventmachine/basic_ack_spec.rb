@@ -12,62 +12,29 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
       @received_messages = []
       em_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
-        channel.open {  }
+        channel.open do
+          queue = AMQ::Client::Queue.new(client, channel)
+          queue.declare
 
-        queue = AMQ::Client::Queue.new(client, channel)
-        queue.declare
+          queue.bind("amq.fanout")
 
-        queue.bind("amq.fanout")
+          queue.consume do |amq_method|
+            queue.on_delivery do |method, header, payload|
+              queue.acknowledge(method.delivery_tag)
+              @received_messages << payload
+            end
 
-        queue.consume do |_, consumer_tag|
-          queue.on_delivery do |method, header, payload|
-            queue.acknowledge(method.delivery_tag)
-            @received_messages << payload
-            done if @received_messages.size == messages.size
+            exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
+            messages.each do |message|
+              exchange.publish(message)
+            end
           end
 
-          exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-          messages.each do |message|
-            exchange.publish(message)
-          end
+          done(2.5) {
+            @received_messages.size == messages.size
+          }
         end
       end
-
-      @received_messages.should =~ messages
     end
-
-  end
-
-  context "sending 500 messages" do
-    let(:messages) { (0..499).map {|i| "Message #{i}" } }
-
-    it "should receive all the messages" do
-      @received_messages = []
-      em_amqp_connect do |client|
-        channel = AMQ::Client::Channel.new(client, 1)
-        channel.open {  }
-
-        queue = AMQ::Client::Queue.new(client, channel)
-        queue.declare
-
-        queue.bind("amq.fanout")
-
-        queue.consume do |_, consumer_tag|
-          queue.on_delivery do |method, header, payload|
-            queue.acknowledge(method.delivery_tag)
-            @received_messages << payload
-            done if @received_messages.size == messages.size
-          end
-
-          exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-          messages.each do |message|
-            exchange.publish(message)
-          end
-        end
-      end
-
-      @received_messages.should =~ messages
-    end
-
   end
 end

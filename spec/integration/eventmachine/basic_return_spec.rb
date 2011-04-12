@@ -3,7 +3,7 @@ require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Basic.Return" do
   include EventedSpec::SpecHelper
-  default_timeout 2
+  default_timeout 1
 
   context "when messages are sent to a direct exchange not bound to a queue" do
     let(:messages) { (0..99).map {|i| "Message #{i}" } }
@@ -15,16 +15,18 @@ describe AMQ::Client::EventMachineClient, "Basic.Return" do
         channel.open do
           queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
-          exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare
-          exchange.on_return do |method|
+          exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare.on_return do |method|
             @returned_messages << method.reply_text
-            done if @returned_messages.size == messages.size
           end
 
           messages.each do |message|
             exchange.publish(message, AMQ::Protocol::EMPTY_STRING, {}, false, true)
           end
         end
+
+        done(0.5) {
+          @returned_messages.size == messages.size
+        }
       end
 
       @returned_messages.should == ["NO_CONSUMERS"] * messages.size

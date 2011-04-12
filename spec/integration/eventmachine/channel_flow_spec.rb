@@ -1,46 +1,32 @@
 require 'spec_helper'
 require 'integration/eventmachine/spec_helper'
 
-describe AMQ::Client::EventMachineClient, "Channel.Flow" do
+describe AMQ::Client::EventMachineClient, "Channel#flow" do
   include EventedSpec::SpecHelper
   default_timeout 1
 
-  it "should control the flow of channel" do
+  it "controls channel flow state" do
     em_amqp_connect do |client|
+      flow_states = []
+
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open do
-        AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
+        AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |amq_method|
           channel.flow_is_active?.should be_true
-          channel.flow(false) do |_, flow_active|
-            flow_active.should be_false
-            channel.flow(true) do |_, flow_active|
-              flow_active.should be_true
-            end
-          end
-          done
-        end
-      end
-    end
-  end
 
+          channel.flow(false) do |flow_status1|
+            channel.flow_is_active?.should be_false
+            flow_states << channel.flow_is_active?
 
-  it "should not raise errors when no state change occurs" do
-    em_amqp_connect do |client|
-      channel = AMQ::Client::Channel.new(client, 1)
-      expect {
-        channel.open do
-          AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
-            channel.flow_is_active?.should be_true
-            channel.flow(false) do |_, flow_active|
-              flow_active.should be_false
-              channel.flow(false) do |_, flow_active|
-                flow_active.should be_false
-              end
-            end
-            done
-          end
-        end
-      }.to_not raise_error
-    end
-  end
-end
+            channel.flow(true) do |flow_status2|
+              channel.flow_is_active?.should be_true
+              flow_states << channel.flow_is_active?
+            end # channel.flow
+          end # channel.flow
+        end # Queue.new
+      end # channel.open
+
+      done(0.5) { flow_states.should == [false, true] }
+    end # em_amqp_connect
+  end # it
+end # describe
