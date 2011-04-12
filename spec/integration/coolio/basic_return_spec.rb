@@ -3,10 +3,10 @@ require 'integration/coolio/spec_helper'
 
 describe AMQ::Client::Coolio, "Basic.Return" do
   include EventedSpec::SpecHelper
-  default_timeout 1
+  default_timeout 1.0
 
   context "when messages are sent to a direct exchange not bound to a queue" do
-    let(:messages) { (0..99).map {|i| "Message #{i}" } }
+    let(:messages) { (0..9).map {|i| "Message #{i}" } }
 
     it "should return all the messages" do
       @returned_messages = []
@@ -24,7 +24,7 @@ describe AMQ::Client::Coolio, "Basic.Return" do
           end
         end
 
-        done(0.5) { @returned_messages.size == messages.size }
+        done(0.6) { @returned_messages.size == messages.size }
       end
 
       @returned_messages.should == ["NO_CONSUMERS"] * messages.size

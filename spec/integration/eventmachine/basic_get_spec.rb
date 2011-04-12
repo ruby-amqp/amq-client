@@ -3,7 +3,7 @@ require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Basic.Get" do
   include EventedSpec::SpecHelper
-  default_timeout 2
+  default_timeout 1
 
   context "when set two messages beforehand" do
     let(:messages) { ["message 1", "message 2"] }
@@ -24,16 +24,17 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
                 puts "Published a message: #{message}"
               end
             end
-            sleep(0.5)
 
             queue.get(true) do |method, header, payload|
+              puts "Got #{payload}"              
               @received_messages << payload
             end
             queue.get(true) do |method, header, payload|
+              puts "Got #{payload}"              
               @received_messages << payload
             end
 
-            done(0.3) {
+            done(0.6) {
               @received_messages.should =~ messages
 
               queue.purge
