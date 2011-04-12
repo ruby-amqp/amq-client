@@ -233,7 +233,7 @@ module AMQ
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
 
         if !nowait
-          self.append_callback(:consume, &block)
+          self.redefine_callback(:consume, &block)
 
           @channel.queues_awaiting_cancel_ok.push(self)
         else
@@ -253,7 +253,7 @@ module AMQ
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         if !nowait
-          self.append_callback(:purge, &block)
+          self.redefine_callback(:purge, &block)
           # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_purge_ok.push(self)
         end
