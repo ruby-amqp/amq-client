@@ -5,7 +5,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
   include EventedSpec::SpecHelper
   default_timeout 2
 
-  context "with two messages in the queue" do
+  context "when set two messages beforehand" do
     let(:messages) { ["message 1", "message 2"] }
 
     it "synchronously fetches all the messages" do
@@ -16,40 +16,33 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
         channel.open do
           queue = AMQ::Client::Queue.new(client, channel)
           queue.declare(false, false, false, true) do
-            queue.bind("amq.fanout") do
-              puts "Bound!"
+            queue.bind("amq.fanout")
+            exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
 
-              exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-
-              messages.each do |message|
-                exchange.publish(message) do
-                  puts "Published a message: #{message}"
-                end
+            messages.each do |message|
+              exchange.publish(message) do
+                puts "Published a message: #{message}"
               end
-
-              queue.get(true) do |method, header, payload|
-                puts "Got #{payload}"
-                @received_messages << payload
-              end
-              queue.get(true) do |method, header, payload|
-                puts "Got #{payload}"                
-                @received_messages << payload
-              end
-
-              queue.purge {
-                puts "Purged the queue"
-              }
             end
+            sleep(0.5)
+
+            queue.get(true) do |method, header, payload|
+              @received_messages << payload
+            end
+            queue.get(true) do |method, header, payload|
+              @received_messages << payload
+            end
+
+            done(0.3) {
+              @received_messages.should =~ messages
+
+              queue.purge
+            }
           end
         end
-
-
-        done(1.0) {
-          @received_messages.should =~ messages
-        }
-      end # em_amqp_connect
-    end # it
-  end # context
+      end
+    end
+  end
 
 
   context "when sent no messages beforehand" do
@@ -66,10 +59,12 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
           queue.get(true) do |method, header, payload|
             header.should be_nil
             payload.should be_nil
+
+            done {
+              queue.purge
+            }
           end # get
         end
-
-        done(0.8)
       end # em_amqp_connect
     end # it
 

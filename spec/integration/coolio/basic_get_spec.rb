@@ -17,7 +17,6 @@ describe AMQ::Client::Coolio, "Basic.Get" do
           queue = AMQ::Client::Queue.new(client, channel)
           queue.declare(false, false, false, true) do
             queue.bind("amq.fanout")
-
             exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
 
             messages.each do |message|
