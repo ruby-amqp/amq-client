@@ -58,7 +58,7 @@ module AMQ
       attr_accessor :callbacks
       attr_accessor :connections
 
-      class <<self
+      class << self
         def connect(settings, &block)
           settings        = self.settings.merge(settings)
           host, port      = settings[:host], settings[:port]
