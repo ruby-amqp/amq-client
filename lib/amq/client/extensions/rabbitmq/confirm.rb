@@ -126,7 +126,7 @@ module AMQ
             end
 
             @confirmations = true
-            self.callbacks[:confirmations] = block if block
+            self.define_callback(:confirmations, &block) if block
             @client.send Protocol::Confirm::Select.encode(@id, nowait)
 
             self
@@ -156,7 +156,8 @@ module AMQ
           # @see AMQ::Client::Extensions::RabbitMQ::Change#confirmations
           def confirm(nowait = false, &block)
             self.confirmations unless @confirmations
-            self.callbacks[:ack] = block if block
+
+            self.define_callback(:ack, &block) if block
 
             self
           end
@@ -177,7 +178,7 @@ module AMQ
           #
           # @return
           def confirm_failed(&block)
-            self.callbacks[:nack] = block if block
+            self.define_callback(:nack, &block) if block
           end
 
           # Handler for Basic.Nack. By default, it just

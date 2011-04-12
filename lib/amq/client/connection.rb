@@ -108,9 +108,7 @@ module AMQ
         # crash your program. It's the expected behaviour
         # if it's a synchronous one, but not if you use
         # some kind of event loop like EventMachine etc.
-        self.callbacks[:close] = Proc.new do |exception|
-          raise exception
-        end
+        self.define_callback(:close) { |exception| raise(exception) }
       end
 
 

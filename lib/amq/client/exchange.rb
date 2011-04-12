@@ -67,7 +67,7 @@ module AMQ
         @client.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
         unless nowait
-          self.callbacks[:declare] = block
+          self.define_callback(:declare, &block)
           @channel.exchanges_awaiting_declare_ok.push(self)
         end
 
@@ -84,7 +84,7 @@ module AMQ
         @client.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
 
         unless nowait
-          self.callbacks[:delete] = block
+          self.define_callback(:delete, &block)
 
           # TODO: delete itself from exchanges cache
           @channel.exchanges_awaiting_delete_ok.push(self)
@@ -94,16 +94,20 @@ module AMQ
       end # delete(if_unused = false, nowait = false)
 
 
-      def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = {}, mandatory = false, immediate = false, frame_size = nil)
+      def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = {}, mandatory = false, immediate = false, frame_size = nil, &block)
         headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }.merge(user_headers)
         @client.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @client.connection.frame_max)))
+
+        block.call if block
 
         self
       end
 
 
       def on_return(&block)
-        self.callbacks[:return] = block if block
+        self.redefine_callback(:return, &block)
+
+        self
       end # on_return(&block)
 
 

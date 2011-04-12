@@ -20,22 +20,25 @@ amq_client_example "Set a queue up for message delivery" do |client|
   end
 
   exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-  100.times do |i|
+  30.times do |i|
+    puts "Publishing message ##{i}"
     exchange.publish("Message ##{i}")
   end
   sleep 0.1
 
-  100.times do |i|
+  30.times do |i|
     queue.get(true) do |method, header, payload|
       puts "basic.get callback has fired"
       puts
-      puts "Payload is #{payload}"
-      puts "header is #{header.decode_payload.inspect}"
-      puts "delivery_tag is #{method.delivery_tag}"
-      puts "redelivered is #{method.redelivered}"
-      puts "exchange is #{method.exchange}"
-      puts "routing_key is #{method.routing_key}"
-      puts "message_count is #{method.message_count}"
+      puts " => Payload is #{payload}"
+      puts " => header is #{header.decode_payload.inspect}"
+      puts " => delivery_tag is #{method.delivery_tag}"
+      puts " => redelivered is #{method.redelivered}"
+      puts " => exchange is #{method.exchange}"
+      puts " => routing_key is #{method.routing_key}"
+      puts " => message_count is #{method.message_count}"
+      puts
+      puts
     end
   end
 

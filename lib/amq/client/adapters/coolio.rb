@@ -72,40 +72,42 @@ module AMQ
       end
 
       def initialize
-        @callbacks = {}
+        # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
+        # won't assign anything to :key. MK.
+        @callbacks   = {}
         @connections = []
         super
       end
 
       # sets a callback for connection
       def on_connection(&block)
-        @callbacks[:connect] = block
+        define_callback :connect, &block
       end
 
       # sets a callback for disconnection
       def on_disconnection(&block)
-        @callbacks[:disconnect] = block
+        define_callback :disconnect, &block
       end
 
       def on_open(&block)
-        @callbacks[:open] = block
+        define_callback :open, &block
       end # on_open(&block)
 
 
       # called by AMQ::Client::Connection after we receive connection.open-ok.
       def connection_successful
-        @callbacks[:connect].call(self) if @callbacks[:connect]
+        exec_callback_yielding_self(:connect)
       end
 
       # called by AMQ::Client::Connection after we receive connection.close-ok.
       def disconnection_successful
-        @callbacks[:disconnect].call(self) if @callbacks[:disconnect]
+        exec_callback_yielding_self(:disconnect)
         close_connection
       end
 
       def open_successful
         @authenticating = false
-        @callbacks[:open].call(self) if @callbacks[:open]
+        exec_callback_yielding_self(:open)
       end # open_successful
 
 
@@ -135,7 +137,62 @@ module AMQ
         @socket.close
       end
 
+
+
+      #
+      # Callbacks
+      #
+
+      def redefine_callback(event, callable = nil, &block)
+        f = (callable || block)
+        # yes, re-assign!
+        @callbacks[event] = [f]
+
+        self
+      end
+
+      def define_callback(event, callable = nil, &block)
+        f = (callable || block)
+        @callbacks[event] ||= []
+
+        @callbacks[event] << f if f
+
+        self
+      end # define_callback(event, &block)
+      alias append_callback define_callback
+
+      def prepend_callback(event, &block)
+        @callbacks[event] ||= []
+        @callbacks[event].unshift(block)
+
+        self
+      end # prepend_callback(event, &block)
+
+
+      def exec_callback(name, *args, &block)
+        callbacks = Array(self.callbacks[name])
+        callbacks.map { |c| c.call(*args, &block) } if callbacks.any?
+      end
+
+      def exec_callback_once(name, *args, &block)
+        callbacks = Array(self.callbacks.delete(name))
+        callbacks.map { |c| c.call(*args, &block) } if callbacks.any?
+      end
+
+      def exec_callback_yielding_self(name, *args, &block)
+        callbacks = Array(self.callbacks[name])
+        callbacks.map { |c| c.call(self, *args, &block) } if callbacks.any?
+      end
+
+      def exec_callback_once_yielding_self(name, *args, &block)
+        callbacks = Array(self.callbacks.delete(name))
+        callbacks.map { |c| c.call(self, *args, &block) } if callbacks.any?
+      end
+
+
+
       protected
+
       def post_init
         reset
         handshake

@@ -78,7 +78,8 @@ module AMQ
         @client.send Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING)
         @client.connection.channels[@id] = self
         self.status = :opening
-        self.callbacks[:open] = block
+
+        self.define_callback :open, &block
       end
 
       # Closes AMQP channel.
@@ -86,7 +87,8 @@ module AMQ
       # @api public
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
         @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
-        self.callbacks[:close] = block
+
+        self.define_callback :close, &block
       end
 
 
@@ -118,7 +120,7 @@ module AMQ
       def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
         @client.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
 
-        self.callbacks[:qos] = block
+        self.redefine_callback :qos, &block
         self
       end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
@@ -133,7 +135,7 @@ module AMQ
       def recover(requeue = true, &block)
         @client.send(Protocol::Basic::Recover.encode(@id, requeue))
 
-        self.callbacks[:recover] = block
+        self.redefine_callback :recover, &block
         self
       end # recover(requeue = false, &block)
 
@@ -150,7 +152,7 @@ module AMQ
       def flow(active = false, &block)
         @client.send Protocol::Channel::Flow.encode(@id, active)
 
-        self.callbacks[:flow] = block
+        self.redefine_callback :flow, &block
         self
       end # flow(active = false, &block)
 
@@ -162,7 +164,7 @@ module AMQ
       def tx_select(&block)
         @client.send Protocol::Tx::Select.encode(@id)
 
-        self.callbacks[:tx_select] = block
+        self.redefine_callback :tx_select, &block
         self
       end # tx_select(&block)
 
@@ -172,7 +174,7 @@ module AMQ
       def tx_commit(&block)
         @client.send Protocol::Tx::Commit.encode(@id)
 
-        self.callbacks[:tx_commit] = block
+        self.redefine_callback :tx_commit, &block
         self
       end # tx_commit(&block)
 
@@ -182,7 +184,7 @@ module AMQ
       def tx_rollback(&block)
         @client.send Protocol::Tx::Rollback.encode(@id)
 
-        self.callbacks[:tx_rollback] = block
+        self.redefine_callback :tx_rollback, &block
         self
       end # tx_rollback(&block)
 

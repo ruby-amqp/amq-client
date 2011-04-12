@@ -85,7 +85,7 @@ module AMQ
         @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         if !nowait
-          self.callbacks[:declare] = block
+          self.append_callback(:declare, &block)
           @channel.queues_awaiting_declare_ok.push(self)
         end
 
@@ -110,7 +110,7 @@ module AMQ
         @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
 
         if !nowait
-          self.callbacks[:delete] = block
+          self.append_callback(:delete, &block)
 
           # TODO: delete itself from queues cache
           @channel.queues_awaiting_delete_ok.push(self)
@@ -136,7 +136,7 @@ module AMQ
         @client.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
 
         if !nowait
-          self.callbacks[:bind] = block
+          self.append_callback(:bind, &block)
 
           # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_bind_ok.push(self)
@@ -160,7 +160,7 @@ module AMQ
 
         @client.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
 
-        self.callbacks[:unbind] = block
+        self.append_callback(:unbind, &block)
         # TODO: handle channel & connection-level exceptions
         @channel.queues_awaiting_unbind_ok.push(self)
 
@@ -183,7 +183,9 @@ module AMQ
         @channel.consumers[@consumer_tag] = self
 
         if !nowait
-          self.callbacks[:consume]         = block
+          # unlike #get, here it is reasonable to expect more than one callback
+          # so we use #append_callback
+          self.append_callback(:consume, &block)
 
           @channel.queues_awaiting_consume_ok.push(self)
         end
@@ -211,7 +213,12 @@ module AMQ
       def get(no_ack = false, &block)
         @client.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
 
-        self.callbacks[:get] = block
+        # most people only want one callback per #get call. Consider the following example:
+        #
+        # 100.times { queue.get { ... } }
+        #
+        # most likely you won't expect 100 callback runs per messages here. MK.
+        self.redefine_callback(:get, &block)
         @channel.queues_awaiting_get_response.push(self)
 
         self
@@ -226,7 +233,7 @@ module AMQ
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
 
         if !nowait
-          self.callbacks[:consume] = block
+          self.append_callback(:consume, &block)
 
           @channel.queues_awaiting_cancel_ok.push(self)
         else
@@ -246,7 +253,7 @@ module AMQ
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         if !nowait
-          self.callbacks[:purge] = block
+          self.append_callback(:purge, &block)
           # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_purge_ok.push(self)
         end
@@ -281,7 +288,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.8.3.9)
       def on_delivery(&block)
-        self.callbacks[:delivery] = block if block
+        self.append_callback(:delivery, &block)
       end # on_delivery(&block)
 
 
@@ -418,7 +425,7 @@ module AMQ
         header  = content_frames.shift
         body    = content_frames.map {|frame| frame.payload }.join
 
-        queue.handle_get_ok(method, header, body)
+        queue.handle_get_ok(method, header, body) if queue
       end
 
 
