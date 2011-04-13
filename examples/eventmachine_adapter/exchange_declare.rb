@@ -21,12 +21,9 @@ amq_client_example "Declare a new fanout exchange" do |client|
     exchange2 = AMQ::Client::Exchange.new(client, channel, exchange_name + "-2", :fanout)
     exchange2.declare
 
-    exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
-    exchange.declare do
+    AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare do |exchange, declare_ok|
       puts "Channel is aware of the following exchanges: #{channel.exchanges.map { |e| e.name }.join(', ')}"
-    end
 
-    show_stopper = Proc.new {
       exchange.delete do
         puts "Exchange #{exchange.name} was successfully deleted"
         exchange2.delete do
@@ -39,11 +36,19 @@ amq_client_example "Declare a new fanout exchange" do |client|
           end
         end
       end
+    end
+
+    show_stopper = Proc.new {
+      client.disconnect do
+        puts
+        puts "AMQP connection is now properly closed"
+        EM.stop
+      end
     }
 
     Signal.trap "INT",  show_stopper
     Signal.trap "TERM", show_stopper
 
-    EM.add_timer(1, show_stopper)
+    EM.add_timer(2, show_stopper)
   end
 end

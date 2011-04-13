@@ -117,7 +117,7 @@ module AMQ
         @name = method.exchange if self.anonymous?
         @channel.register_exchange(self)
 
-        self.exec_callback_once(:declare, method)
+        self.exec_callback_once_yielding_self(:declare, method)
       end
 
       def handle_delete_ok(method)

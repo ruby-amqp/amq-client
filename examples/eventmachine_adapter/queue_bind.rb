@@ -10,22 +10,22 @@ amq_client_example "Bind a new queue to amq.fanout" do |client|
     puts "Channel #{channel.id} is now open!"
   end
 
-  queue = AMQ::Client::Queue.new(client, channel, "amqclient.queue2")
-  queue.declare do
+  AMQ::Client::Queue.new(client, channel, "amqclient.queue2").declare do |queue, declare_ok|
+    puts queue.class.name
     puts "Queue #{queue.name.inspect} is now declared!"
-  end
 
-  queue.bind("amq.fanout") do
-    puts "Queue #{queue.name} is now bound to amq.fanout"
-    puts
-    puts "Deleting queue #{queue.name}"
-    queue.delete do |message_count|
-      puts "Deleted."
+    queue.bind("amq.fanout") do
+      puts "Queue #{queue.name} is now bound to amq.fanout"
       puts
-      client.disconnect do
+      puts "Deleting queue #{queue.name}"
+      queue.delete do |message_count|
+        puts "Deleted."
         puts
-        puts "AMQP connection is now properly closed"
-        EM.stop
+        client.disconnect do
+          puts
+          puts "AMQP connection is now properly closed"
+          EM.stop
+        end
       end
     end
   end
