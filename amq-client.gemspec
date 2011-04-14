@@ -23,6 +23,9 @@ Gem::Specification.new do |s|
   s.files = `git ls-files`.split("\n").reject { |file| file =~ /^vendor\// }
   s.require_paths = ["lib"]
 
+  # Dependencies
+  s.add_dependency "amq-protocol"
+
   begin
     require "changelog"
   rescue LoadError
