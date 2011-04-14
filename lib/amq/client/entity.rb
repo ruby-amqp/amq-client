@@ -71,6 +71,10 @@ module AMQ
         self
       end # prepend_callback(event, &block)
 
+      def clear_callbacks(event)
+        @callbacks[event].clear
+      end # clear_callbacks(event)
+
 
       def exec_callback(name, *args, &block)
         callbacks = Array(self.callbacks[name])

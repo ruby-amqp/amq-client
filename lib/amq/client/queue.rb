@@ -177,7 +177,7 @@ module AMQ
         raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
         nowait        = true unless block
-        @consumer_tag = "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        @consumer_tag = generate_consumer_tag(name)
         @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @channel.consumers[@consumer_tag] = self
@@ -191,6 +191,14 @@ module AMQ
         end
 
         self
+      end
+
+      # Unique string supposed to be used as a consumer tag.
+      #
+      # @return [String]  Unique string.
+      # @api plugin
+      def generate_consumer_tag(name)
+        "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
       end
 
       # Resets consumer tag by setting it to nil.
@@ -331,7 +339,7 @@ module AMQ
 
       def handle_delivery(method, header, payload)
         self.exec_callback(:delivery, method, header, payload)
-      end # def handle_delivery
+      end # handle_delivery
 
       def handle_cancel_ok(method)
         @consumer_tag = nil
