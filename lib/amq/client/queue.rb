@@ -241,16 +241,12 @@ module AMQ
         raise "This instance isn't being consumed!" if @consumer_tag.nil?
 
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
+        @consumer_tag = nil
+        self.clear_callbacks(:delivery)
 
         if !nowait
-          self.redefine_callback(:consume) do
-            @consumer_tag = nil
-            block.call if block
-          end
-
+          self.redefine_callback(:consume, &block)
           @channel.queues_awaiting_cancel_ok.push(self)
-        else
-          @consumer_tag = nil
         end
 
         self
