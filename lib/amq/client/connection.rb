@@ -178,13 +178,13 @@ module AMQ
       # Handles connection.tune-ok
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
-      def handle_tune_ok(method)
+      def handle_tune(method)
         @channel_max        = method.channel_max
         @frame_max          = method.frame_max
         @heartbeat_interval = @client.heartbeat_interval || method.heartbeat
 
         @client.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
-      end # handle_tune_ok(method)
+      end # handle_tune(method)
 
 
       # Handles connection.close
@@ -222,10 +222,10 @@ module AMQ
       end
 
       self.handle(Protocol::Connection::Tune) do |client, frame|
-        client.connection.handle_tune_ok(frame.decode_payload)
+        client.connection.handle_tune(frame.decode_payload)
 
-        client.open_successful
         client.connection.open(client.settings[:vhost] || "/")
+        client.open_successful
       end
 
       self.handle(Protocol::Connection::OpenOk) do |client, frame|
