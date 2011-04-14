@@ -72,7 +72,7 @@ module AMQ
       end # prepend_callback(event, &block)
 
       def clear_callbacks(event)
-        @callbacks[event].clear
+        @callbacks[event].clear if @callbacks[event]
       end # clear_callbacks(event)
 
 
