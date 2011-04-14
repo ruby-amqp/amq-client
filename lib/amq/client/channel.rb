@@ -256,7 +256,7 @@ module AMQ
       end
 
       def handle_close(method, exception = nil)
-        self.status            = :closed
+        self.status = :closed
         self.on_connection_interruption(exception)
       end
 
