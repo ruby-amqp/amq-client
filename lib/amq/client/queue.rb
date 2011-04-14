@@ -235,7 +235,10 @@ module AMQ
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
 
         if !nowait
-          self.redefine_callback(:consume, &block)
+          self.redefine_callback(:consume) do
+            @consumer_tag = nil
+            block.call if block
+          end
 
           @channel.queues_awaiting_cancel_ok.push(self)
         else
