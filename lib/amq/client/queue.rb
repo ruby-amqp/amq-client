@@ -245,7 +245,7 @@ module AMQ
         self.clear_callbacks(:delivery)
 
         if !nowait
-          self.redefine_callback(:consume, &block)
+          self.redefine_callback(:cancel, &block)
           @channel.queues_awaiting_cancel_ok.push(self)
         end
 
