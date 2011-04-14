@@ -258,7 +258,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.7.)
       def purge(nowait = false, &block)
-        nowait        = true unless block
+        nowait = true unless block
         @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         if !nowait
