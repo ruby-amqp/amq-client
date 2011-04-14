@@ -230,6 +230,8 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.5.)
       def cancel(nowait = false, &block)
+        raise "This instance isn't being consumed!" if @consumer_tag.nil?
+
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
 
         if !nowait
@@ -237,7 +239,7 @@ module AMQ
 
           @channel.queues_awaiting_cancel_ok.push(self)
         else
-          @consumer_tag            = nil
+          @consumer_tag = nil
         end
 
         self
