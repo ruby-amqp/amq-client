@@ -30,7 +30,7 @@ describe AMQ::Client::Coolio, "Basic.Ack" do
         end # open
 
         done(0.5) {
-          @received_messages.size == messages.size
+          @received_messages.size.should == messages.size
         }
       end # coolio_amqp_connect
     end # it
