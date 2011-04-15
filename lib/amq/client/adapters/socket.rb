@@ -36,8 +36,8 @@ module AMQ
 
         @socket.connect(sockaddr)
       rescue Errno::ECONNREFUSED => exception
-        exception.message = "Don't forget to start an AMQP broker first!\nThe original message: #{exception.message}"
-        raise exception
+        message = "Don't forget to start an AMQP broker first!\nThe original message: #{exception.message}"
+        raise exception.class.new(message)
       rescue Exception => exception
         self.disconnect if self.connected?
         raise exception
