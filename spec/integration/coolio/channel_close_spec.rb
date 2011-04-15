@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'integration/coolio/spec_helper'
 
-describe AMQ::Client::Coolio, "Channel.Close" do
+describe "AMQ::Client::Coolio", "Channel.Close", :nojruby => true do
   include EventedSpec::SpecHelper
   default_timeout 1
 

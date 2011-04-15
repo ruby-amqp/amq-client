@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'integration/coolio/spec_helper'
 require 'integration/eventmachine/spec_helper'
 
-describe AMQ::Client::Coolio do
+describe "AMQ::Client::Coolio", :nojruby => true do
   include EventedSpec::SpecHelper
   default_timeout 1
 

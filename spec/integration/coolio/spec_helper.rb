@@ -1,4 +1,13 @@
-require "amq/client/adapters/coolio"
+begin
+  require "amq/client/adapters/coolio"
+rescue LoadError => e
+  if RUBY_PLATFORM =~ /java/
+    puts "WARNING: Cool.io specs will not run on jruby"
+  else
+    # reraise, cause unknown
+    raise e
+  end
+end
 require "amq/client/queue"
 require "amq/client/exchange"
 require "evented-spec"
