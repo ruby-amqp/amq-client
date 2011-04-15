@@ -1,4 +1,4 @@
-script: "bundle exec rspec spec"
+script: "rake spec"
 rvm:
   - 1.8.7
   - 1.9.2
