@@ -32,7 +32,7 @@ describe "AMQ::Client::Coolio", "Basic.Ack", :nojruby => true do
           end # consume
         end # open
 
-        done(0.5) {
+        done(0.8) {
           @received_messages.size.should == messages.size
         }
       end # coolio_amqp_connect
