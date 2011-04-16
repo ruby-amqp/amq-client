@@ -28,12 +28,6 @@ Gem::Specification.new do |s|
   s.add_dependency "eventmachine", ">= 0.12.4"
   s.add_dependency "amq-protocol"
 
-  begin
-    require "changelog"
-    s.post_install_message = CHANGELOG.new.version_changes
-  rescue LoadError
-    # warn "You have to have changelog gem installed for post install message"
-  end
 
   # RubyForge
   s.rubyforge_project = "amq-client"
