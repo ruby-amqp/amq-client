@@ -16,6 +16,7 @@ describe "AMQ::Client::Coolio", "Tx.Rollback", :nojruby => true do
 
 
   it "should cancel all the changes done during transaction" do
+    pending("Need to figure out details with AMQP protocol on that matter")
     received_messages = []
     coolio_amqp_connect do |client|
       channel = AMQ::Client::Channel.new(client, 1)
