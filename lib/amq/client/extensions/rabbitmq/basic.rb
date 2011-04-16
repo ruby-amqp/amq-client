@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require "amq/client/amqp/channel"
+require "amq/client/channel"
 
 # Basic.Nack
 module AMQ
