@@ -41,177 +41,214 @@
 # http://www.rabbitmq.com/amqp-0-9-1-quickref.html#class.confirm
 # http://www.rabbitmq.com/amqp-0-9-1-reference.html#basic.ack
 
+puts "in confirm.rb"
+
 module AMQ
   module Client
     module Extensions
       module RabbitMQ
-        class Exchange < ::AMQ::Client::Exchange
-          # Publish message and then run #after_publish on channel belonging
-          # to the exchange. This is used for incrementing the publisher index.
-          #
-          # @api public
-          # @see AMQ::Client::Exchange#publish
-          # @see AMQ::Client::Extensions::RabbitMQ::Channel#publisher_index
-          # @return [AMQ::Client::Extensions::RabbitMQ::Exchange] Current exchange instance.
-          def publish(*args)
-            super(*args)
-            @channel.after_publish(*args)
-            self
-          end
-        end
+        module Confirm
+          module ChannelMixin
+            # Boolean value expressing whether confirmations are
+            # on or off, aka whether Confirm.Select was sent or not.
+            #
+            # @api public
+            # @return [Boolean] Whether confirmations are on or off.
+            attr_reader :confirmations
 
-        # @example
-        #   ch = Channel.new(client, 1)
-        #
-        #   ch.confirm do |method|
-        #     puts "Message #{method.delivery_tag} was processed by the broker."
-        #   end
-        class Channel < ::AMQ::Client::Channel
-          # Boolean value expressing whether confirmations are
-          # on or off, aka whether Confirm.Select was sent or not.
-          #
-          # @api public
-          # @return [Boolean] Whether confirmations are on or off.
-          attr_reader :confirmations
+            # Change publisher index. Publisher index is incremented
+            # by 1 after each Basic.Publish starting at 1. This is done
+            # on both client and server, hence this acknowledged messages
+            # can be matched via its delivery-tag.
+            #
+            # @api private
+            attr_writer :publisher_index
 
-          # Change publisher index. Publisher index is incremented
-          # by 1 after each Basic.Publish starting at 1. This is done
-          # on both client and server, hence this acknowledged messages
-          # can be matched via its delivery-tag.
-          #
-          # @api private
-          attr_writer :publisher_index
-
-          # Publisher index is an index of the last message since
-          # the confirmations were activated, started with 1. It's
-          # incremented by 1 after each Basic.Publish starting at 1.
-          # This is done on both client and server, hence this
-          # acknowledged messages can be matched via its delivery-tag.
-          #
-          # @return [Integer] Current publisher index.
-          # @api public
-          def publisher_index
-            @publisher_index ||= 1
-          end
-
-          # This hook is executed after each RabbitMQ::Exchange#publish.
-          # It takes all the arguments as RabbitMQ::Exchange#publish does,
-          # so you can easily implement matching messages with their indexes.
-          # By default, it just increments publisher index by 1, so messages
-          # can be actually matched.
-          #
-          # @api plugin
-          # @see AMQ::Client::Extensions::RabbitMQ::Exchange#publish
-          def after_publish(*)
-            self.publisher_index += 1
-          end
-
-          # Turn on confirmations for this channel and, if given,
-          # register callback for Confirm.Select-Ok.
-          #
-          # @raise [RuntimeError] Occurs when confirmations are already activated.
-          # @raise [RuntimeError] Occurs when nowait is true and block is given.
-          # @param [Boolean] nowait Whether we expect Confirm.Select-Ok to be returned by the broker or not.
-          # @yield [method] Callback which will be executed once we receive Confirm.Select-Ok.
-          # @yieldparam [AMQ::Protocol::Confirm::SelectOk] method Protocol method class instance.
-          # @return [self] Returns self.
-          # @see AMQ::Client::Extensions::RabbitMQ::Change#confirm
-          def confirmations(nowait = false, &block)
-            if @confirmations
-              raise "Confirmations are already activated!"
+            # Publisher index is an index of the last message since
+            # the confirmations were activated, started with 1. It's
+            # incremented by 1 after each Basic.Publish starting at 1.
+            # This is done on both client and server, hence this
+            # acknowledged messages can be matched via its delivery-tag.
+            #
+            # @return [Integer] Current publisher index.
+            # @api public
+            def publisher_index
+              @publisher_index ||= 1
             end
 
-            if nowait && block
-              raise "You can't use Confirm.Select with nowait=true and a callback at the same time."
+            # Resets publisher index to 0
+            #
+            # @api plugin
+            def reset_publisher_index!
+              @publisher_index = 0
             end
 
-            @confirmations = true
-            self.define_callback(:confirmations, &block) if block
-            @client.send Protocol::Confirm::Select.encode(@id, nowait)
 
-            self
-          end
+            # This method is executed after publishing of each message via {Exchage#publish}.
+            # Currently it just increments publisher index by 1, so messages
+            # can be actually matched.
+            #
+            # @api plugin
+            def after_publish(*args)
+              self.publisher_index += 1
+            end
 
-          # Handler for Confirm.Select-Ok. By default, it just
-          # executes hook specified via the #confirmations method
-          # with a single argument, a protocol method class
-          # instance (an instance of AMQ::Protocol::Confirm::SelectOk)
-          # and then it deletes the callback, since Confirm.Select
-          # is supposed to be sent just once.
-          #
-          # @api plugin
-          def handle_select_ok(method)
-            self.exec_callback_once(:confirmations, method)
-          end
+            # Turn on confirmations for this channel and, if given,
+            # register callback for Confirm.Select-Ok.
+            #
+            # @raise [RuntimeError] Occurs when confirmations are already activated.
+            # @raise [RuntimeError] Occurs when nowait is true and block is given.
+            #
+            # @param [Boolean] nowait Whether we expect Confirm.Select-Ok to be returned by the broker or not.
+            # @yield [method] Callback which will be executed once we receive Confirm.Select-Ok.
+            # @yieldparam [AMQ::Protocol::Confirm::SelectOk] method Protocol method class instance.
+            #
+            # @return [self] self.
+            #
+            # @see #confirm
+            def confirmations(nowait = false, &block)
+              if @confirmations
+                raise "Confirmations are already activated!"
+              end
 
-          # Turn on confirmations for this channel and, if given,
-          # register callback for Basic.Ack from the broker.
-          #
-          # @raise [RuntimeError] Occurs when confirmations are already activated.
-          # @raise [RuntimeError] Occurs when nowait is true and block is given.
-          # @param [Boolean] nowait Whether we expect Confirm.Select-Ok to be returned by the broker or not.
-          # @yield [method] Callback which will be executed every time we receive Basic.Ack from the broker.
-          # @yieldparam [AMQ::Protocol::Basic::Ack] method Protocol method class instance.
-          # @return [self] Returns self.
-          # @see AMQ::Client::Extensions::RabbitMQ::Change#confirmations
-          def confirm(nowait = false, &block)
-            self.confirmations unless @confirmations
+              if nowait && block
+                raise "You can't use Confirm.Select with nowait=true and a callback at the same time."
+              end
 
-            self.define_callback(:ack, &block) if block
+              @confirmations = true
+              self.redefine_callback(:confirmations, &block)
+              @client.send(Protocol::Confirm::Select.encode(@id, nowait))
 
-            self
-          end
+              self
+            end
 
-          # Handler for Basic.Ack. By default, it just
-          # executes hook specified via the #confirm method
-          # with a single argument, a protocol method class
-          # instance (an instance of AMQ::Protocol::Basic::Ack).
-          #
-          # @api plugin
-          # @note Don't forget it can have multi flag!
-          def handle_basic_ack(method)
-            self.exec_callback(:ack, method)
-          end
 
-          # Register error callback for Basic.Nack. It's called
-          # when the broker reject given message(s).
-          #
-          # @return
-          def confirm_failed(&block)
-            self.define_callback(:nack, &block) if block
-          end
+            # Turn on confirmations for this channel and, if given,
+            # register callback for basic.ack from the broker.
+            #
+            # @raise [RuntimeError] Occurs when confirmations are already activated.
+            # @raise [RuntimeError] Occurs when nowait is true and block is given.
+            # @param [Boolean] nowait Whether we expect Confirm.Select-Ok to be returned by the broker or not.
+            #
+            # @yield [basick_ack] Callback which will be executed every time we receive Basic.Ack from the broker.
+            # @yieldparam [AMQ::Protocol::Basic::Ack] basick_ack Protocol method class instance.
+            #
+            # @return [self] self.
+            def confirm(nowait = false, &block)
+              self.confirmations unless @confirmations
 
-          # Handler for Basic.Nack. By default, it just
-          # executes hook specified via the #confirm_failed method
-          # with a single argument, a protocol method class
-          # instance (an instance of AMQ::Protocol::Basic::Nack).
-          #
-          # @api plugin
-          # @note Don't forget it can have multi flag!
-          def handle_basic_nack(method)
-            self.exec_callback(:nack, method)
-          end
-        end
+              self.define_callback(:ack, &block) if block
 
-        # === Handlers ===
-        self.handle(Protocol::Confirm::SelectOk) do |client, frame|
-          method  = frame.decode_payload
-          channel = client.connection.channels[frame.channel]
-          channel.handle_select_ok(method)
-        end
+              self
+            end
 
-        self.handle(Protocol::Basic::Ack) do |client, frame|
-          method  = frame.decode_payload
-          channel = client.connection.channels[frame.channel]
-          channel.handle_basic_ack(method)
-        end
 
-        self.handle(Protocol::Basic::Nack) do |client, frame|
-          method  = frame.decode_payload
-          channel = client.connection.channels[frame.channel]
-          channel.handle_basic_nack(method)
-        end
-      end
-    end
-  end
-end
+            # Register error callback for Basic.Nack. It's called
+            # when the broker reject given message(s).
+            #
+            # @return [self] self
+            def confirm_failed(&block)
+              self.define_callback(:nack, &block) if block
+
+              self
+            end
+
+
+
+
+            # Handler for Confirm.Select-Ok. By default, it just
+            # executes hook specified via the #confirmations method
+            # with a single argument, a protocol method class
+            # instance (an instance of AMQ::Protocol::Confirm::SelectOk)
+            # and then it deletes the callback, since Confirm.Select
+            # is supposed to be sent just once.
+            #
+            # @api plugin
+            def handle_select_ok(method)
+              self.exec_callback_once(:confirmations, method)
+            end
+
+            # Handler for Basic.Ack. By default, it just
+            # executes hook specified via the #confirm method
+            # with a single argument, a protocol method class
+            # instance (an instance of AMQ::Protocol::Basic::Ack).
+            #
+            # @api plugin
+            def handle_basic_ack(method)
+              self.exec_callback(:ack, method)
+            end
+
+
+            # Handler for Basic.Nack. By default, it just
+            # executes hook specified via the #confirm_failed method
+            # with a single argument, a protocol method class
+            # instance (an instance of AMQ::Protocol::Basic::Nack).
+            #
+            # @api plugin
+            def handle_basic_nack(method)
+              self.exec_callback(:nack, method)
+            end
+
+
+            def reset_state!
+              super
+
+              @confirmations = false
+            end
+
+
+            def self.included(host)
+              host.handle(Protocol::Confirm::SelectOk) do |client, frame|
+                method  = frame.decode_payload
+                channel = client.connection.channels[frame.channel]
+                channel.handle_select_ok(method)
+              end
+
+              host.handle(Protocol::Basic::Ack) do |client, frame|
+                method  = frame.decode_payload
+                channel = client.connection.channels[frame.channel]
+                channel.handle_basic_ack(method)
+              end
+
+              host.handle(Protocol::Basic::Nack) do |client, frame|
+                method  = frame.decode_payload
+                channel = client.connection.channels[frame.channel]
+                channel.handle_basic_nack(method)
+              end
+            end # self.included(host)
+          end # ChannelMixin
+
+
+          module ExchangeMixin
+            # Publish message and then run #after_publish on channel belonging
+            # to the exchange. This is used for incrementing the publisher index.
+            #
+            # @api public
+            # @see AMQ::Client::Exchange#publish
+            # @see AMQ::Client::Extensions::RabbitMQ::Channel#publisher_index
+            # @return [self] self
+            def publish(*args)
+              super(*args)
+              @channel.after_publish(*args)
+
+              self
+            end # publish
+          end # ExchangeMixin
+        end # Confirm
+      end # RabbitMQ
+    end # Extensions
+
+
+    class Channel
+      # use modules, a native Ruby way of extension of existing classes,
+      # instead of reckless monkey-patching. MK.
+      include Extensions::RabbitMQ::Confirm::ChannelMixin
+    end # Channel
+
+    class Exchange
+      # use modules, a native Ruby way of extension of existing classes,
+      # instead of reckless monkey-patching. MK.
+      include Extensions::RabbitMQ::Confirm::ExchangeMixin
+    end # Exchange
+  end # Client
+end # AMQ
