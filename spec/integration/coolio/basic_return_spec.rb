@@ -15,6 +15,10 @@ describe "AMQ::Client::Coolio", "Basic.Return", :nojruby => true do
         channel.open do
           queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
+          # need to delete the queue manually because we don't start consumption,
+          # hence, no auto-delete
+          delayed(0.4) { queue.delete }
+
           exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare.on_return do |method|
             @returned_messages << method.reply_text
           end

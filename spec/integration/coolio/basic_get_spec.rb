@@ -34,10 +34,13 @@ describe "AMQ::Client::Coolio", "Basic.Get", :nojruby => true do
               @received_messages << payload
             end
 
-            done(0.5) {
+            delayed(0.5) {
+              # need to delete the queue manually because #get doesn't count as consumption,
+              # hence, no auto-delete
+              queue.delete
+            }
+            done(0.75) {
               @received_messages.should =~ messages
-
-              queue.purge
             }
           end
         end
@@ -61,9 +64,8 @@ describe "AMQ::Client::Coolio", "Basic.Get", :nojruby => true do
             header.should be_nil
             payload.should be_nil
 
-            done {
-              queue.purge
-            }
+            queue.delete
+            done(0.5)
           end # get
         end
       end # em_amqp_connect

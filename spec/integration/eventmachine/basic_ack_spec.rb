@@ -13,9 +13,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
       em_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
-          queue = AMQ::Client::Queue.new(client, channel)
-          queue.declare
-
+          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
           queue.bind("amq.fanout")
 
           queue.consume do |amq_method|

@@ -16,8 +16,8 @@ describe "AMQ::Client::Coolio", "Basic.Ack", :nojruby => true do
       coolio_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
-          queue = AMQ::Client::Queue.new(client, channel)
-          queue.declare.bind("amq.fanout")
+          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
+          queue.bind("amq.fanout")
 
           queue.consume do |_, consumer_tag|
             queue.on_delivery do |method, header, payload|

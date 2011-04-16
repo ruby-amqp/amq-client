@@ -26,18 +26,22 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
             end
 
             queue.get(true) do |method, header, payload|
-              puts "Got #{payload}"              
+              puts "Got #{payload}"
               @received_messages << payload
             end
             queue.get(true) do |method, header, payload|
-              puts "Got #{payload}"              
+              puts "Got #{payload}"
               @received_messages << payload
             end
 
-            done(0.6) {
-              @received_messages.should =~ messages
+            delayed(0.5) {
+              # need to delete the queue manually because #get doesn't count as consumption,
+              # hence, no auto-delete
+              queue.delete
+            }
 
-              queue.purge
+            done(0.75) {
+              @received_messages.should =~ messages
             }
           end
         end
@@ -61,9 +65,8 @@ describe AMQ::Client::EventMachineClient, "Basic.Get" do
             header.should be_nil
             payload.should be_nil
 
-            done {
-              queue.purge
-            }
+            queue.delete
+            done(0.5)
           end # get
         end
       end # em_amqp_connect
