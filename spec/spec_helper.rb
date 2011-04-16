@@ -18,3 +18,7 @@ when /^1.9/ then
   Encoding.default_internal = Encoding::UTF_8
   Encoding.default_external = Encoding::UTF_8
 end
+
+RSpec.configure do |c|
+  c.filter_run_excluding :nojruby => true if RUBY_PLATFORM =~ /java/
+end

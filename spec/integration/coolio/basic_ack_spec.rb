@@ -1,7 +1,10 @@
 require 'spec_helper'
 require 'integration/coolio/spec_helper'
 
-describe AMQ::Client::Coolio, "Basic.Ack" do
+require 'spec_helper'
+require 'integration/coolio/spec_helper'
+
+describe "AMQ::Client::Coolio", "Basic.Ack", :nojruby => true do
   include EventedSpec::SpecHelper
   default_timeout 1
 
@@ -30,7 +33,7 @@ describe AMQ::Client::Coolio, "Basic.Ack" do
         end # open
 
         done(0.5) {
-          @received_messages.size == messages.size
+          @received_messages.size.should == messages.size
         }
       end # coolio_amqp_connect
     end # it
