@@ -11,19 +11,17 @@ describe AMQ::Client::EventMachineClient, "Channel#flow" do
 
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open do
-        AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |amq_method|
-          channel.flow_is_active?.should be_true
+        channel.flow_is_active?.should be_true
 
-          channel.flow(false) do |flow_status1|
-            channel.flow_is_active?.should be_false
+        channel.flow(false) do |flow_status1|
+          channel.flow_is_active?.should be_false
+          flow_states << channel.flow_is_active?
+
+          channel.flow(true) do |flow_status2|
+            channel.flow_is_active?.should be_true
             flow_states << channel.flow_is_active?
-
-            channel.flow(true) do |flow_status2|
-              channel.flow_is_active?.should be_true
-              flow_states << channel.flow_is_active?
-            end # channel.flow
           end # channel.flow
-        end # Queue.new
+        end # channel.flow
       end # channel.open
 
       done(0.5) { flow_states.should == [false, true] }

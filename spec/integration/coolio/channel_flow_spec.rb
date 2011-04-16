@@ -9,16 +9,14 @@ describe "AMQ::Client::Coolio", "Channel.Flow", :nojruby => true do
     coolio_amqp_connect do |client|
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open do
-        AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
-          channel.flow_is_active?.should be_true
-          channel.flow(false) do |_, flow_active|
-            flow_active.should be_false
-            channel.flow(true) do |_, flow_active|
-              flow_active.should be_true
-            end
+        channel.flow_is_active?.should be_true
+        channel.flow(false) do |_, flow_active|
+          flow_active.should be_false
+          channel.flow(true) do |_, flow_active|
+            flow_active.should be_true
           end
-          done
         end
+        done
       end
     end
   end
@@ -29,16 +27,14 @@ describe "AMQ::Client::Coolio", "Channel.Flow", :nojruby => true do
       channel = AMQ::Client::Channel.new(client, 1)
       expect {
         channel.open do
-          AMQ::Client::Queue.new(client, channel).declare(false, false, false, true) do |q, _, _, _|
-            channel.flow_is_active?.should be_true
+          channel.flow_is_active?.should be_true
+          channel.flow(false) do |_, flow_active|
+            flow_active.should be_false
             channel.flow(false) do |_, flow_active|
               flow_active.should be_false
-              channel.flow(false) do |_, flow_active|
-                flow_active.should be_false
-              end
             end
-            done
           end
+          done
         end
       }.to_not raise_error
     end
