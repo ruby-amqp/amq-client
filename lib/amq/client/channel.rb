@@ -195,6 +195,9 @@ module AMQ
         @flow_is_active
       end # flow_is_active?
 
+      def on_error(&block)
+        self.define_callback(:close, &block)
+      end
 
 
       #
@@ -256,7 +259,10 @@ module AMQ
       end
 
       def handle_close(method, exception = nil)
+        puts "In Channel#handle_close"
         self.status = :closed
+        self.exec_callback_once_yielding_self(:close, method)
+
         self.on_connection_interruption(exception)
       end
 
