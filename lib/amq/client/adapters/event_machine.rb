@@ -24,7 +24,6 @@ module AMQ
       self.sync = false
 
       register_entity :channel,  AMQ::Client::Channel
-      register_entity :exchange, AMQ::Client::Exchange
 
       #
       # API
