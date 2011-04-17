@@ -259,7 +259,6 @@ module AMQ
       end
 
       def handle_close(method, exception = nil)
-        puts "In Channel#handle_close"
         self.status = :closed
         self.exec_callback_once_yielding_self(:close, method)
 
