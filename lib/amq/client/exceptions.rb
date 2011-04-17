@@ -7,6 +7,21 @@ module AMQ
     # Adapters
     #
 
+    class TCPConnectionFailed < StandardError
+
+      #
+      # API
+      #
+
+      attr_reader :settings
+
+      def initialize(settings)
+        @settings = settings
+
+        super("Could not estabilish TCP connection to #{@settings[:host]}:#{@settings[:port]}")
+      end
+    end
+
     # Base exception class for data consistency and framing errors.
     class InconsistentDataError < StandardError
     end
