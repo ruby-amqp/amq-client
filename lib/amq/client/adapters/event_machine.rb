@@ -97,15 +97,26 @@ module AMQ
       # Implementation
       #
 
+      # EventMachine reactor callback. Is run when TCP connection is estabilished
+      # but before resumption of the network loop.
       def post_init
         reset
 
         @tcp_connection_established = true
+        # note that upgrading to TLS in #connection_completed causes
+        # Erlang SSL app that RabbitMQ relies on to report
+        # error on TCP connection <0.1465.0>:{ssl_upgrade_error,"record overflow"}
+        # and close TCP connection down. Investigation of this issue is likely
+        # to take some time and to not be worth in as long as #post_init
+        # works fine. MK.
+        upgrade_to_tls_if_necessary
 
         self.handshake
       rescue Exception => error
         raise error
       end # post_init
+
+
 
       #
       # EventMachine receives data in chunks, sometimes those chunks are smaller
@@ -190,7 +201,7 @@ module AMQ
         username = @settings[:user] || @settings[:username]
         password = @settings[:pass] || @settings[:password]
 
-        self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
+        # self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
 
         self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
 
@@ -222,6 +233,16 @@ module AMQ
         else
           nil
         end
+      end # get_next_frame
+
+      def upgrade_to_tls_if_necessary
+        tls_options = @settings[:ssl]
+
+        if tls_options.is_a?(Hash)
+          start_tls(tls_options)
+        elsif tls_options
+          start_tls
+        end        
       end
     end # EventMachineClient
   end # Client

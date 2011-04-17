@@ -20,14 +20,6 @@ EM.run do
       end
     }
 
-    show_stopper = Proc.new {
-      client.disconnect do
-        puts
-        puts "AMQP connection is now properly closed"
-        EM.stop
-      end
-    }
-
     Signal.trap "INT",  show_stopper
     Signal.trap "TERM", show_stopper
 
