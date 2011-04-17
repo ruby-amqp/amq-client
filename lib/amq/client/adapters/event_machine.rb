@@ -32,7 +32,7 @@ module AMQ
 
       def self.connect(settings = nil, &block)
         settings = AMQ::Client::Settings.configure(settings)
-        instance = EM.connect(settings[:host], settings[:port], self, settings)
+        instance = EventMachine.connect(settings[:host], settings[:port], self, settings)
 
         unless block.nil?
           # delay calling block we were given till after we receive
@@ -58,6 +58,7 @@ module AMQ
         @settings                 = args.first
         @connections              = Array.new
         @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
+        @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings| raise AMQ::Client::TCPConnectionFailed.new(settings) }
 
         @chunk_buffer             = ""
         @connection_deferrable    = Deferrable.new
@@ -73,7 +74,7 @@ module AMQ
 
         if self.heartbeat_interval > 0
           @last_server_heartbeat = Time.now
-          EM.add_periodic_timer(self.heartbeat_interval, &method(:send_heartbeat))
+          EventMachine.add_periodic_timer(self.heartbeat_interval, &method(:send_heartbeat))
         end
       end # initialize(*args)
 
@@ -98,11 +99,11 @@ module AMQ
       #
 
       # EventMachine reactor callback. Is run when TCP connection is estabilished
-      # but before resumption of the network loop.
+      # but before resumption of the network loop. Note that this includes cases
+      # when TCP connection has failed.
       def post_init
         reset
 
-        @tcp_connection_established = true
         # note that upgrading to TLS in #connection_completed causes
         # Erlang SSL app that RabbitMQ relies on to report
         # error on TCP connection <0.1465.0>:{ssl_upgrade_error,"record overflow"}
@@ -116,20 +117,25 @@ module AMQ
         raise error
       end # post_init
 
-
-
-      #
-      # EventMachine receives data in chunks, sometimes those chunks are smaller
-      # than the size of AMQP frame. That's why you need to add some kind of buffer.
-      #
-      def receive_data(chunk)
-        @chunk_buffer << chunk
-        while frame = get_next_frame
-          self.receive_frame(AMQ::Client::Framing::String::Frame.decode(frame))
-        end
+      # Called by EventMachine reactor once TCP connection is successfully estabilished.
+      def connection_completed
+        # we only can safely set this value here because EventMachine is a lovely piece of
+        # software that calls #post_init before #unbind even when TCP connection
+        # fails. Yes, it makes as much sense to me MK.
+        @tcp_connection_established = true
       end
 
+      # Called by EventMachine reactor when
+      #
+      # * We close TCP connection down
+      # * Our peer closes TCP connection down
+      # * There is a network connection issue
+      # * Initial TCP connection fails
       def unbind
+        if !@tcp_connection_established
+          self.tcp_connection_failed
+        end
+
         closing!
 
         @tcp_connection_established = false
@@ -153,6 +159,18 @@ module AMQ
       end # unbind
 
 
+      #
+      # EventMachine receives data in chunks, sometimes those chunks are smaller
+      # than the size of AMQP frame. That's why you need to add some kind of buffer.
+      #
+      def receive_data(chunk)
+        @chunk_buffer << chunk
+        while frame = get_next_frame
+          self.receive_frame(AMQ::Client::Framing::String::Frame.decode(frame))
+        end
+      end
+
+
 
       def on_connection(&block)
         @connection_deferrable.callback(&block)
@@ -162,6 +180,7 @@ module AMQ
       def connection_successful
         @connection_deferrable.succeed
       end # connection_successful
+
 
 
       def on_open(&block)
@@ -176,6 +195,7 @@ module AMQ
       end # open_successful
 
 
+
       def on_disconnection(&block)
         @disconnection_deferrable.callback(&block)
       end # on_disconnection(&block)
@@ -187,6 +207,16 @@ module AMQ
         self.close_connection
         closed!
       end # disconnection_successful
+
+
+
+      def on_tcp_connection_failure(&block)
+        @on_tcp_connection_failure = block
+      end
+
+      def tcp_connection_failed
+        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
+      end
 
 
 
