@@ -2,7 +2,7 @@
 require 'spec_helper'
 require 'integration/coolio/spec_helper'
 
-describe "AMQ::Client::Coolio", "Tx.Rollback", :nojruby => true do
+describe "AMQ::Client::CoolioClient", "Tx.Rollback", :nojruby => true do
   include EventedSpec::SpecHelper
   default_timeout 2
 

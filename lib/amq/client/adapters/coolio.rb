@@ -8,7 +8,7 @@ require "amq/client/framing/string/frame"
 
 module AMQ
   module Client
-    class Coolio
+    class CoolioClient
       class Socket < ::Coolio::TCPSocket
         attr_accessor :adapter
 

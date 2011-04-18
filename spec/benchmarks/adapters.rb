@@ -11,7 +11,7 @@ TOTAL_MESSAGES = 10000
 # Short messages
 # Cool.io
 coolio_start = Time.now
-AMQ::Client::Coolio.connect(:port => 5672, :vhost => "/amq_client_testbed") do |client|
+AMQ::Client::CoolioClient.connect(:port => 5672, :vhost => "/amq_client_testbed") do |client|
   received_messages = 0
   channel = AMQ::Client::Channel.new(client, 1)
   channel.open { }
