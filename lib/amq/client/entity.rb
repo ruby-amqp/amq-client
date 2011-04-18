@@ -18,49 +18,7 @@ module AMQ
       end
     end
 
-    # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
-    # when necessary.
-    #
-    # @note Exchanges and queues implementation is based on this class.
-    #
-    # @abstract
-    class Entity
-
-      #
-      # Behaviors
-      #
-
-      include StatusMixin
-      extend RegisterEntityMixin
-
-      #
-      # API
-      #
-
-      # @return [Array<#call>]
-      attr_reader :callbacks
-
-      @@handlers ||= Hash.new
-
-      def self.handle(klass, &block)
-        @@handlers[klass] = block
-      end
-
-      def self.handlers
-        @@handlers
-      end
-
-
-
-
-      def initialize(client)
-        @client    = client
-        # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
-        # won't assign anything to :key. MK.
-        @callbacks = Hash.new
-      end
-
-
+    module CallbacksMixin
       def redefine_callback(event, callable = nil, &block)
         f = (callable || block)
         # yes, re-assign!
@@ -110,7 +68,49 @@ module AMQ
         callbacks = Array(self.callbacks.delete(name))
         callbacks.map { |c| c.call(self, *args, &block) } if callbacks.any?
       end
+    end
 
+    # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
+    # when necessary.
+    #
+    # @note Exchanges and queues implementation is based on this class.
+    #
+    # @abstract
+    class Entity
+
+      #
+      # Behaviors
+      #
+
+      include StatusMixin
+      include CallbacksMixin
+
+      extend RegisterEntityMixin
+
+      #
+      # API
+      #
+
+      # @return [Array<#call>]
+      attr_reader :callbacks
+
+      @@handlers ||= Hash.new
+
+      def self.handle(klass, &block)
+        @@handlers[klass] = block
+      end
+
+      def self.handlers
+        @@handlers
+      end
+
+
+      def initialize(client)
+        @client    = client
+        # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
+        # won't assign anything to :key. MK.
+        @callbacks = Hash.new
+      end
 
 
       def error(exception)
