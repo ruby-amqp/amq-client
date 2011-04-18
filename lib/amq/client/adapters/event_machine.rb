@@ -27,19 +27,28 @@ module AMQ
       #
 
       def self.connect(settings = nil, &block)
-        settings = AMQ::Client::Settings.configure(settings)
-        instance = EventMachine.connect(settings[:host], settings[:port], self, settings)
+        @settings = settings = Settings.configure(settings)
 
+        instance = EventMachine.connect(settings[:host], settings[:port], self, settings)
+        instance.register_connection_callback(&block)
+
+        instance
+      end
+
+      def establish_connection(settings)
+        # Unfortunately there doesn't seem to be any sane way
+        # how to get EventMachine connect to the instance level.
+      end
+
+      def register_connection_callback(&block)
         unless block.nil?
           # delay calling block we were given till after we receive
           # connection.open-ok. Connection will notify us when
           # that happens.
-          instance.on_connection do
-            block.call(instance)
+          self.on_connection do
+            block.call(self)
           end
         end
-
-        instance
       end
 
 
@@ -74,10 +83,6 @@ module AMQ
         end
       end # initialize(*args)
 
-
-      def establish_connection(settings)
-        # an intentional no-op
-      end
 
       alias send_raw send_data
 
@@ -268,7 +273,7 @@ module AMQ
           start_tls(tls_options)
         elsif tls_options
           start_tls
-        end        
+        end
       end
     end # EventMachineClient
   end # Client

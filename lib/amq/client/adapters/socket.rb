@@ -38,6 +38,15 @@ module AMQ
         raise exception
       end
 
+      def register_connection_callback(&block)
+        if block
+          block.call(self)
+          self.disconnect
+        else
+          self
+        end
+      end
+
       def connection
         @socket
       end # connection

@@ -47,29 +47,32 @@ module AMQ
         end
       end
 
+      #
       # Behaviors
+      #
+
       include AMQ::Client::Adapter
 
       self.sync = false
 
       register_entity :channel,  AMQ::Client::Channel
 
+      #
       # API
+      #
+
       attr_accessor :socket
       attr_accessor :callbacks
       attr_accessor :connections
 
-      class << self
-        def connect(settings, &block)
-          settings        = self.settings.merge(settings)
-          host, port      = settings[:host], settings[:port]
-          instance        = new
-          socket          = Socket.connect(instance, settings[:host], settings[:port])
-          socket.attach Cool.io::Loop.default
-          instance.socket = socket
-          instance.on_connection(&block)
-          instance
-        end
+      def establish_connection(settings)
+        socket = Socket.connect(self, settings[:host], settings[:port])
+        socket.attach(Cool.io::Loop.default)
+        self.socket = socket
+      end
+
+      def register_connection_callback(&block)
+        self.on_connection(&block)
       end
 
       def initialize

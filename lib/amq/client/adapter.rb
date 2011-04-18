@@ -4,6 +4,7 @@ require "amq/client/logging"
 require "amq/client/settings"
 require "amq/client/entity"
 require "amq/client/connection"
+require "amq/client/channel"
 
 module AMQ
   # For overview of AMQP client adapters API, see {AMQ::Client::Adapter}
@@ -119,40 +120,22 @@ module AMQ
         # Establishes connection to AMQ broker and returns it. New connection object is yielded to
         # the block if it is given.
         #
+        # @example Specifying adapter via the :adapter option
+        #   AMQ::Client::Adapter.connect(adapter: "socket")
+        # @example Specifying using custom adapter class
+        #   AMQ::Client::SocketClient.connect
         # @param [Hash] Connection parameters, including :adapter to use.
         # @api public
         def connect(settings = nil, &block)
-          if settings && settings[:adapter]
-            adapter = load_adapter(settings[:adapter])
-          else
-            adapter = self
-          end
+          # TODO: this doesn't look very nice, do we need it?
+          # Let's make it an instance thing by instance = self.new(settings)
+          @settings = settings = Settings.configure(settings)
 
-          @settings = AMQ::Client::Settings.configure(settings)
-          instance  = adapter.new
-          instance.establish_connection(@settings)
-          # We don't need anything more, once the server receives the preable, he sends Connection.Start, we just have to reply.
+          instance = self.new
+          instance.establish_connection(settings)
+          instance.register_connection_callback(&block)
 
-          if block
-            block.call(instance)
-
-            instance.disconnect
-          else
-            instance
-          end
-        end
-
-
-        # Loads adapter from amq/client/adapters.
-        #
-        # @raise [InvalidAdapterNameError] When loading attempt failed (LoadError was raised).
-        def load_adapter(adapter)
-          require "amq/client/adapters/#{adapter}"
-
-          const_name = adapter.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
-          const_get(const_name)
-        rescue LoadError
-          raise InvalidAdapterNameError.new(adapter)
+          instance
         end
 
         # @see AMQ::Client::Adapter
@@ -184,16 +167,9 @@ module AMQ
 
       include AMQ::Client::StatusMixin
 
-
       #
       # API
       #
-
-      def self.load_adapter(adapter)
-        ClassMethods.load_adapter(adapter)
-      end
-
-
 
       def initialize(*args)
         super(*args)
@@ -352,5 +328,3 @@ module AMQ
     end # Adapter
   end # Client
 end # AMQ
-
-require "amq/client/channel"

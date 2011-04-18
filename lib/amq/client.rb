@@ -54,7 +54,6 @@ module AMQ
     def self.connect(settings = nil, &block)
       adapter  = (settings && settings.delete(:adapter)) || :socket
       adapter  = load_adapter(adapter)
-      settings = Settings.configure(settings)
       adapter.connect(settings, &block)
     end
 
