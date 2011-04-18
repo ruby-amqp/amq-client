@@ -105,18 +105,6 @@ module AMQ
         end
 
 
-        # @example Registering Channel implementation
-        #  Adapter.register_entity(:channel, Channel)
-        #   # ... so then I can do:
-        #  channel = client.channel(1)
-        #  # instead of:
-        #  channel = Channel.new(client, 1)
-        def register_entity(name, klass)
-          define_method(name) do |*args, &block|
-            klass.new(self, *args, &block)
-          end
-        end
-
         # Establishes connection to AMQ broker and returns it. New connection object is yielded to
         # the block if it is given.
         #
@@ -166,6 +154,10 @@ module AMQ
       #
 
       include AMQ::Client::StatusMixin
+
+      extend RegisterEntityMixin
+
+      register_entity :channel,  AMQ::Client::Channel
 
       #
       # API

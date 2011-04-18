@@ -20,8 +20,6 @@ module AMQ
 
       self.sync = false
 
-      register_entity :channel,  AMQ::Client::Channel
-
       #
       # API
       #

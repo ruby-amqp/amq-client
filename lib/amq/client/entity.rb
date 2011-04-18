@@ -4,6 +4,20 @@ require "amq/client/mixins/status"
 
 module AMQ
   module Client
+    module RegisterEntityMixin
+      # @example Registering Channel implementation
+      #  Adapter.register_entity(:channel, Channel)
+      #   # ... so then I can do:
+      #  channel = client.channel(1)
+      #  # instead of:
+      #  channel = Channel.new(client, 1)
+      def register_entity(name, klass)
+        define_method(name) do |*args, &block|
+          klass.new(self, *args, &block)
+        end
+      end
+    end
+
     # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
     # when necessary.
     #
@@ -17,6 +31,7 @@ module AMQ
       #
 
       include StatusMixin
+      extend RegisterEntityMixin
 
       #
       # API

@@ -1,11 +1,19 @@
 # encoding: utf-8
 
 require "amq/client/entity"
-require "amq/client/adapter"
+require "amq/client/queue"
+require "amq/client/exchange"
 
 module AMQ
   module Client
     class Channel < Entity
+
+      #
+      # Behaviors
+      #
+
+      register_entity :queue,    AMQ::Client::Queue
+      register_entity :exchange, AMQ::Client::Exchange
 
       #
       # API
