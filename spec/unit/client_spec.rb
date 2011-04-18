@@ -35,7 +35,7 @@ describe AMQ::Client do
     include EventedSpec::SpecHelper
     default_timeout 1
 
-    context "with specified adapter" do
+    context "with specified adapter", :nojruby => true do
       it "should connect using socket adapter" do
         pending "Socket adapter is currently broken" do
           AMQ::Client.connect(:adapter => :socket) do |client|
