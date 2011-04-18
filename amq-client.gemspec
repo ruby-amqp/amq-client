@@ -11,11 +11,7 @@ Gem::Specification.new do |s|
   s.email   = [Base64.decode64("c3Rhc3RueUAxMDFpZGVhcy5jeg==\n"), "michael@novemberain.com"]
   s.homepage = "http://github.com/ruby-amqp/amq-client"
   s.summary = "amq-client is a fully-featured, low-level AMQP 0.9.1 client"
-  s.description = <<-DESC
-  amq-client supports multiple networking adapters (EventMachine, TCP sockets, cool.io) and
-  supposed to back more opinionated AMQP clients (such as amqp gem, bunny, et cetera) or be used directly
-  in cases when access to more advanced AMQP 0.9.1 features is more important that convenient APIs
-  DESC
+  s.description = "amq-client supports multiple networking adapters (EventMachine, TCP sockets, cool.io) and supposed to back more opinionated AMQP clients (such as amqp gem, bunny, et cetera) or be used directly in cases when access to more advanced AMQP 0.9.1 features is more important that convenient APIs"
   s.cert_chain = nil
   s.has_rdoc   = true
 
