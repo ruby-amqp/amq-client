@@ -1,11 +1,8 @@
 # encoding: utf-8
 
-require "amq/client"
-require "amq/client/channel"
-require "amq/client/exchange"
-require "amq/client/framing/string/frame"
-
 require "eventmachine"
+require "amq/client"
+require "amq/client/framing/string/frame"
 
 module AMQ
   module Client
