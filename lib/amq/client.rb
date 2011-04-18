@@ -31,12 +31,10 @@ module AMQ
       @adapters ||= begin
         root = File.expand_path("../client/adapters", __FILE__)
         Dir.glob("#{root}/*.rb").inject(Hash.new) do |buffer, path|
-          path.match(/([^\/]+)\.rb$/) do |match|
-            name = match[1]
-            const_base = name.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
-            meta = {:path => path, :const_name => "#{const_base}Client"}
-            buffer.merge!(name.to_sym => meta)
-          end
+          name = path.match(/([^\/]+)\.rb$/)[1]
+          const_base = name.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
+          meta = {:path => path, :const_name => "#{const_base}Client"}
+          buffer.merge!(name.to_sym => meta)
         end
       end
     end
