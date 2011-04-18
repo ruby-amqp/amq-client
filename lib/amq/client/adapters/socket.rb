@@ -2,9 +2,6 @@
 
 require "socket"
 require "amq/client"
-require "amq/client/channel"
-require "amq/client/exchange"
-require "amq/client/queue"
 require "amq/client/framing/io/frame"
 
 module AMQ
@@ -20,8 +17,6 @@ module AMQ
       self.sync = true
 
       register_entity :channel,  AMQ::Client::Channel
-      register_entity :exchange, AMQ::Client::Exchange
-      register_entity :queue,    AMQ::Client::Queue
 
 
       #

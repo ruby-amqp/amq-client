@@ -4,7 +4,6 @@
 
 require "cool.io"
 require "amq/client"
-
 require "amq/client/framing/string/frame"
 
 module AMQ
@@ -52,6 +51,8 @@ module AMQ
       include AMQ::Client::Adapter
 
       self.sync = false
+
+      register_entity :channel,  AMQ::Client::Channel
 
       # API
       attr_accessor :socket
