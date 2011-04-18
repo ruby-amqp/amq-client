@@ -5,6 +5,7 @@ require "bundler"
 Bundler.setup
 Bundler.require(:default, :test)
 
+require 'amq/client'
 #
 # Ruby version-specific
 #

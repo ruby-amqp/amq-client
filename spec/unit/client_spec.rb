@@ -5,11 +5,18 @@ require "spec_helper"
 require "amq/client"
 
 describe AMQ::Client do
-  ADAPTERS = {
-    :event_machine => "EventMachineClient",
-    :coolio        => "CoolioClient",
-    :socket        => "SocketClient"
-  }
+  if RUBY_PLATFORM =~ /java/
+    ADAPTERS = {
+      :event_machine => "EventMachineClient",
+      :socket        => "SocketClient"
+    }
+  else
+    ADAPTERS = {
+      :event_machine => "EventMachineClient",
+      :coolio        => "CoolioClient",
+      :socket        => "SocketClient"
+    }
+  end
 
   it "should have VERSION" do
     AMQ::Client::const_defined?(:VERSION).should be_true
@@ -35,7 +42,7 @@ describe AMQ::Client do
     include EventedSpec::SpecHelper
     default_timeout 1
 
-    context "with specified adapter", :nojruby => true do
+    context "with specified adapter" do
       it "should connect using socket adapter" do
         pending "Socket adapter is currently broken" do
           AMQ::Client.connect(:adapter => :socket) do |client|
@@ -54,10 +61,12 @@ describe AMQ::Client do
         end
       end
 
-      it "should connect using coolio adapter" do
-        AMQ::Client.connect(:adapter => :coolio) do |client|
-          client.class.name.should eql("AMQ::Client::CoolioClient")
-          done
+      it "should connect using coolio adapter", :nojruby => true do
+        coolio do
+          AMQ::Client.connect(:adapter => :coolio) do |client|
+            client.class.name.should eql("AMQ::Client::CoolioClient")
+            done
+          end
         end
       end
     end
