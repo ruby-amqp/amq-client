@@ -33,6 +33,25 @@ module AMQ
         instance
       end
 
+
+      def reconnect(period = 5, force = false)
+        if @reconnecting and not force
+          EventMachine::Timer.new(period) {
+            reconnect(period, true)
+          }
+          return
+        end
+
+        if !@reconnecting
+          @reconnecting = true
+          @connections.each { |c| c.handle_connection_interruption }
+          self.reset
+        end
+
+        self.reconnect(@settings[:host], @settings[:port])
+      end
+
+
       def establish_connection(settings)
         # Unfortunately there doesn't seem to be any sane way
         # how to get EventMachine connect to the instance level.
@@ -56,28 +75,21 @@ module AMQ
       def initialize(*args)
         super(*args)
 
+        @connections                        = Array.new
+        # track TCP connection state, used to detect initial TCP connection failures.
+        @tcp_connection_established       = false
+        @tcp_connection_failed            = false
+        @intentionally_closing_connection = false
+
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
         @settings                           = args.first
-        @connections                        = Array.new
         @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
-        @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings| raise AMQ::Client::TCPConnectionFailed.new(settings) }
+        @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
+          raise AMQ::Client::TCPConnectionFailed.new(settings)
+        }
 
-        @chunk_buffer                 = ""
-        @connection_deferrable        = Deferrable.new
-        @disconnection_deferrable     = Deferrable.new
-        # succeeds when connection is open, that is, vhost is selected
-        # and client is given green light to proceed.
-        @connection_opened_deferrable = Deferrable.new
-
-        # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
-        # that on authentication failure broker must close TCP connection without sending
-        # any more data. This is why we need to explicitly track whether we are past
-        # authentication stage to signal possible authentication failures.
-        @authenticating           = false
-
-        # track TCP connection state, used to detect initial TCP connection failures.
-        @tcp_connection_established   = false
+        self.reset
 
         if self.heartbeat_interval > 0
           @last_server_heartbeat = Time.now
@@ -114,8 +126,6 @@ module AMQ
         # to take some time and to not be worth in as long as #post_init
         # works fine. MK.
         upgrade_to_tls_if_necessary
-
-        self.handshake
       rescue Exception => error
         raise error
       end # post_init
@@ -124,8 +134,22 @@ module AMQ
       def connection_completed
         # we only can safely set this value here because EventMachine is a lovely piece of
         # software that calls #post_init before #unbind even when TCP connection
-        # fails. Yes, it makes as much sense to me MK.
-        @tcp_connection_established = true
+        # fails. MK.
+        @tcp_connection_established       = true
+        # again, this is because #unbind is called in different situations
+        # and there is no easy way to tell initial connection failure
+        # from connection loss. Not in EventMachine 0.12.x, anyway. MK.
+        @had_successfull_connected_before = true
+
+        @reconnecting                     = false
+
+        handshake
+      end
+
+      def close_connection(*args)
+        @intentionally_closing_connection = true
+
+        super(*args)
       end
 
       # Called by EventMachine reactor when
@@ -135,21 +159,21 @@ module AMQ
       # * There is a network connection issue
       # * Initial TCP connection fails
       def unbind
-        if !@tcp_connection_established
+        if !@tcp_connection_established && !@had_successfull_connected_before
+          @tcp_connection_failed = true
           self.tcp_connection_failed
         end
 
         closing!
-
-        # TODO: we need to provide a way to handle connection loss in various
-        # ways: from automatic reconnection to whatever library/application up the
-        # stack wants to do.
         @tcp_connection_established = false
 
         @connections.each { |c| c.handle_connection_interruption }
         @disconnection_deferrable.succeed
 
         closed!
+
+
+        self.tcp_connection_lost if !@intentionally_closing_connection && @had_successfull_connected_before
 
         # since AMQP spec dictates that authentication failure is a protocol exception
         # and protocol exceptions result in connection closure, check whether we are
@@ -248,6 +272,22 @@ module AMQ
       end
 
 
+      # Defines a callback that will be run when initial TCP connection fails.
+      # You can define only one callback.
+      #
+      # @api public
+      def on_tcp_connection_loss(&block)
+        @on_tcp_connection_loss = block
+      end
+
+      # Called when initial TCP connection fails.
+      # @api public
+      def tcp_connection_lost
+        @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
+      end
+
+
+
       # Defines a callback that will be run when TCP connection is closed before authentication
       # finishes. Usually this means authentication failure. You can define only one callback.
       #
@@ -275,6 +315,19 @@ module AMQ
         @size    = 0
         @payload = ""
         @frames  = Array.new
+
+        @chunk_buffer                 = ""
+        @connection_deferrable        = Deferrable.new
+        @disconnection_deferrable     = Deferrable.new
+        # succeeds when connection is open, that is, vhost is selected
+        # and client is given green light to proceed.
+        @connection_opened_deferrable = Deferrable.new
+
+        # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
+        # that on authentication failure broker must close TCP connection without sending
+        # any more data. This is why we need to explicitly track whether we are past
+        # authentication stage to signal possible authentication failures.
+        @authenticating           = false
       end
 
       # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595

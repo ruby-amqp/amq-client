@@ -197,6 +197,8 @@ module AMQ
       # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
       # @see  #close_connection
       def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
+        @intentionally_closing_connection = true
+
         self.on_disconnection(&block)
         closing!
         self.connection.close(reply_code, reply_text)
