@@ -50,7 +50,11 @@ module AMQ
         # 65536 is here for cases when channel is opened without passing a callback in,
         # otherwise channel_mix would be nil and it causes a lot of needless headaches.
         # lets just have this default. MK.
-        channel_max = client.connection.channel_max || 65536
+        channel_max = if client.connection
+                        client.connection.channel_max || 65536
+                      else
+                        65536
+                      end
 
         if channel_max != 0 && !(0..channel_max).include?(id)
           raise ChannelOutOfBadError.new(channel_max, id)

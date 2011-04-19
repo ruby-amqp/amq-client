@@ -143,7 +143,7 @@ module AMQ
 
         @reconnecting                     = false
 
-        handshake
+        self.handshake
       end
 
       def close_connection(*args)
