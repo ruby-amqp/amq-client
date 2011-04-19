@@ -58,21 +58,25 @@ module AMQ
 
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
-        @settings                 = args.first
-        @connections              = Array.new
+        @settings                           = args.first
+        @connections                        = Array.new
         @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings| raise AMQ::Client::TCPConnectionFailed.new(settings) }
 
-        @chunk_buffer             = ""
-        @connection_deferrable    = Deferrable.new
-        @disconnection_deferrable = Deferrable.new
-
-        @authenticating           = false
-
+        @chunk_buffer                 = ""
+        @connection_deferrable        = Deferrable.new
+        @disconnection_deferrable     = Deferrable.new
         # succeeds when connection is open, that is, vhost is selected
         # and client is given green light to proceed.
         @connection_opened_deferrable = Deferrable.new
 
+        # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
+        # that on authentication failure broker must close TCP connection without sending
+        # any more data. This is why we need to explicitly track whether we are past
+        # authentication stage to signal possible authentication failures.
+        @authenticating           = false
+
+        # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established   = false
 
         if self.heartbeat_interval > 0
@@ -137,9 +141,12 @@ module AMQ
 
         closing!
 
+        # TODO: we need to provide a way to handle connection loss in various
+        # ways: from automatic reconnection to whatever library/application up the
+        # stack wants to do.
         @tcp_connection_established = false
 
-        @connections.each { |c| c.on_connection_interruption }
+        @connections.each { |c| c.handle_connection_interruption }
         @disconnection_deferrable.succeed
 
         closed!
@@ -169,23 +176,35 @@ module AMQ
         end
       end
 
-
-
+      # Defines a callback that will be executed when AMQP connection is considered open,
+      # after client and broker has agreed on max channel identifier and maximum allowed frame
+      # size. You can define more than one callback.
+      #
+      # @see #on_open
+      # @api public
       def on_connection(&block)
         @connection_deferrable.callback(&block)
       end # on_connection(&block)
 
-      # called by AMQ::Client::Connection after we receive connection.open-ok.
+      # Called by AMQ::Client::Connection after we receive connection.open-ok.
+      # @api public
       def connection_successful
         @connection_deferrable.succeed
       end # connection_successful
 
 
-
+      # Defines a callback that will be executed when AMQP connection is considered open,
+      # before client and broker has agreed on max channel identifier and maximum allowed frame
+      # size. You can define more than one callback.
+      #
+      # @see #on_connection
+      # @api public
       def on_open(&block)
         @connection_opened_deferrable.callback(&block)
       end # on_open(&block)
 
+      # Called by AMQ::Client::Connection after we receive connection.tune.
+      # @api public
       def open_successful
         @authenticating = false
         @connection_opened_deferrable.succeed
@@ -194,31 +213,45 @@ module AMQ
       end # open_successful
 
 
-
+      # Defines a callback that will be run when broker confirms connection termination
+      # (client receives connection.close-ok). You can define more than one callback.
+      #
+      # @api public
       def on_disconnection(&block)
         @disconnection_deferrable.callback(&block)
       end # on_disconnection(&block)
 
-      # called by AMQ::Client::Connection after we receive connection.close-ok.
+      # Called by AMQ::Client::Connection after we receive connection.close-ok.
+      #
+      # @api public
       def disconnection_successful
         @disconnection_deferrable.succeed
 
         self.close_connection
+        self.reset
         closed!
       end # disconnection_successful
 
 
-
+      # Defines a callback that will be run when initial TCP connection fails.
+      # You can define only one callback.
+      #
+      # @api public
       def on_tcp_connection_failure(&block)
         @on_tcp_connection_failure = block
       end
 
+      # Called when initial TCP connection fails.
+      # @api public
       def tcp_connection_failed
         @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
       end
 
 
-
+      # Defines a callback that will be run when TCP connection is closed before authentication
+      # finishes. Usually this means authentication failure. You can define only one callback.
+      #
+      # @api public
       def on_possible_authentication_failure(&block)
         @on_possible_authentication_failure = block
       end

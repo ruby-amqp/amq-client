@@ -191,11 +191,12 @@ module AMQ
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
       def handle_close(method)
-        self.channels.each { |key, value| value.on_connection_interruption }
+        self.handle_connection_interruption
 
         closed!
         # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
-        self.error RuntimeError.new(method.reply_text)
+        x = RuntimeError.new(method.reply_text)
+        self.error(x)
       end
 
       # Handles connection.close-ok
@@ -207,9 +208,9 @@ module AMQ
       end # handle_close_ok(method)
 
 
-      def on_connection_interruption
-        @channels.each { |n, c| c.on_connection_interruption }
-      end # on_connection_interruption
+      def handle_connection_interruption
+        @channels.each { |n, c| c.handle_connection_interruption }
+      end # handle_connection_interruption
 
 
 

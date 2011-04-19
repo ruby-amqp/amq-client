@@ -203,6 +203,10 @@ module AMQ
         @flow_is_active
       end # flow_is_active?
 
+      # Defines a callback that will be executed when channel is closed after
+      # channel-level exception.
+      #
+      # @api public
       def on_error(&block)
         self.define_callback(:close, &block)
       end
@@ -252,9 +256,11 @@ module AMQ
       end # reset_state!
 
 
-      def on_connection_interruption(exception = nil)
+      def handle_connection_interruption(exception = nil)
         self.reset_state!
-      end # on_connection_interruption
+      end # handle_connection_interruption
+
+
 
       def handle_open_ok(method)
         self.status = :opened
@@ -270,7 +276,7 @@ module AMQ
         self.status = :closed
         self.exec_callback_once_yielding_self(:close, method)
 
-        self.on_connection_interruption(exception)
+        self.handle_connection_interruption(exception)
       end
 
       # === Handlers ===
