@@ -119,11 +119,7 @@ module AMQ
           # Let's make it an instance thing by instance = self.new(settings)
           @settings = settings = Settings.configure(settings)
 
-          instance = self.new
-          instance.establish_connection(settings)
-          instance.register_connection_callback(&block)
-
-          instance
+          self.new(settings, &block)
         end
 
         # @see AMQ::Client::Adapter
@@ -155,21 +151,20 @@ module AMQ
 
       include AMQ::Client::StatusMixin
 
-      extend RegisterEntityMixin
-
-      register_entity :channel,  AMQ::Client::Channel
-
       #
       # API
       #
 
-      def initialize(*args)
-        super(*args)
+      attr_reader :connections
+      def initialize(settings, &block)
+        @settings    = settings
+        @frames      = Array.new
+        @connections = Array.new
+        self.logger  = self.class.logger
 
-        self.logger   = self.class.logger
-        self.settings = self.class.settings
-
-        @frames       = Array.new
+        self.establish_connection
+        self.establish_amqp_connection
+        self.register_connection_callback(&block)
       end
 
 
@@ -177,8 +172,13 @@ module AMQ
       # Establish socket connection to the server.
       #
       # @api plugin
-      def establish_connection(settings)
-        raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection(settings)")
+      def establish_connection
+        raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection")
+      end
+
+      def establish_amqp_connection
+        self.reset
+        self.handshake
       end
 
       def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
@@ -187,6 +187,7 @@ module AMQ
         if self.sync?
           self.receive # Start/Start-Ok
           self.receive # Tune/Tune-Ok
+          self.receive # Open/Open-Ok
         end
       end
 
@@ -275,6 +276,13 @@ module AMQ
           send(Protocol::HeartbeatFrame)
         end
       end # send_heartbeat
+
+      # Shortcut for creating new channels.
+      #
+      # @return [AMQ::Client::Channel] A new channel.
+      def channel(*args, &block)
+        AMQ::Client::Channel.new(self, *args, &block)
+      end
 
 
       # @see .sync?

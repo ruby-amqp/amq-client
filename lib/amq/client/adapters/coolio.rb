@@ -62,10 +62,9 @@ module AMQ
 
       attr_accessor :socket
       attr_accessor :callbacks
-      attr_accessor :connections
 
-      def establish_connection(settings)
-        socket = Socket.connect(self, settings[:host], settings[:port])
+      def establish_connection
+        socket = Socket.connect(self, @settings[:host], @settings[:port])
         socket.attach(Cool.io::Loop.default)
         self.socket = socket
       end
@@ -74,11 +73,10 @@ module AMQ
         self.on_connection(&block)
       end
 
-      def initialize
+      def initialize(settings, &block)
         # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
         # won't assign anything to :key. MK.
-        @callbacks   = {}
-        @connections = []
+        @callbacks = {}
         super
       end
 
