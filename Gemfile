@@ -13,7 +13,7 @@ def custom_gem(name, options = Hash.new)
   end
 end
 
-gem "eventmachine", "0.12.10" #, "1.0.0.beta.3"
+gem "eventmachine"
 # cool.io uses iobuffer that won't compile on JRuby
 # (and, probably, Windows)
 gem "cool.io", :platform => :ruby
