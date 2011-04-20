@@ -212,7 +212,7 @@ module AMQ
       #
       # @api public
       def on_error(&block)
-        self.define_callback(:close, &block)
+        self.define_callback(:error, &block)
       end
 
 
@@ -278,7 +278,7 @@ module AMQ
 
       def handle_close(method, exception = nil)
         self.status = :closed
-        self.exec_callback_once_yielding_self(:close, method)
+        self.exec_callback_yielding_self(:error, method)
 
         self.handle_connection_interruption(exception)
       end
