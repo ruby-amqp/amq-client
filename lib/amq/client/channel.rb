@@ -9,6 +9,13 @@ module AMQ
     class Channel < Entity
 
       #
+      # Behaviors
+      #
+
+      register_entity :queue,    AMQ::Client::Queue
+      register_entity :exchange, AMQ::Client::Exchange
+
+      #
       # API
       #
 
@@ -52,20 +59,6 @@ module AMQ
         if channel_max != 0 && !(0..channel_max).include?(id)
           raise ChannelOutOfBadError.new(channel_max, id)
         end
-      end
-
-      # Shortcut for creating new queues.
-      #
-      # @return [AMQ::Client::Queue] A new queue.
-      def queue(*args, &block)
-        AMQ::Client::Queue.new(@client, self, *args, &block)
-      end
-
-      # Shortcut for creating new exchanges.
-      #
-      # @return [AMQ::Client::Exchange] A new exchange.
-      def exchange(*args, &block)
-        AMQ::Client::Exchange.new(@client, self, *args, &block)
       end
 
       def consumers

@@ -33,21 +33,6 @@ module AMQ
         instance
       end
 
-      def establish_connection
-        # Unfortunately there doesn't seem to be any sane way
-        # how to get EventMachine connect to the instance level.
-      end
-
-      def register_connection_callback(&block)
-        unless block.nil?
-          # delay calling block we were given till after we receive
-          # connection.open-ok. Connection will notify us when
-          # that happens.
-          self.on_connection do
-            block.call(self)
-          end
-        end
-      end
 
       def reconnect(period = 5, force = false)
         if @reconnecting and not force
@@ -65,6 +50,26 @@ module AMQ
 
         self.reconnect(@settings[:host], @settings[:port])
       end
+
+
+      def establish_connection(settings)
+        # Unfortunately there doesn't seem to be any sane way
+        # how to get EventMachine connect to the instance level.
+      end
+
+      def register_connection_callback(&block)
+        unless block.nil?
+          # delay calling block we were given till after we receive
+          # connection.open-ok. Connection will notify us when
+          # that happens.
+          self.on_connection do
+            block.call(self)
+          end
+        end
+      end
+
+
+      attr_reader :connections
 
 
       def initialize(*args)

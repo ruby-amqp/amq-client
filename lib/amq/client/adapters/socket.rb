@@ -20,11 +20,11 @@ module AMQ
       # API
       #
 
-      def establish_connection
+      def establish_connection(settings)
         # NOTE: this doesn't work with "localhost", I don't know why:
-        host = @settings[:host] = "127.0.0.1" if @settings[:host] == "localhost"
-        @socket          = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-        sockaddr         = Socket.pack_sockaddr_in(@settings[:port], host)
+        settings[:host] = "127.0.0.1" if settings[:host] == "localhost"
+        @socket         = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+        sockaddr        = Socket.pack_sockaddr_in(settings[:port], settings[:host])
 
         @socket.connect(sockaddr)
       rescue Errno::ECONNREFUSED => exception
@@ -44,17 +44,9 @@ module AMQ
         end
       end
 
-      def reset
-        # TODO
-      end
-
-      def open_successful
-        # TODO: do we need anything in here actually?
-      end
-
-      def on_disconnection
-        # TODO: do we need anything in here actually?
-      end
+      def connection
+        @socket
+      end # connection
 
       def connected?
         @socket && !@socket.closed?
