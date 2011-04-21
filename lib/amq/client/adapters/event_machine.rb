@@ -27,11 +27,10 @@ module AMQ
       def self.connect(settings = nil, &block)
         @settings = settings = Settings.configure(settings)
 
-        # FIXME: the last argument is supposed to be &block, not block,
-        # unfortunately EventMachine eats &block and even worse, there's
-        # no other sane way how to establish connection (we'd like to do
-        # that on an instance level, see #establish_connection method).
-        EventMachine.connect(settings[:host], settings[:port], self, settings, block)
+        instance = EventMachine.connect(settings[:host], settings[:port], self, settings)
+        instance.register_connection_callback(&block)
+
+        instance
       end
 
       # Reconnect after a period of wait.
@@ -80,15 +79,18 @@ module AMQ
       attr_reader :connections
 
 
-      # FIXME: block should be &block, see explanation in self.connect.
-      def initialize(settings, block)
-        super(settings, &block)
+      def initialize(*args)
+        super(*args)
 
+        @connections                        = Array.new
         # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established       = false
         @tcp_connection_failed            = false
         @intentionally_closing_connection = false
 
+        # EventMachine::Connection's and Adapter's constructors arity
+        # make it easier to use *args. MK.
+        @settings                           = args.first
         @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
           raise AMQ::Client::TCPConnectionFailed.new(settings)
@@ -100,7 +102,7 @@ module AMQ
           @last_server_heartbeat = Time.now
           EventMachine.add_periodic_timer(self.heartbeat_interval, &method(:send_heartbeat))
         end
-      end # initialize(settings, &block)
+      end # initialize(*args)
 
 
       alias send_raw send_data
