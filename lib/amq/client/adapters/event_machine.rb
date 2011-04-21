@@ -7,7 +7,7 @@ require "amq/client/framing/string/frame"
 module AMQ
   module Client
     class EventMachineClient < EM::Connection
-
+      # @private
       class Deferrable
         include EventMachine::Deferrable
       end
@@ -33,7 +33,11 @@ module AMQ
         instance
       end
 
-
+      # Reconnect after a period of wait.
+      #
+      # @param [Fixnum]  period Period of time, in seconds, to wait before reconnection attempt.
+      # @param [Boolean] force  If true, enforces immediate reconnection.
+      # @api public
       def reconnect(period = 5, force = false)
         if @reconnecting and not force
           EventMachine::Timer.new(period) {
@@ -51,12 +55,15 @@ module AMQ
         self.reconnect(@settings[:host], @settings[:port])
       end
 
-
+      # For EventMachine adapter, this is a no-op.
+      # @api public
       def establish_connection(settings)
         # Unfortunately there doesn't seem to be any sane way
         # how to get EventMachine connect to the instance level.
       end
 
+      # @see #on_connection
+      # @private
       def register_connection_callback(&block)
         unless block.nil?
           # delay calling block we were given till after we receive
@@ -100,11 +107,18 @@ module AMQ
 
       alias send_raw send_data
 
-
+      # Whether we are in authentication state (after TCP connection was estabilished
+      # but before broker authenticated us).
+      #
+      # @return [Boolean]
+      # @api public
       def authenticating?
         @authenticating
       end # authenticating?
 
+      # IS TCP connection estabilished and currently active?
+      # @return [Boolean]
+      # @api public
       def tcp_connection_established?
         @tcp_connection_established
       end # tcp_connection_established?
@@ -116,6 +130,7 @@ module AMQ
       # EventMachine reactor callback. Is run when TCP connection is estabilished
       # but before resumption of the network loop. Note that this includes cases
       # when TCP connection has failed.
+      # @private
       def post_init
         reset
 
@@ -131,6 +146,7 @@ module AMQ
       end # post_init
 
       # Called by EventMachine reactor once TCP connection is successfully estabilished.
+      # @private
       def connection_completed
         # we only can safely set this value here because EventMachine is a lovely piece of
         # software that calls #post_init before #unbind even when TCP connection
@@ -146,6 +162,7 @@ module AMQ
         self.handshake
       end
 
+      # @private
       def close_connection(*args)
         @intentionally_closing_connection = true
 
@@ -158,7 +175,8 @@ module AMQ
       # * Our peer closes TCP connection down
       # * There is a network connection issue
       # * Initial TCP connection fails
-      def unbind
+      # @private
+      def unbind(exception = nil)
         if !@tcp_connection_established && !@had_successfull_connected_before
           @tcp_connection_failed = true
           self.tcp_connection_failed
@@ -193,6 +211,7 @@ module AMQ
       # EventMachine receives data in chunks, sometimes those chunks are smaller
       # than the size of AMQP frame. That's why you need to add some kind of buffer.
       #
+      # @private
       def receive_data(chunk)
         @chunk_buffer << chunk
         while frame = get_next_frame

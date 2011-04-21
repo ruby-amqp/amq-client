@@ -83,7 +83,7 @@ module AMQ
 
 
 
-
+      # @api public
       def initialize(client, mechanism, response, locale, client_properties = nil)
         @mechanism         = mechanism
         @response          = response
@@ -111,7 +111,7 @@ module AMQ
         self.define_callback(:close) { |exception| raise(exception) }
       end
 
-
+      # @api public
       def settings
         @client.settings
       end # settings
@@ -124,6 +124,7 @@ module AMQ
 
       # Sends connection.open to the server.
       #
+      # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
       def open(vhost = "/")
         @client.send Protocol::Connection::Open.encode(vhost)
@@ -132,13 +133,14 @@ module AMQ
 
       # Sends connection.close to the server.
       #
+      # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
       def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
         @client.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         closing!
       end
 
-
+      # @api public
       def reset_state!
       end # reset_state!
 
@@ -151,6 +153,7 @@ module AMQ
 
       # Handles connection.open
       #
+      # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
       def start_ok(method)
         @server_properties = method.server_properties
@@ -165,6 +168,7 @@ module AMQ
 
       # Handles connection.open-Ok
       #
+      # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
       def handle_open_ok(method)
         @known_hosts = method.known_hosts
@@ -177,6 +181,7 @@ module AMQ
 
       # Handles connection.tune-ok
       #
+      # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
       def handle_tune(method)
         @channel_max        = method.channel_max
@@ -189,6 +194,7 @@ module AMQ
 
       # Handles connection.close
       #
+      # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
       def handle_close(method)
         self.handle_connection_interruption
@@ -201,13 +207,14 @@ module AMQ
 
       # Handles connection.close-ok
       #
+      # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
       def handle_close_ok(method)
         closed!
         @client.disconnection_successful
       end # handle_close_ok(method)
 
-
+      # @api plugin
       def handle_connection_interruption
         @channels.each { |n, c| c.handle_connection_interruption }
       end # handle_connection_interruption
