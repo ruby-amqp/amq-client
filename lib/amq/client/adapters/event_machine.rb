@@ -98,6 +98,8 @@ module AMQ
 
         self.reset
 
+        self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f)
+
         if self.heartbeat_interval > 0
           @last_server_heartbeat = Time.now
           EventMachine.add_periodic_timer(self.heartbeat_interval, &method(:send_heartbeat))

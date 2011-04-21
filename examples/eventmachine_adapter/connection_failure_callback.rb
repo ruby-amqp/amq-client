@@ -19,7 +19,7 @@ EM.run do
                                           :vhost    => "/amq_client_testbed",
                                           :user     => "amq_client_gem",
                                           :password => "amq_client_gem_password",
-                                          :connection_timeout        => 0.3,
+                                          :timeout        => 0.3,
                                           :on_tcp_connection_failure => Proc.new { |settings| puts "Failed to connect, as expected"; EM.stop }) do |client|
     raise "Connected, authenticated. This is not what this example is supposed to do!"
   end

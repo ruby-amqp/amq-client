@@ -20,7 +20,7 @@ begin
                                             :vhost    => "/amq_client_testbed",
                                             :user     => "amq_client_gem",
                                             :password => "amq_client_gem_password",
-                                            :connection_timeout        => 0.3) do |client|
+                                            :timeout        => 0.3) do |client|
       raise "Connected, authenticated. This is not what this example is supposed to do!"
     end
   end
