@@ -25,9 +25,9 @@ module AMQ
       #
 
       def self.connect(settings = nil, &block)
-        @settings = settings = Settings.configure(settings)
+        @settings = Settings.configure(settings)
 
-        instance = EventMachine.connect(settings[:host], settings[:port], self, settings)
+        instance = EventMachine.connect(@settings[:host], @settings[:port], self, @settings)
         instance.register_connection_callback(&block)
 
         instance
