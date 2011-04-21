@@ -151,22 +151,23 @@ module AMQ
       #
 
 
-      # Handles connection.open
+      # Handles Connection.Start.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
       def start_ok(method)
         @server_properties = method.server_properties
 
-        # it's not clear whether we should transition to :opening state here
+        # It's not clear whether we should transition to :opening state here
         # or in #open but in case authentication fails, it would be strange to have
         # @status undefined. So lets do this. MK.
         opening!
+
         @client.send Protocol::Connection::StartOk.encode(@client_properties, @mechanism, @response, @locale)
       end
 
 
-      # Handles connection.open-Ok
+      # Handles Connection.Open-Ok.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
@@ -179,7 +180,7 @@ module AMQ
         @client.connection_successful if @client.respond_to?(:connection_successful)
       end
 
-      # Handles connection.tune-ok
+      # Handles Connection.Tune-Ok.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
@@ -192,7 +193,7 @@ module AMQ
       end # handle_tune(method)
 
 
-      # Handles connection.close
+      # Handles Connection.Close.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
@@ -201,11 +202,11 @@ module AMQ
 
         closed!
         # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
-        x = RuntimeError.new(method.reply_text)
-        self.error(x)
+        error = RuntimeError.new(method.reply_text)
+        self.error(error)
       end
 
-      # Handles connection.close-ok
+      # Handles Connection.Close-Ok.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
