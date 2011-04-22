@@ -52,7 +52,7 @@ module AMQ
           self.reset
         end
 
-        self.reconnect(@settings[:host], @settings[:port])
+        EventMachine.reconnect(@settings[:host], @settings[:port], self)
       end
 
       # For EventMachine adapter, this is a no-op.
