@@ -31,10 +31,10 @@ EM.run do
         EM.stop
       }
     }
-    
+
     Signal.trap "INT",  show_stopper
     Signal.trap "TERM", show_stopper
-    
+
     EM.add_timer(30, show_stopper)
 
 
