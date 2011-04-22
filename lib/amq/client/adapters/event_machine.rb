@@ -38,10 +38,10 @@ module AMQ
       # @param [Fixnum]  period Period of time, in seconds, to wait before reconnection attempt.
       # @param [Boolean] force  If true, enforces immediate reconnection.
       # @api public
-      def reconnect(period = 5, force = false)
+      def reconnect(force = false, period = 5)
         if @reconnecting and not force
           EventMachine::Timer.new(period) {
-            reconnect(period, true)
+            reconnect(true, period)
           }
           return
         end

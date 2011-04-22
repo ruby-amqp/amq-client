@@ -6,13 +6,6 @@ require File.join(__dir, "example_helper")
 
 
 EM.run do
-  reconnector = Proc.new { |client, settings|
-    puts "Asked to reconnect to #{settings[:host]}:#{settings[:port]}"
-
-
-  }
-
-
   AMQ::Client::EventMachineClient.connect(:port     => 5672,
                                           :vhost    => "/amq_client_testbed",
                                           :user     => "amq_client_gem",
@@ -22,7 +15,7 @@ EM.run do
 
     client.on_tcp_connection_loss do |cl, settings|
       puts "tcp_connection_loss handler kicks in"
-      cl.reconnect(1)
+      cl.reconnect(false, 2)
     end
 
     show_stopper = Proc.new {
