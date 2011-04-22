@@ -1,5 +1,5 @@
 module AMQ
   module Client
-    VERSION = "0.7.0.alpha8"
+    VERSION = "0.7.0.alpha9"
   end
 end
