@@ -24,6 +24,9 @@ module AMQ
       # API
       #
 
+      attr_reader :connections
+
+
       def self.connect(settings = nil, &block)
         @settings = Settings.configure(settings)
 
@@ -55,11 +58,57 @@ module AMQ
         EventMachine.reconnect(@settings[:host], @settings[:port], self)
       end
 
-      # For EventMachine adapter, this is a no-op.
+
+      # Defines a callback that will be executed when AMQP connection is considered open,
+      # after client and broker has agreed on max channel identifier and maximum allowed frame
+      # size. You can define more than one callback.
+      #
+      # @see #on_open
       # @api public
-      def establish_connection(settings)
-        # Unfortunately there doesn't seem to be any sane way
-        # how to get EventMachine connect to the instance level.
+      def on_connection(&block)
+        @connection_deferrable.callback(&block)
+      end # on_connection(&block)
+
+      # Defines a callback that will be executed when AMQP connection is considered open,
+      # before client and broker has agreed on max channel identifier and maximum allowed frame
+      # size. You can define more than one callback.
+      #
+      # @see #on_connection
+      # @api public
+      def on_open(&block)
+        @connection_opened_deferrable.callback(&block)
+      end # on_open(&block)
+
+      # Defines a callback that will be run when broker confirms connection termination
+      # (client receives connection.close-ok). You can define more than one callback.
+      #
+      # @api public
+      def on_disconnection(&block)
+        @disconnection_deferrable.callback(&block)
+      end # on_disconnection(&block)
+
+      # Defines a callback that will be run when initial TCP connection fails.
+      # You can define only one callback.
+      #
+      # @api public
+      def on_tcp_connection_failure(&block)
+        @on_tcp_connection_failure = block
+      end
+
+      # Defines a callback that will be run when initial TCP connection fails.
+      # You can define only one callback.
+      #
+      # @api public
+      def on_tcp_connection_loss(&block)
+        @on_tcp_connection_loss = block
+      end
+
+      # Defines a callback that will be run when TCP connection is closed before authentication
+      # finishes. Usually this means authentication failure. You can define only one callback.
+      #
+      # @api public
+      def on_possible_authentication_failure(&block)
+        @on_possible_authentication_failure = block
       end
 
       # @see #on_connection
@@ -74,9 +123,6 @@ module AMQ
           end
         end
       end
-
-
-      attr_reader :connections
 
 
       def initialize(*args)
@@ -124,6 +170,15 @@ module AMQ
       def tcp_connection_established?
         @tcp_connection_established
       end # tcp_connection_established?
+
+      # For EventMachine adapter, this is a no-op.
+      # @api public
+      def establish_connection(settings)
+        # Unfortunately there doesn't seem to be any sane way
+        # how to get EventMachine connect to the instance level.
+      end
+
+
 
       #
       # Implementation
@@ -221,15 +276,6 @@ module AMQ
         end
       end
 
-      # Defines a callback that will be executed when AMQP connection is considered open,
-      # after client and broker has agreed on max channel identifier and maximum allowed frame
-      # size. You can define more than one callback.
-      #
-      # @see #on_open
-      # @api public
-      def on_connection(&block)
-        @connection_deferrable.callback(&block)
-      end # on_connection(&block)
 
       # Called by AMQ::Client::Connection after we receive connection.open-ok.
       # @api public
@@ -237,16 +283,6 @@ module AMQ
         @connection_deferrable.succeed
       end # connection_successful
 
-
-      # Defines a callback that will be executed when AMQP connection is considered open,
-      # before client and broker has agreed on max channel identifier and maximum allowed frame
-      # size. You can define more than one callback.
-      #
-      # @see #on_connection
-      # @api public
-      def on_open(&block)
-        @connection_opened_deferrable.callback(&block)
-      end # on_open(&block)
 
       # Called by AMQ::Client::Connection after we receive connection.tune.
       # @api public
@@ -257,14 +293,6 @@ module AMQ
         opened!
       end # open_successful
 
-
-      # Defines a callback that will be run when broker confirms connection termination
-      # (client receives connection.close-ok). You can define more than one callback.
-      #
-      # @api public
-      def on_disconnection(&block)
-        @disconnection_deferrable.callback(&block)
-      end # on_disconnection(&block)
 
       # Called by AMQ::Client::Connection after we receive connection.close-ok.
       #
@@ -278,43 +306,16 @@ module AMQ
       end # disconnection_successful
 
 
-      # Defines a callback that will be run when initial TCP connection fails.
-      # You can define only one callback.
-      #
-      # @api public
-      def on_tcp_connection_failure(&block)
-        @on_tcp_connection_failure = block
-      end
-
-      # Called when initial TCP connection fails.
-      # @api public
-      def tcp_connection_failed
-        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
-      end
-
-
-      # Defines a callback that will be run when initial TCP connection fails.
-      # You can define only one callback.
-      #
-      # @api public
-      def on_tcp_connection_loss(&block)
-        @on_tcp_connection_loss = block
-      end
-
       # Called when initial TCP connection fails.
       # @api public
       def tcp_connection_lost
         @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
       end
 
-
-
-      # Defines a callback that will be run when TCP connection is closed before authentication
-      # finishes. Usually this means authentication failure. You can define only one callback.
-      #
+      # Called when initial TCP connection fails.
       # @api public
-      def on_possible_authentication_failure(&block)
-        @on_possible_authentication_failure = block
+      def tcp_connection_failed
+        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
       end
 
 
@@ -379,7 +380,7 @@ module AMQ
         elsif tls_options
           start_tls
         end
-      end
+      end # upgrade_to_tls_if_necessary
     end # EventMachineClient
   end # Client
 end # AMQ
