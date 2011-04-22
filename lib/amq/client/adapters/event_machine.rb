@@ -98,7 +98,7 @@ module AMQ
 
         self.reset
 
-        self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f)
+        self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
         if self.heartbeat_interval > 0
           @last_server_heartbeat = Time.now
