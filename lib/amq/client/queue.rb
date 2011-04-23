@@ -315,23 +315,23 @@ module AMQ
       end
 
       def handle_delete_ok(method)
-        self.exec_callback(:delete, method)
+        self.exec_callback_once(:delete, method)
       end # handle_delete_ok(method)
 
       def handle_consume_ok(method)
-        self.exec_callback(:consume, method)
+        self.exec_callback_once(:consume, method)
       end # handle_consume_ok(method)
 
       def handle_purge_ok(method)
-        self.exec_callback(:purge, method)
+        self.exec_callback_once(:purge, method)
       end # handle_purge_ok(method)
 
       def handle_bind_ok(method)
-        self.exec_callback(:bind)
+        self.exec_callback_once(:bind)
       end # handle_bind_ok(method)
 
       def handle_unbind_ok(method)
-        self.exec_callback(:unbind)
+        self.exec_callback_once(:unbind)
       end # handle_unbind_ok(method)
 
       def handle_delivery(method, header, payload)
@@ -340,7 +340,7 @@ module AMQ
 
       def handle_cancel_ok(method)
         @consumer_tag = nil
-        self.exec_callback(:cancel, method)
+        self.exec_callback_once(:cancel, method)
       end # handle_cancel_ok(method)
 
       def handle_get_ok(method, header, payload)
