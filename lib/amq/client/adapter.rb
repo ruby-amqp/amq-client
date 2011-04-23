@@ -151,7 +151,7 @@ module AMQ
         # Can be overriden by higher-level libraries like amqp gem or bunny.
         # Defaults to AMQ::Client::TCPConnectionFailed.
         #
-        # @return [Exception]
+        # @return [Class]
         def tcp_connection_failure_exception_class
           @tcp_connection_failure_exception_class ||= AMQ::Client::TCPConnectionFailed
         end # tcp_connection_failure_exception_class
