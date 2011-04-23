@@ -146,6 +146,15 @@ module AMQ
         def async?
           !sync?
         end
+
+
+        # Can be overriden by higher-level libraries like amqp gem or bunny.
+        # Defaults to AMQ::Client::TCPConnectionFailed.
+        #
+        # @return [Exception]
+        def tcp_connection_failure_exception_class
+          @tcp_connection_failure_exception_class ||= AMQ::Client::TCPConnectionFailed
+        end # tcp_connection_failure_exception_class
       end # ClassMethods
 
 

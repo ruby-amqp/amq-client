@@ -139,7 +139,7 @@ module AMQ
         @settings                           = args.first
         @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
-          raise AMQ::Client::TCPConnectionFailed.new(settings)
+          raise self.class.tcp_connection_failure_exception_class.new(settings)
         }
 
         self.reset
