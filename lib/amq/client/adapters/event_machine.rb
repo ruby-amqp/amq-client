@@ -9,7 +9,33 @@ module AMQ
     class EventMachineClient < EM::Connection
       # @private
       class Deferrable
+
+        #
+        # Behaviors
+        #
+
         include EventMachine::Deferrable
+
+        #
+        # API
+        #
+
+        # Same as EventMachine::Deferrable#callback but instead of prepending callback to callbacks list,
+        # appends it.
+        #
+        # @return [self]
+        # @api public
+        def append_callback(&block)
+          return unless block
+          @deferred_status ||= :unknown
+          if @deferred_status == :succeeded
+            block.call(*@deferred_args)
+          elsif @deferred_status != :failed
+            @callbacks ||= []
+            @callbacks.push(block)
+          end
+          self
+        end
       end
 
       #
