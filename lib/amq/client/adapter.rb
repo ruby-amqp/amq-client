@@ -203,7 +203,6 @@ module AMQ
       # section 2.2.4 of the {http://bit.ly/hw2ELX AMQP 0.9.1 specification}.
       #
       # @api  plugin
-      # @todo This method should await broker's response with Close-Ok. {http://github.com/michaelklishin MK}.
       # @see  #close_connection
       def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
         @intentionally_closing_connection = true
