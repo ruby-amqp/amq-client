@@ -109,7 +109,7 @@ module AMQ
         # the block if it is given.
         #
         # @example Specifying adapter via the :adapter option
-        #   AMQ::Client::Adapter.connect(adapter: "socket")
+        #   AMQ::Client::Adapter.connect(:adapter => "socket")
         # @example Specifying using custom adapter class
         #   AMQ::Client::SocketClient.connect
         # @param [Hash] Connection parameters, including :adapter to use.
