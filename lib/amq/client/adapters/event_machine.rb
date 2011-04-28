@@ -306,7 +306,7 @@ module AMQ
       end # disconnection_successful
 
 
-      # Called when initial TCP connection fails.
+      # Called when previously established TCP connection fails.
       # @api public
       def tcp_connection_lost
         @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
