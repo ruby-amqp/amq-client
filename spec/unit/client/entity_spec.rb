@@ -12,6 +12,17 @@ describe AMQ::Client::Entity do
     subject.callbacks.should be_kind_of(Hash)
   end
 
+  describe "#has_callback?" do
+    it "should return true if entity has at least one callback with given name" do
+      subject.define_callback(:init, proc {})
+      subject.has_callback?(:init).should be_true
+    end
+
+    it "should return false if entity doesn't have callbacks with given name" do
+      subject.has_callback?(:init).should be_false
+    end
+  end
+
   describe "#exec_callback" do
     it "executes callback for given event" do
       proc = Proc.new { |*args, &block|

@@ -68,6 +68,10 @@ module AMQ
         callbacks = Array(self.callbacks.delete(name))
         callbacks.map { |c| c.call(self, *args, &block) } if callbacks.any?
       end
+
+      def has_callback?(name)
+        self.callbacks[name] && !self.callbacks[name].empty?
+      end # has_callback?
     end
 
     # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
