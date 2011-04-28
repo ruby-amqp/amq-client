@@ -175,6 +175,7 @@ module AMQ
       def disconnection_successful
         exec_callback_yielding_self(:disconnect)
         close_connection
+        closed!
       end
 
       # Called by AMQ::Client::Connection after we receive connection.tune.
@@ -182,6 +183,7 @@ module AMQ
       # @api private
       def open_successful
         @authenticating = false
+        opened!
         exec_callback_yielding_self(:open)
       end # open_successful
 

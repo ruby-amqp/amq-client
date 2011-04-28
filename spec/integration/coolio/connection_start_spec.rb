@@ -12,6 +12,7 @@ describe "AMQ::Client::CoolioClient", "Connection.Start", :nojruby => true do
     it "should trigger the callback" do
       coolio do
         AMQ::Client::CoolioClient.connect do |client|
+          client.should be_opened
           done
         end
       end
