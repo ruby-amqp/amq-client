@@ -40,6 +40,10 @@ module AMQ
           write(data)
         end
 
+        def on_connect_failed
+          adapter.tcp_connection_failed
+        end
+
         protected
         def puts_data(data)
           puts "    As string:     #{data.inspect}"
@@ -80,6 +84,9 @@ module AMQ
         @callbacks   = {}
         @connections = []
         super
+        if settings[:on_tcp_connection_failure]
+          on_tcp_connection_failure(&settings.delete(:on_tcp_connection_failure))
+        end
       end
 
       # sets a callback for connection
@@ -90,6 +97,10 @@ module AMQ
       # sets a callback for disconnection
       def on_disconnection(&block)
         define_callback :disconnect, &block
+      end
+
+      def on_tcp_connection_failure(&block)
+        define_callback :tcp_connection_failure, &block
       end
 
       def on_open(&block)
@@ -113,6 +124,13 @@ module AMQ
         exec_callback_yielding_self(:open)
       end # open_successful
 
+      def tcp_connection_failed
+        if has_callback?(:tcp_connection_failure)
+          exec_callback_yielding_self(:tcp_connection_failure)
+        else
+          raise self.class.tcp_connection_failure_exception_class.new(settings)
+        end
+      end # tcp_connection_failed
 
       # triggered when socket is connected but before handshake is done
       def on_socket_connect
@@ -140,6 +158,10 @@ module AMQ
         @socket.close
       end
 
+
+      def self.tcp_connection_failure_exception_class
+        AMQ::Client::TCPConnectionFailed
+      end # self.tcp_connection_failure_exception_class
 
       protected
 
