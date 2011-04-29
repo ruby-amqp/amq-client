@@ -11,7 +11,7 @@ EM.run do
                                           :password => "a password that is incorrect #{Time.now.to_i}", :on_possible_authentication_failure => Proc.new { |settings|
                                             puts "Authentication failed, as expected, settings are: #{settings.inspect}"
 
-                                            EM.stop
+                                            EventMachine.stop
                                           }) do |client|
     raise "Should not really be executed"
   end

@@ -155,6 +155,14 @@ module AMQ
         def tcp_connection_failure_exception_class
           @tcp_connection_failure_exception_class ||= AMQ::Client::TCPConnectionFailed
         end # tcp_connection_failure_exception_class
+
+        # Can be overriden by higher-level libraries like amqp gem or bunny.
+        # Defaults to AMQ::Client::PossibleAuthenticationFailure.
+        #
+        # @return [Class]
+        def authentication_failure_exception_class
+          @authentication_failure_exception_class ||= AMQ::Client::PossibleAuthenticationFailureError
+        end # authentication_failure_exception_class
       end # ClassMethods
 
 

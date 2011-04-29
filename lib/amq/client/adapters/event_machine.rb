@@ -137,10 +137,13 @@ module AMQ
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
         @settings                           = args.first
-        @on_possible_authentication_failure = @settings[:on_possible_authentication_failure]
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
           raise self.class.tcp_connection_failure_exception_class.new(settings)
         }
+        @on_possible_authentication_failure = @settings[:on_possible_authentication_failure] || Proc.new { |settings|
+          raise self.class.authentication_failure_exception_class.new(settings)
+        }
+
 
         self.reset
 
