@@ -15,7 +15,7 @@ amq_client_example "Bind a new queue to amq.fanout" do |client|
     puts "Queue #{queue.name.inspect} is now declared!"
 
     queue.bind("amq.fanout") do
-      puts "Queue #{queue.name} is now bound to amq.fanout"
+      puts "Queue #{queue.name} is now bound to amq.fanout."
       puts
       puts "Deleting queue #{queue.name}"
       queue.delete do |message_count|

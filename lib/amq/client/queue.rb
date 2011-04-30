@@ -327,11 +327,11 @@ module AMQ
       end # handle_purge_ok(method)
 
       def handle_bind_ok(method)
-        self.exec_callback_once(:bind)
+        self.exec_callback_once(:bind, method)
       end # handle_bind_ok(method)
 
       def handle_unbind_ok(method)
-        self.exec_callback_once(:unbind)
+        self.exec_callback_once(:unbind, method)
       end # handle_unbind_ok(method)
 
       def handle_delivery(method, header, payload)
