@@ -238,7 +238,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.5.)
       def cancel(nowait = false, &block)
-        raise "This instance isn't being consumed!" if @consumer_tag.nil?
+        raise "There is no consumer tag for this queue. This usually means that you are trying to unsubscribe a queue that never was subscribed for messages in the first place." if @consumer_tag.nil?
 
         @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
         @consumer_tag = nil
