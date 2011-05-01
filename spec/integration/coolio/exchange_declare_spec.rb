@@ -7,7 +7,8 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
   let(:exchange_name) { "amq-client.testexchange.#{Time.now.to_i}" }
   it "should create an exchange and trigger a callback" do
     coolio_amqp_connect do |client|
-      AMQ::Client::Channel.new(client, 1).open do |channel|
+      channel = AMQ::Client::Channel.new(client, 1)
+      channel.open do
         exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
         exchange.declare do
           exchange.delete
@@ -22,7 +23,8 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
       context "when set" do
         it "should trigger channel level error if given exchange doesn't exist" do
           coolio_amqp_connect do |client|
-            AMQ::Client::Channel.new(client, 1).open do |channel|
+            channel = AMQ::Client::Channel.new(client, 1)
+            channel.open do
               channel.on_error do
                 @error_fired = true
               end
@@ -41,13 +43,14 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
 
         it "should raise no error and fire the callback if given exchange exists" do
           coolio_amqp_connect do |client|
-            AMQ::Client::Channel.new(client, 1).open do |channel|
+            channel = AMQ::Client::Channel.new(client, 1)
+            channel.open do
               channel.on_error do
                 @error_fired = true
               end
               exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
               exchange.declare(false, false, false, false) do # initial declaration
-                AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare(true) do |other_exchange|
+                AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare(true) do
                   @callback_fired = true
                 end
               end
@@ -64,7 +67,8 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
       context "when unset" do
         it "should raise no error and fire the callback if given exchange doesn't exist" do
           coolio_amqp_connect do |client|
-            AMQ::Client::Channel.new(client, 1).open do |channel|
+            channel = AMQ::Client::Channel.new(client, 1)
+            channel.open do
               channel.on_error do
                 @error_fired = true
               end
@@ -83,14 +87,15 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
 
         it "should raise no error and fire the callback if given exchange exists" do
           coolio_amqp_connect do |client|
-            AMQ::Client::Channel.new(client, 1).open do |channel|
+            channel = AMQ::Client::Channel.new(client, 1)
+            channel.open do
               channel.on_error do
                 @error_fired = true
               end
               exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
               exchange.declare(false, false, false, false) do # initial declaration
                 exchange.delete
-                AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare(false) do |other|
+                AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare(false) do
                   @callback_fired = true
                 end
               end
