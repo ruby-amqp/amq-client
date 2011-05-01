@@ -63,7 +63,7 @@ module AMQ
 
 
 
-      def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
+      def declare(passive = false, durable = false, auto_delete = false, nowait = false, arguments = nil, &block)
         @client.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
         unless nowait
