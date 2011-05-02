@@ -94,7 +94,6 @@ describe AMQ::Client::EventMachineClient, "Exchange.Declare" do
               end
               exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
               exchange.declare(false, false, false, false) do # initial declaration
-                exchange.delete
                 AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare(false) do
                   @callback_fired = true
                 end
