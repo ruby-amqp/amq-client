@@ -19,8 +19,8 @@ amq_client_example "Channel-level exception handling" do |client|
 
 
 
-    channel.on_error do
-      puts "Oops, there is a channel-levle exceptions!"
+    channel.on_error do |ch, close|
+      puts "Oops, there is a channel-level exception: #{close.inspect}"
 
       EM.add_timer(1.2) { show_stopper.call }
     end

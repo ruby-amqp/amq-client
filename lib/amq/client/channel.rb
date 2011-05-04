@@ -260,7 +260,7 @@ module AMQ
       end # reset_state!
 
 
-      def handle_connection_interruption(exception = nil)
+      def handle_connection_interruption(method = nil)
         self.reset_state!
       end # handle_connection_interruption
 
@@ -276,11 +276,11 @@ module AMQ
         self.exec_callback_once_yielding_self(:close, method)
       end
 
-      def handle_close(method, exception = nil)
+      def handle_close(method)
         self.status = :closed
         self.exec_callback_yielding_self(:error, method)
 
-        self.handle_connection_interruption(exception)
+        self.handle_connection_interruption(method)
       end
 
       # === Handlers ===
@@ -301,21 +301,11 @@ module AMQ
       end
 
       self.handle(Protocol::Channel::Close) do |client, frame|
-        exception = nil
-
-        begin
-          method   = frame.decode_payload
-        rescue AMQ::Protocol::Error => e
-          exception = e
-        end
+        method   = frame.decode_payload
         channels = client.connection.channels
         channel  = channels[frame.channel]
 
-        if exception
-          channel.handle_close(method, exception)
-        else
-          channel.handle_close(method)
-        end
+        channel.handle_close(method)
       end
 
       self.handle(Protocol::Basic::QosOk) do |client, frame|
