@@ -257,7 +257,7 @@ module AMQ
         # and protocol exceptions result in connection closure, check whether we are
         # in the authentication stage. If so, it is likely to signal an authentication
         # issue. Java client behaves the same way. MK.
-        if authenticating?
+        if authenticating? && !@intentionally_closing_connection
           if sync?
             raise PossibleAuthenticationFailureError.new(@settings)
           else

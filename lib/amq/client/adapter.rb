@@ -217,7 +217,13 @@ module AMQ
 
         self.on_disconnection(&block)
         closing!
-        self.connection.close(reply_code, reply_text)
+
+        # ruby-amqp/amqp#66, MK.
+        if self.connection
+          self.connection.close(reply_code, reply_text)
+        else
+          self.disconnection_successful
+        end
       end
       alias close disconnect
 
