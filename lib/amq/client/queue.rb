@@ -225,7 +225,7 @@ module AMQ
         #
         # 100.times { queue.get { ... } }
         #
-        # most likely you won't expect 100 callback runs per messages here. MK.
+        # most likely you won't expect 100 callback runs per message here. MK.
         self.redefine_callback(:get, &block)
         @channel.queues_awaiting_get_response.push(self)
 
