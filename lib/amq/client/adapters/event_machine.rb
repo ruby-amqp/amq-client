@@ -237,7 +237,7 @@ module AMQ
       # * Initial TCP connection fails
       # @private
       def unbind(exception = nil)
-        if !@tcp_connection_established && !@had_successfull_connected_before
+        if !@tcp_connection_established && !@had_successfull_connected_before && !@intentionally_closing_connection
           @tcp_connection_failed = true
           self.tcp_connection_failed
         end
