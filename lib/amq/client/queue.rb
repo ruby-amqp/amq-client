@@ -26,6 +26,9 @@ module AMQ
       # Channel this queue belongs to.
       attr_reader :channel
 
+      # Consumer tag identifies subscription for message delivery. It is nil for queues that are not subscribed for messages. See AMQ::Client::Queue#subscribe.
+      attr_reader :consumer_tag
+
       # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
       # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.
       # @param  [String]                Queue name. Please note that AMQP spec does not require brokers to support Unicode for queue names.
