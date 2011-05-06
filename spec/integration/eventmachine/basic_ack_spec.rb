@@ -29,7 +29,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
           end
 
           done(2.5) {
-            @received_messages.size == messages.size
+            @received_messages.size.should == messages.size
           }
         end
       end
