@@ -21,7 +21,7 @@ describe "AMQ::Client::CoolioClient", "Basic.Consume", :nojruby => true do
           queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
           queue.bind("amq.fanout")
 
-          queue.consume(false) do |amq_method|
+          queue.consume(true) do |amq_method|
             queue.on_delivery do |method, header, payload|
               @received_messages << payload
             end
