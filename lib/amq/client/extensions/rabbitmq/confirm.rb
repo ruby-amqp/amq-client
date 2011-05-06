@@ -97,7 +97,7 @@ module AMQ
             # @return [self] self.
             #
             # @see #confirm
-            def use_publisher_confirmations!(nowait = false, &block)
+            def confirm_select(nowait = false, &block)
               if nowait && block
                 raise "You can't use Confirm.Select with nowait=true and a callback at the same time."
               end

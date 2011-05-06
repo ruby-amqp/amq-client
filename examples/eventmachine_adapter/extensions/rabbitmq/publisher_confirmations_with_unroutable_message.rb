@@ -11,7 +11,7 @@ amq_client_example "Publisher confirmations using RabbitMQ extension: unroutable
   channel.open do
     puts "Channel #{channel.id} is now open"
 
-    channel.use_publisher_confirmations!
+    channel.confirm_select
     channel.on_error do
       puts "Oops, there is a channel-levle exceptions!"
     end
