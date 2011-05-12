@@ -10,8 +10,9 @@ amq_client_example "basic.return example" do |client|
     queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
 
     exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-    exchange.on_return do |method|
+    exchange.on_return do |method, header, body|
       puts "Handling a returned message: exchange = #{method.exchange}, reply_code = #{method.reply_code}, reply_text = #{method.reply_text}"
+      puts "Body of the returned message: #{body}"
     end
 
     10.times do |i|

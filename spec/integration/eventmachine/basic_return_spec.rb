@@ -18,7 +18,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Return" do
           # hence, no auto-delete
           delayed(0.4) { queue.delete }
 
-          exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare.on_return do |method|
+          exchange = AMQ::Client::Exchange.new(client, channel, "direct-exchange", :direct).declare.on_return do |method, header, body|
             @returned_messages << method.reply_text
           end
 

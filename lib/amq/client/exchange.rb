@@ -150,12 +150,15 @@ module AMQ
       end # handle
 
 
-      self.handle(Protocol::Basic::Return) do |client, frame|
+      self.handle(Protocol::Basic::Return) do |client, frame, content_frames|
         channel  = client.connection.channels[frame.channel]
         method   = frame.decode_payload
         exchange = channel.find_exchange(method.exchange)
 
-        exchange.exec_callback(:return, method)
+        header   = content_frames.shift
+        body     = content_frames.map { |frame| frame.payload }.join
+
+        exchange.exec_callback(:return, method, header, body)
       end
 
     end # Exchange
