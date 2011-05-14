@@ -112,11 +112,11 @@ module AMQ
         self.socket = socket
       end
 
-      # Registers on_connection callback
-      # @see #on_connection
+      # Registers on_open callback
+      # @see #on_open
       # @api private
       def register_connection_callback(&block)
-        self.on_connection(&block)
+        self.on_open(&block)
       end
 
       # Performs basic initialization. Do not use this method directly, use
@@ -138,16 +138,18 @@ module AMQ
       # Sets a callback for successful connection (after we receive open-ok)
       #
       # @api public
-      def on_connection(&block)
+      def on_open(&block)
         define_callback :connect, &block
       end
+      alias on_connection on_open
 
       # Sets a callback for disconnection (as in client-side disconnection)
       #
       # @api public
-      def on_disconnection(&block)
+      def on_closed(&block)
         define_callback :disconnect, &block
       end
+      alias on_disconnection on_closed
 
       # Sets a callback for tcp connection failure (as in can't make initial connection)
       def on_tcp_connection_failure(&block)

@@ -65,17 +65,19 @@ module AMQ
       #
       # @see on_possible_authentication_failure
       # @api public
-      def on_connection(&block)
+      def on_open(&block)
         @connection_deferrable.callback(&block)
-      end # on_connection(&block)
+      end # on_open(&block)
+      alias on_connection on_open
 
       # Defines a callback that will be run when broker confirms connection termination
       # (client receives connection.close-ok). You can define more than one callback.
       #
       # @api public
-      def on_disconnection(&block)
+      def on_closed(&block)
         @disconnection_deferrable.callback(&block)
-      end # on_disconnection(&block)
+      end # on_closed(&block)
+      alias on_disconnection on_closed
 
       # Defines a callback that will be run when initial TCP connection fails.
       # You can define only one callback.
@@ -101,14 +103,14 @@ module AMQ
         @on_possible_authentication_failure = block
       end
 
-      # @see #on_connection
+      # @see #on_open
       # @private
       def register_connection_callback(&block)
         unless block.nil?
           # delay calling block we were given till after we receive
           # connection.open-ok. Connection will notify us when
           # that happens.
-          self.on_connection do
+          self.on_open do
             block.call(self)
           end
         end
