@@ -234,7 +234,6 @@ module AMQ
         client.connection.handle_tune(frame.decode_payload)
 
         client.connection.open(client.settings[:vhost] || "/")
-        client.open_successful
       end
 
       self.handle(Protocol::Connection::OpenOk) do |client, frame|

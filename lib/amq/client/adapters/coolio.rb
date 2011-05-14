@@ -154,20 +154,17 @@ module AMQ
         define_callback :tcp_connection_failure, &block
       end
 
-      # Sets a callback for successful connection (after we receive tune-ok)
-      #
-      # @api public
-      def on_open(&block)
-        define_callback :open, &block
-      end # on_open(&block)
-
 
       # Called by AMQ::Client::Connection after we receive connection.open-ok.
       #
       # @api private
       def connection_successful
+        @authenticating = false
+        opened!
+
         exec_callback_yielding_self(:connect)
       end
+
 
       # Called by AMQ::Client::Connection after we receive connection.close-ok.
       #
@@ -178,14 +175,6 @@ module AMQ
         closed!
       end
 
-      # Called by AMQ::Client::Connection after we receive connection.tune.
-      #
-      # @api private
-      def open_successful
-        @authenticating = false
-        opened!
-        exec_callback_yielding_self(:open)
-      end # open_successful
 
       # Called by Socket if it could not connect.
       #

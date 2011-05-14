@@ -59,25 +59,15 @@ module AMQ
       end
 
 
-      # Defines a callback that will be executed when AMQP connection is considered open,
-      # after client and broker has agreed on max channel identifier and maximum allowed frame
-      # size. You can define more than one callback.
+      # Defines a callback that will be executed when AMQP connection is considered open:
+      # client and broker has agreed on max channel identifier and maximum allowed frame
+      # size and authentication succeeds. You can define more than one callback.
       #
-      # @see #on_open
+      # @see on_possible_authentication_failure
       # @api public
       def on_connection(&block)
         @connection_deferrable.callback(&block)
       end # on_connection(&block)
-
-      # Defines a callback that will be executed when AMQP connection is considered open,
-      # before client and broker has agreed on max channel identifier and maximum allowed frame
-      # size. You can define more than one callback.
-      #
-      # @see #on_connection
-      # @api public
-      def on_open(&block)
-        @connection_opened_deferrable.callback(&block)
-      end # on_open(&block)
 
       # Defines a callback that will be run when broker confirms connection termination
       # (client receives connection.close-ok). You can define more than one callback.
@@ -283,18 +273,11 @@ module AMQ
       # Called by AMQ::Client::Connection after we receive connection.open-ok.
       # @api public
       def connection_successful
+        @authenticating = false
+        opened!
+
         @connection_deferrable.succeed
       end # connection_successful
-
-
-      # Called by AMQ::Client::Connection after we receive connection.tune.
-      # @api public
-      def open_successful
-        @authenticating = false
-        @connection_opened_deferrable.succeed
-
-        opened!
-      end # open_successful
 
 
       # Called by AMQ::Client::Connection after we receive connection.close-ok.
@@ -344,9 +327,6 @@ module AMQ
         @chunk_buffer                 = ""
         @connection_deferrable        = Deferrable.new
         @disconnection_deferrable     = Deferrable.new
-        # succeeds when connection is open, that is, vhost is selected
-        # and client is given green light to proceed.
-        @connection_opened_deferrable = Deferrable.new
 
         # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
         # that on authentication failure broker must close TCP connection without sending
