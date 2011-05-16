@@ -119,7 +119,7 @@ module AMQ
 
       def initialize(*args)
         super(*args)
-
+        opening!
         @connections                        = Array.new
         # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established       = false
