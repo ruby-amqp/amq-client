@@ -118,18 +118,12 @@ module AMQ
 
 
       def error(exception)
-        if client.sync? # DO NOT DO THIS, just add a default errback to do exactly this, so if someone wants to use begin/rescue, he'll just ignore the errbacks.
-          # Synchronous error handling.
-          # Just use begin/rescue in the main loop.
-          raise exception
-        else
-          # Asynchronous error handling.
-          # Set callback for given class (Queue for example)
-          # or for the Connection class (or instance, of course).
-          callbacks = [self.callbacks[:close], self.client.connection.callbacks[:close]].flatten.compact
+        # Asynchronous error handling.
+        # Set callback for given class (Queue for example)
+        # or for the Connection class (or instance, of course).
+        callbacks = [self.callbacks[:close], self.client.connection.callbacks[:close]].flatten.compact
 
-          callbacks.map { |c| c.call(exception) } if callbacks.any?
-        end
+        callbacks.map { |c| c.call(exception) } if callbacks.any?
       end
     end
   end

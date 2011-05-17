@@ -80,7 +80,6 @@ module AMQ
       include AMQ::Client::Adapter
       include AMQ::Client::CallbacksMixin
 
-      self.sync = false
 
       #
       # API

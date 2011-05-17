@@ -7,14 +7,12 @@ require "amq/client"
 describe AMQ::Client do
   if RUBY_PLATFORM =~ /java/
     ADAPTERS = {
-      :event_machine => "EventMachineClient",
-      :socket        => "SocketClient"
+      :event_machine => "EventMachineClient"
     }
   else
     ADAPTERS = {
       :event_machine => "EventMachineClient",
-      :coolio        => "CoolioClient",
-      :socket        => "SocketClient"
+      :coolio        => "CoolioClient"
     }
   end
 

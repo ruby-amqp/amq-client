@@ -18,7 +18,6 @@ module AMQ
 
       include AMQ::Client::Adapter
 
-      self.sync = false
 
       #
       # API
@@ -250,11 +249,7 @@ module AMQ
         # in the authentication stage. If so, it is likely to signal an authentication
         # issue. Java client behaves the same way. MK.
         if authenticating? && !@intentionally_closing_connection
-          if sync?
-            raise PossibleAuthenticationFailureError.new(@settings)
-          else
-            @on_possible_authentication_failure.call(@settings) if @on_possible_authentication_failure
-          end
+          @on_possible_authentication_failure.call(@settings) if @on_possible_authentication_failure
         end
       end # unbind
 

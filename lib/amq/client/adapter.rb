@@ -16,29 +16,6 @@ module AMQ
     # * #estabilish_connection(settings)
     # * #close_connection
     #
-    # Adapters also must indicate whether they operate in asynchronous or synchronous mode
-    # using AMQ::Client::Adapter.sync accessor:
-    #
-    # @example EventMachine adapter indicates that it is asynchronous
-    #  module AMQ
-    #    module Client
-    #      class EventMachineClient
-    #
-    #        #
-    #        # Behaviors
-    #        #
-    #
-    #        include AMQ::Client::Adapter
-    #        include EventMachine::Deferrable
-    #
-    #         self.sync = false
-    #
-    #         # the rest of implementation code ...
-    #
-    #       end
-    #     end
-    #   end
-    #
     # @abstract
     module Adapter
 
@@ -126,27 +103,6 @@ module AMQ
           instance
         end
 
-        # @see AMQ::Client::Adapter
-        def sync=(boolean)
-          @sync = boolean
-        end
-
-        # Use this method to detect whether adapter is synchronous or asynchronous.
-        #
-        # @return [Boolean] true if this adapter is synchronous
-        # @api plugin
-        # @see AMQ::Client::Adapter
-        def sync?
-          @sync == true
-        end
-
-        # @see #sync?
-        # @api plugin
-        # @see AMQ::Client::Adapter
-        def async?
-          !sync?
-        end
-
 
         # Can be overriden by higher-level libraries like amqp gem or bunny.
         # Defaults to AMQ::Client::TCPConnectionFailed.
@@ -201,10 +157,6 @@ module AMQ
       def handshake(mechanism = "PLAIN", response = "\0guest\0guest", locale = "en_GB")
         self.send_preamble
         self.connection = AMQ::Client::Connection.new(self, mechanism, response, locale)
-        if self.sync?
-          self.receive # Start/Start-Ok
-          self.receive # Tune/Tune-Ok
-        end
       end
 
       # Properly close connection with AMQ broker, as described in
@@ -298,20 +250,6 @@ module AMQ
         end
       end # send_heartbeat
 
-
-      # @see .sync?
-      # @api plugin
-      # @see AMQ::Client::Adapter
-      def sync?
-        self.class.sync?
-      end
-
-      # @see .async?
-      # @api plugin
-      # @see AMQ::Client::Adapter
-      def async?
-        self.class.async?
-      end
 
       # Returns heartbeat interval this client uses, in seconds.
       # This value may or may not be used depending on broker capabilities.

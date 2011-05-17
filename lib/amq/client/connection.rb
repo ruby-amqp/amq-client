@@ -106,8 +106,6 @@ module AMQ
         # Default errback.
         # You might want to override it, otherwise it'll
         # crash your program. It's the expected behaviour
-        # if it's a synchronous one, but not if you use
-        # some kind of event loop like EventMachine etc.
         self.define_callback(:close) { |exception| raise(exception) }
       end
 
@@ -175,8 +173,6 @@ module AMQ
         @known_hosts = method.known_hosts
 
         opened!
-        # async adapters need this callback to proceed with
-        # Adapter.connect block evaluation
         @client.connection_successful if @client.respond_to?(:connection_successful)
       end
 

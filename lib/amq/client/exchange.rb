@@ -71,11 +71,6 @@ module AMQ
           @channel.exchanges_awaiting_declare_ok.push(self)
         end
 
-
-        if @client.sync?
-          @client.read_until_receives(Protocol::Exchange::DeclareOk) unless nowait
-        end
-
         self
       end
 

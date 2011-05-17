@@ -92,10 +92,6 @@ module AMQ
           @channel.queues_awaiting_declare_ok.push(self)
         end
 
-        if @client.sync?
-          @client.read_until_receives(Protocol::Queue::DeclareOk) unless nowait
-        end
-
         self
       end
 
