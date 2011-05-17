@@ -23,13 +23,13 @@ module AMQ
       # API
       #
 
-      # TODO: make it possible to override these from, say, amqp gem or bunny
-      CLIENT_PROPERTIES = {
-        :platform => ::RUBY_DESCRIPTION,
-        :product  => "AMQ Client",
-        :version  => AMQ::Client::VERSION,
-        :homepage => "https://github.com/ruby-amqp/amq-client"
-      }.freeze
+      DEFAULT_CLIENT_PROPERTIES = {
+        :platform    => ::RUBY_DESCRIPTION,
+        :product     => "AMQ Client",
+        :information => "http://github.com/ruby-amqp/amq-client",
+        :version     => AMQ::Client::VERSION
+      }
+
 
       # Client capabilities
       #
@@ -84,18 +84,13 @@ module AMQ
 
 
       # @api public
-      def initialize(client, mechanism, response, locale, client_properties = nil)
+      def initialize(client, mechanism, response, locale, client_properties = {})
         @mechanism         = mechanism
         @response          = response
         @locale            = locale
 
         @channels          = Hash.new
-        @client_properties = client_properties || {
-          :platform    => "Ruby #{RUBY_VERSION}",
-          :product     => "AMQ Client",
-          :information => "http://github.com/ruby-amqp/amq-client",
-          :version     => AMQ::Client::VERSION
-        }
+        @client_properties = DEFAULT_CLIENT_PROPERTIES.merge(client_properties)
 
         reset_state!
 
@@ -113,6 +108,7 @@ module AMQ
       def settings
         @client.settings
       end # settings
+
 
 
       #
