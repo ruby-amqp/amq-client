@@ -2,7 +2,7 @@
 
 require "amq/client/entity"
 require "amq/client/adapter"
-require "amq/client/mixins/anonymous_entity"
+require "amq/client/mixins/server_named_entity"
 require "amq/client/protocol/get_response"
 
 module AMQ
@@ -13,7 +13,7 @@ module AMQ
       # Behaviors
       #
 
-      include AnonymousEntityMixin
+      include ServerNamedEntity
 
 
       #
