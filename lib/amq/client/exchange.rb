@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 require "amq/client/entity"
-require "amq/client/mixins/server_named_entity"
+require "amq/client/server_named_entity"
 
 module AMQ
   module Client

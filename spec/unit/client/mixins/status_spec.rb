@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 require "spec_helper"
-require "amq/client/mixins/openable"
+require "amq/client/openable"
 
 describe AMQ::Client::Openable do
   subject do

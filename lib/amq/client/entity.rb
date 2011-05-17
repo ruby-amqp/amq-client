@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require "amq/client/mixins/openable"
+require "amq/client/openable"
 
 module AMQ
   module Client
