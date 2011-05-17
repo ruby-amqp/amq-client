@@ -16,7 +16,7 @@ module AMQ
       # Behaviors
       #
 
-      include StatusMixin
+      include Openable
 
 
       #

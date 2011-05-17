@@ -126,7 +126,7 @@ module AMQ
       # Behaviors
       #
 
-      include AMQ::Client::StatusMixin
+      include AMQ::Client::Openable
 
       extend RegisterEntityMixin
 

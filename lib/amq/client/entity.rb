@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require "amq/client/mixins/status"
+require "amq/client/mixins/openable"
 
 module AMQ
   module Client
@@ -86,7 +86,7 @@ module AMQ
       # Behaviors
       #
 
-      include StatusMixin
+      include Openable
       include CallbacksMixin
 
       extend RegisterEntityMixin
