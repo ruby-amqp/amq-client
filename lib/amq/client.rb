@@ -2,6 +2,7 @@
 
 require "amq/client/version"
 require "amq/client/exceptions"
+require "amq/client/handlers_registry"
 require "amq/client/adapter"
 require "amq/client/channel"
 require "amq/client/exchange"
@@ -66,5 +67,5 @@ module AMQ
     rescue LoadError
       raise InvalidAdapterNameError.new(adapter)
     end
-  end
-end
+  end # Client
+end # AMQ

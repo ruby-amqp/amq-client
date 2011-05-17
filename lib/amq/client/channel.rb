@@ -6,11 +6,15 @@ require "amq/client/exchange"
 
 module AMQ
   module Client
-    class Channel < Entity
+    class Channel
 
       #
       # Behaviors
       #
+
+      extend RegisterEntityMixin
+      include Entity
+      extend ProtocolMethodHandlers
 
       register_entity :queue,    AMQ::Client::Queue
       register_entity :exchange, AMQ::Client::Exchange

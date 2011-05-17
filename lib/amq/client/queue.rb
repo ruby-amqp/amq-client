@@ -7,13 +7,15 @@ require "amq/protocol/get_response"
 
 module AMQ
   module Client
-    class Queue < Entity
+    class Queue
 
       #
       # Behaviors
       #
 
+      include Entity
       include ServerNamedEntity
+      extend ProtocolMethodHandlers      
 
 
       #

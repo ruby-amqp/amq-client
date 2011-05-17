@@ -4,8 +4,15 @@ require "spec_helper"
 require "amq/client/entity"
 
 describe AMQ::Client::Entity do
+  let(:klazz) do
+    Class.new do
+      include AMQ::Client::Entity
+    end
+  end
+
+
   subject do
-    AMQ::Client::Entity.new(Object.new)
+    klazz.new(Object.new)
   end
 
   it "should maintain an associative array of callbacks" do

@@ -15,10 +15,19 @@ module AMQ
       def register_entity(name, klass)
         define_method(name) do |*args, &block|
           klass.new(self, *args, &block)
-        end
-      end
-    end
+        end # define_method
+      end # register_entity
+    end # RegisterEntityMixin
 
+    module ProtocolMethodHandlers
+      def handle(klass, &block)
+        AMQ::Client::HandlersRegistry.register(klass, &block)
+      end
+
+      def handlers
+        AMQ::Client::HandlersRegistry.handlers
+      end
+    end # ProtocolMethodHandlers
 
 
     # AMQ entities, as implemented by AMQ::Client, have callbacks and can run them
@@ -27,7 +36,7 @@ module AMQ
     # @note Exchanges and queues implementation is based on this class.
     #
     # @abstract
-    class Entity
+    module Entity
 
       #
       # Behaviors
@@ -36,24 +45,12 @@ module AMQ
       include Openable
       include Callbacks
 
-      extend RegisterEntityMixin
-
       #
       # API
       #
 
       # @return [Array<#call>]
       attr_reader :callbacks
-
-      @@handlers ||= Hash.new
-
-      def self.handle(klass, &block)
-        @@handlers[klass] = block
-      end
-
-      def self.handlers
-        @@handlers
-      end
 
 
       def initialize(client)

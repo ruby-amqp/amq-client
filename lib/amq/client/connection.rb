@@ -10,14 +10,14 @@ module AMQ
     # methods)
     #
     # AMQP connection has multiple channels accessible via {Connection#channels} reader.
-    class Connection < Entity
+    class Connection
 
       #
       # Behaviors
       #
 
-      include Openable
-
+      include Entity
+      extend ProtocolMethodHandlers
 
       #
       # API

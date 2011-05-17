@@ -5,8 +5,12 @@ require "amq/client/server_named_entity"
 
 module AMQ
   module Client
-    class Exchange < Entity
+    class Exchange
+
+
+      include Entity
       include ServerNamedEntity
+      extend ProtocolMethodHandlers      
 
       TYPES = [:fanout, :direct, :topic, :headers].freeze
 
