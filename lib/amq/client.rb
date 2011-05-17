@@ -23,8 +23,8 @@ module AMQ
     # where metadata are hash with :path and :const_name keys.
     #
     # @example
-    #   AMQ::Client.adapters[:socket]
-    #   # => {path: full_path, const_name: "SocketClient"}}
+    #   AMQ::Client.adapters[:event_machine] # => {path: "...", const_name: "EventMachineClient"}}
+    #
     # @return [Hash]
     # @api public
     def self.adapters
@@ -50,7 +50,7 @@ module AMQ
     # @param [Hash] Connection parameters, including :adapter to use.
     # @api public
     def self.connect(settings = nil, &block)
-      adapter  = (settings && settings.delete(:adapter)) || :socket
+      adapter  = (settings && settings.delete(:adapter))
       adapter  = load_adapter(adapter)
       adapter.connect(settings, &block)
     end
