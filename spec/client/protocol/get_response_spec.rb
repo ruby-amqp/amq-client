@@ -3,7 +3,7 @@
 require "spec_helper"
 
 require "amq/protocol/client"
-require "amq/client/protocol/get_response"
+require "amq/protocol/get_response"
 # require "amq/protocol/frame"
 #
 # # We have to use Kernel#load so extensions to the

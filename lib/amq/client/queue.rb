@@ -3,7 +3,7 @@
 require "amq/client/entity"
 require "amq/client/adapter"
 require "amq/client/server_named_entity"
-require "amq/client/protocol/get_response"
+require "amq/protocol/get_response"
 
 module AMQ
   module Client
