@@ -2,14 +2,45 @@ require 'spec_helper'
 require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Exchange.Declare" do
+
+  #
+  # Environment
+  #
+
   include EventedSpec::SpecHelper
   default_timeout 1
   let(:exchange_name) { "amq-client.testexchange.#{Time.now.to_i}" }
+
+
+
+  #
+  # Examples
+  #
+
+  context "when exchange type is non-standard" do
+    context "and DOES NOT begin with x-" do
+      it "raises an exception" do
+        em_amqp_connect do |client|
+          channel = AMQ::Client::Channel.new(client, 1)
+          channel.open do
+            begin
+              AMQ::Client::Exchange.new(client, channel, exchange_name, "my_shiny_metal_exchange_type")
+            rescue AMQ::Client::Exchange::IncompatibleExchangeTypeError => e
+              done
+            end
+          end # channel.open
+        end # em_amqp_connect
+      end # it
+    end # context
+  end # context
+
+
+
   it "should create an exchange and trigger a callback" do
     em_amqp_connect do |client|
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open do
-        exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
+        exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, "fanout")
         exchange.declare do
           exchange.delete
           done(0.2)

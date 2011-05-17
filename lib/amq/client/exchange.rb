@@ -10,13 +10,13 @@ module AMQ
 
       include Entity
       include ServerNamedEntity
-      extend ProtocolMethodHandlers      
+      extend ProtocolMethodHandlers
 
       TYPES = [:fanout, :direct, :topic, :headers].freeze
 
       class IncompatibleExchangeTypeError < StandardError
         def initialize(types, given)
-          super("Exchange types are #{TYPES.inspect}, #{given.inspect} given.")
+          super("#{given.inspect} exchange type is unknown. Standard types are #{TYPES.inspect}, custom exchange types must begin with x-, for example: x-recent-history")
         end
       end
 
@@ -35,7 +35,7 @@ module AMQ
       attr_reader :type
 
       def initialize(client, channel, name, type = :fanout)
-        unless TYPES.include?(type.to_sym)
+        if !(TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
           raise IncompatibleExchangeTypeError.new(TYPES, type)
         end
 
