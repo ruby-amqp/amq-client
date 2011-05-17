@@ -27,7 +27,7 @@ describe AMQ::Client do
       end
 
       it "should provide info about path to the adapter" do
-        lambda { require @meta[:path] }.should_not raise_error
+        require @meta[:path]
       end
 
       it "should provide info about const_name" do
