@@ -78,7 +78,7 @@ module AMQ
       #
 
       include AMQ::Client::Adapter
-      include AMQ::Client::CallbacksMixin
+      include AMQ::Client::Callbacks
 
 
       #
