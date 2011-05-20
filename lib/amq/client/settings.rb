@@ -10,7 +10,7 @@ module AMQ
       #
       # @see AMQ::Client::Settings.configure
       def self.default
-        {
+        @default ||= {
           # server
           :host  => "127.0.0.1",
           :port  => AMQ::Protocol::DEFAULT_PORT,
@@ -36,6 +36,17 @@ module AMQ
           :frame_max => 131072
         }
       end
+
+
+      def self.client_properties
+        @client_properties ||= {
+          :platform    => ::RUBY_DESCRIPTION,
+          :product     => "AMQ Client",
+          :information => "http://github.com/ruby-amqp/amq-client",
+          :version     => AMQ::Client::VERSION
+        }
+      end
+
 
       # Merges given configuration parameters with defaults and returns
       # the result.

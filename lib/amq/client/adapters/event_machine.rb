@@ -26,7 +26,7 @@ module AMQ
       attr_reader :connections
 
 
-      def self.connect(settings = nil, &block)
+      def self.connect(settings = {}, &block)
         @settings = Settings.configure(settings)
 
         instance = EventMachine.connect(@settings[:host], @settings[:port], self, @settings)
@@ -117,6 +117,7 @@ module AMQ
 
 
       def initialize(*args)
+        puts args.inspect
         super(*args)
         opening!
         @connections                        = Array.new
@@ -302,6 +303,34 @@ module AMQ
       end
 
 
+
+
+
+      self.handle(Protocol::Connection::Start) do |client, frame|
+        client.connection.start_ok(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::Tune) do |client, frame|
+        client.connection.handle_tune(frame.decode_payload)
+
+        client.connection.open(client.settings[:vhost] || "/")
+      end
+
+      self.handle(Protocol::Connection::OpenOk) do |client, frame|
+        client.connection.handle_open_ok(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::Close) do |client, frame|
+        client.connection.handle_close(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::CloseOk) do |client, frame|
+        client.connection.handle_close_ok(frame.decode_payload)
+      end
+
+
+
+
       protected
 
       def handshake(mechanism = "PLAIN", response = nil, locale = "en_GB")
@@ -310,7 +339,9 @@ module AMQ
 
         # self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
 
-        self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
+        @mechanism = mechanism
+        @username  = username
+        @locale    = locale
 
         @authenticating = true
         self.send_preamble
