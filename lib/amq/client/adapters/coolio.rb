@@ -206,7 +206,7 @@ module AMQ
       def socket_disconnected
       end
 
-
+      alias close disconnect
 
 
       self.handle(Protocol::Connection::Start) do |connection, frame|

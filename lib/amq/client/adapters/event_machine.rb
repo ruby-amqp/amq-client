@@ -162,7 +162,7 @@ module AMQ
         # how to get EventMachine connect to the instance level.
       end
 
-
+      alias close disconnect
 
 
 

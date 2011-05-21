@@ -196,14 +196,14 @@ module AMQ
       #
       # @api  plugin
       # @see  #close_connection
-      def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
+      def disconnect(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0, &block)
         @intentionally_closing_connection = true
         self.on_disconnection(&block)
 
         # ruby-amqp/amqp#66, MK.
         if self.open?
           closing!
-          self.close(reply_code, reply_text)
+          self.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
         elsif self.closing?
           # no-op
         else
@@ -211,11 +211,6 @@ module AMQ
         end
       end
 
-      # (see #disconnect)
-      def close(*args, &block)
-        # alias won't work since this is a module. MK.
-        disconnect(*args, &block)
-      end
 
       # Sends AMQ protocol header (also known as preamble).
       #
