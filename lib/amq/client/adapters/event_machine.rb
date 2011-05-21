@@ -51,6 +51,9 @@ module AMQ
       end
 
 
+
+
+
       # Defines a callback that will be executed when AMQP connection is considered open:
       # client and broker has agreed on max channel identifier and maximum allowed frame
       # size and authentication succeeds. You can define more than one callback.
@@ -109,6 +112,8 @@ module AMQ
       end
 
 
+
+
       def initialize(*args)
         super(*args)
 
@@ -148,7 +153,17 @@ module AMQ
       end # initialize(*args)
 
 
-      alias send_raw send_data
+
+      # For EventMachine adapter, this is a no-op.
+      # @api public
+      def establish_connection(settings)
+        # Unfortunately there doesn't seem to be any sane way
+        # how to get EventMachine connect to the instance level.
+      end
+
+
+
+
 
       # Whether we are in authentication state (after TCP connection was estabilished
       # but before broker authenticated us).
@@ -166,18 +181,17 @@ module AMQ
         @tcp_connection_established
       end # tcp_connection_established?
 
-      # For EventMachine adapter, this is a no-op.
-      # @api public
-      def establish_connection(settings)
-        # Unfortunately there doesn't seem to be any sane way
-        # how to get EventMachine connect to the instance level.
-      end
+
+
 
 
 
       #
       # Implementation
       #
+
+      alias send_raw send_data
+
 
       # EventMachine reactor callback. Is run when TCP connection is estabilished
       # but before resumption of the network loop. Note that this includes cases
@@ -196,6 +210,8 @@ module AMQ
       rescue Exception => error
         raise error
       end # post_init
+
+
 
       # Called by EventMachine reactor once TCP connection is successfully estabilished.
       # @private
