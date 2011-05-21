@@ -95,7 +95,7 @@ module AMQ
         @connection.channels[@id] = self
         self.status = :opening
 
-        self.define_callback :open, &block
+        self.redefine_callback :open, &block
       end
 
       # Closes AMQP channel.
@@ -104,7 +104,7 @@ module AMQ
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
         @connection.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
 
-        self.define_callback :close, &block
+        self.redefine_callback :close, &block
       end
 
 
@@ -270,21 +270,21 @@ module AMQ
 
 
 
-      def handle_open_ok(method)
+      def handle_open_ok(open_ok)
         self.status = :opened
-        self.exec_callback_once_yielding_self(:open, method)
+        self.exec_callback_once_yielding_self(:open, open_ok)
       end
 
-      def handle_close_ok(method)
+      def handle_close_ok(close_ok)
         self.status = :closed
-        self.exec_callback_once_yielding_self(:close, method)
+        self.exec_callback_once_yielding_self(:close, close_ok)
       end
 
-      def handle_close(method)
+      def handle_close(channel_close)
         self.status = :closed
-        self.exec_callback_yielding_self(:error, method)
+        self.exec_callback_yielding_self(:error, channel_close)
 
-        self.handle_connection_interruption(method)
+        self.handle_connection_interruption(channel_close)
       end
 
 
@@ -300,7 +300,6 @@ module AMQ
 
         channel  = channels[frame.channel]
         channels.delete(channel)
-
         channel.handle_close_ok(method)
       end
 
