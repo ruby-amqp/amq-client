@@ -116,14 +116,12 @@ module AMQ
         super(*args)
 
         self.logger   = self.class.logger
-        self.settings = self.class.settings
 
         @frames            = Array.new
         @channels          = Hash.new
 
         opening!
 
-        @connections                        = Array.new
         # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established       = false
         @tcp_connection_failed            = false
@@ -131,7 +129,7 @@ module AMQ
 
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
-        @settings                           = args.first
+        @settings                           = Settings.configure(args.first)
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
           raise self.class.tcp_connection_failure_exception_class.new(settings)
         }
@@ -242,7 +240,7 @@ module AMQ
         closing!
         @tcp_connection_established = false
 
-        @connections.each { |c| c.handle_connection_interruption }
+        self.handle_connection_interruption
         @disconnection_deferrable.succeed
 
         closed!
