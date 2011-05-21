@@ -241,32 +241,6 @@ module AMQ
 
 
 
-      # Sends connection.open to the server.
-      #
-      # @api public
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
-      def open(vhost = "/")
-        self.send Protocol::Connection::Open.encode(vhost)
-      end
-
-
-      # Sends connection.close to the server.
-      #
-      # @api public
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.9)
-      def close(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0)
-        self.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
-        closing!
-      end
-
-      # Resets connection state.
-      #
-      # @api public
-      def reset_state!
-        # no-op by default
-      end # reset_state!
-
-
       # Returns heartbeat interval this client uses, in seconds.
       # This value may or may not be used depending on broker capabilities.
       # Zero means the server does not want a heartbeat.
@@ -315,6 +289,22 @@ module AMQ
         @authenticating = true
         self.send_preamble
       end
+
+
+      # Sends connection.open to the server.
+      #
+      # @api plugin
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
+      def open(vhost = "/")
+        self.send Protocol::Connection::Open.encode(vhost)
+      end
+
+      # Resets connection state.
+      #
+      # @api plugin
+      def reset_state!
+        # no-op by default
+      end # reset_state!
 
       # @api plugin
       # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
