@@ -140,9 +140,7 @@ module AMQ
         # @param [Hash] Connection parameters, including :adapter to use.
         # @api public
         def connect(settings = nil, &block)
-          # TODO: this doesn't look very nice, do we need it?
-          # Let's make it an instance thing by instance = self.new(settings)
-          @settings = settings = Settings.configure(settings)
+          @settings = Settings.configure(settings)
 
           instance = self.new
           instance.establish_connection(settings)
@@ -200,7 +198,7 @@ module AMQ
       # @see  #close_connection
       def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
         @intentionally_closing_connection = true
-        @disconnection_deferrable.callback(&block)
+        self.on_disconnection(&block)
 
         # ruby-amqp/amqp#66, MK.
         if self.open?
@@ -228,6 +226,9 @@ module AMQ
         self.send_raw(AMQ::Protocol::PREAMBLE)
       end
 
+      # Sends frame to the peer, checking that connection is open.
+      #
+      # @raise [ConnectionClosedError]
       def send(frame)
         if closed?
           raise ConnectionClosedError.new(frame)
@@ -235,6 +236,14 @@ module AMQ
           self.send_raw(frame.encode)
         end
       end
+
+      # Sends multiple frames, one by one.
+      #
+      # @api public
+      def send_frameset(frames)
+        frames.each { |frame| self.send(frame) }
+      end # send_frameset(frames)
+
 
 
       # Sends connection.open to the server.
@@ -255,16 +264,47 @@ module AMQ
         closing!
       end
 
+      # Resets connection state.
+      #
       # @api public
       def reset_state!
+        # no-op by default
       end # reset_state!
 
 
+      # Returns heartbeat interval this client uses, in seconds.
+      # This value may or may not be used depending on broker capabilities.
+      # Zero means the server does not want a heartbeat.
+      #
+      # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
+      def heartbeat_interval
+        @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
+      end # heartbeat_interval
 
 
-      def send_frameset(frames)
-        frames.each { |frame| self.send(frame) }
-      end # send_frameset(frames)
+      def vhost
+        @settings.fetch(:vhost, "/")
+      end # vhost
+
+
+      # Called when previously established TCP connection fails.
+      # @api public
+      def tcp_connection_lost
+        @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
+      end
+
+      # Called when initial TCP connection fails.
+      # @api public
+      def tcp_connection_failed
+        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
+      end
+
+
+
+      #
+      # Implementation
+      #
 
 
       # Sends opaque data to AMQ broker over active connection.
@@ -274,6 +314,19 @@ module AMQ
       def send_raw(data)
         raise MissingInterfaceMethodError.new("AMQ::Client#send_raw(data)")
       end
+
+      # Sends connection preamble to the broker.
+      def handshake
+        @authenticating = true
+        self.send_preamble
+      end
+
+      # @api plugin
+      # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
+      def encode_credentials(username, password)
+        "\0#{username}\0#{password}"
+      end # encode_credentials(username, password)
+
 
       def receive_frame(frame)
         @frames << frame
@@ -316,27 +369,6 @@ module AMQ
         end
       end # send_heartbeat
 
-
-      # Returns heartbeat interval this client uses, in seconds.
-      # This value may or may not be used depending on broker capabilities.
-      # Zero means the server does not want a heartbeat.
-      #
-      # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
-      def heartbeat_interval
-        @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
-      end # heartbeat_interval
-
-
-      def vhost
-        @settings.fetch(:vhost, "/")
-      end # vhost
-
-
-
-      #
-      # Implementation
-      #
 
 
       # Handles Connection.Start.
@@ -413,6 +445,24 @@ module AMQ
 
 
       protected
+
+      # Returns next frame from buffer whenever possible
+      #
+      # @api private
+      def get_next_frame
+        return nil unless @chunk_buffer.size > 7 # otherwise, cannot read the length
+        # octet + short
+        offset = 3 # 1 + 2
+        # length
+        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
+        # 4 bytes for long payload length, 1 byte final octet
+        frame_length = offset + 4 + payload_length + 1
+        if frame_length <= @chunk_buffer.size
+          @chunk_buffer.slice!(0, frame_length)
+        else
+          nil
+        end
+      end # def get_next_frame
 
       # Utility methods
 

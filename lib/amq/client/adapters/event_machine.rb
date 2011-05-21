@@ -306,19 +306,6 @@ module AMQ
       end # disconnection_successful
 
 
-      # Called when previously established TCP connection fails.
-      # @api public
-      def tcp_connection_lost
-        @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
-      end
-
-      # Called when initial TCP connection fails.
-      # @api public
-      def tcp_connection_failed
-        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
-      end
-
-
 
 
 
@@ -349,10 +336,6 @@ module AMQ
 
       protected
 
-      def handshake
-        @authenticating = true
-        self.send_preamble
-      end
 
       def reset
         @size    = 0
@@ -369,26 +352,6 @@ module AMQ
         # authentication stage to signal possible authentication failures.
         @authenticating           = false
       end
-
-      # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
-      def encode_credentials(username, password)
-        "\0#{username}\0#{password}"
-      end # encode_credentials(username, password)
-
-      def get_next_frame
-        return unless @chunk_buffer.size > 7 # otherwise, cannot read the length
-        # octet + short
-        offset = 3 # 1 + 2
-        # length
-        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
-        # 5: 4 bytes for long payload length, 1 byte final octet
-        frame_length = offset + 5 + payload_length
-        if frame_length <= @chunk_buffer.size
-          @chunk_buffer.slice!(0, frame_length)
-        else
-          nil
-        end
-      end # get_next_frame
 
       def upgrade_to_tls_if_necessary
         tls_options = @settings[:ssl]

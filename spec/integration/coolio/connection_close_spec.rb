@@ -7,14 +7,14 @@ describe "AMQ::Client::CoolioClient", "Connection.Close", :nojruby => true do
 
   it "should issue a callback and close connection" do
     coolio do
-      AMQ::Client::CoolioClient.connect do |client|
-        @client = client
-        client.should be_opened
-        client.close do
+      AMQ::Client::CoolioClient.connect do |connection|
+        @connection = connection
+        connection.should be_opened
+        connection.disconnect do
           done
         end
       end
     end
-    @client.should be_closed
+    @connection.should be_closed
   end
 end
