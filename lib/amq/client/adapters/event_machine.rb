@@ -191,6 +191,10 @@ module AMQ
       # Implementation
       #
 
+      # Backwards compatibility with 0.7.0.a25. MK.
+      Deferrable = EventMachine::DefaultDeferrable
+
+
       alias send_raw send_data
 
 
