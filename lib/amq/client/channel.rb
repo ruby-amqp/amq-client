@@ -41,8 +41,8 @@ module AMQ
       attr_accessor :flow_is_active
 
 
-      def initialize(client, id)
-        super(client)
+      def initialize(connection, id)
+        super(connection)
 
         @id        = id
         @exchanges = Hash.new
@@ -54,8 +54,8 @@ module AMQ
         # 65536 is here for cases when channel is opened without passing a callback in,
         # otherwise channel_mix would be nil and it causes a lot of needless headaches.
         # lets just have this default. MK.
-        channel_max = if client.connection
-                        client.connection.channel_max || 65536
+        channel_max = if @connection.open?
+                        @connection.channel_max || 65536
                       else
                         65536
                       end
@@ -84,27 +84,27 @@ module AMQ
       #
       # @return [AMQ::Client::Connection] Connection this channel belongs to.
       def connection
-        @client.connection
+        @connection
       end # connection
 
       # Opens AMQP channel.
       #
       # @api public
       def open(&block)
-        @client.send Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING)
-        @client.connection.channels[@id] = self
+        @connection.send Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING)
+        @connection.channels[@id] = self
         self.status = :opening
 
-        self.define_callback :open, &block
+        self.redefine_callback :open, &block
       end
 
       # Closes AMQP channel.
       #
       # @api public
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
-        @client.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
+        @connection.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
 
-        self.define_callback :close, &block
+        self.redefine_callback :close, &block
       end
 
 
@@ -113,7 +113,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
       def acknowledge(delivery_tag, multiple = false)
-        @client.send(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
+        @connection.send(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
 
         self
       end # acknowledge(delivery_tag, multiple = false)
@@ -123,7 +123,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
-        @client.send(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
+        @connection.send(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
 
         self
       end # reject(delivery_tag, requeue = true)
@@ -134,7 +134,7 @@ module AMQ
       # @note RabbitMQ as of 2.3.1 does not support prefetch_size.
       # @api public
       def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
-        @client.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
+        @connection.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
 
         self.redefine_callback :qos, &block
         self
@@ -149,7 +149,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
       # @api public
       def recover(requeue = true, &block)
-        @client.send(Protocol::Basic::Recover.encode(@id, requeue))
+        @connection.send(Protocol::Basic::Recover.encode(@id, requeue))
 
         self.redefine_callback :recover, &block
         self
@@ -166,7 +166,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.3.)
       # @api public
       def flow(active = false, &block)
-        @client.send Protocol::Channel::Flow.encode(@id, active)
+        @connection.send Protocol::Channel::Flow.encode(@id, active)
 
         self.redefine_callback :flow, &block
         self
@@ -178,7 +178,7 @@ module AMQ
       #
       # @api public
       def tx_select(&block)
-        @client.send Protocol::Tx::Select.encode(@id)
+        @connection.send Protocol::Tx::Select.encode(@id)
 
         self.redefine_callback :tx_select, &block
         self
@@ -188,7 +188,7 @@ module AMQ
       #
       # @api public
       def tx_commit(&block)
-        @client.send Protocol::Tx::Commit.encode(@id)
+        @connection.send Protocol::Tx::Commit.encode(@id)
 
         self.redefine_callback :tx_commit, &block
         self
@@ -198,7 +198,7 @@ module AMQ
       #
       # @api public
       def tx_rollback(&block)
-        @client.send Protocol::Tx::Rollback.encode(@id)
+        @connection.send Protocol::Tx::Rollback.encode(@id)
 
         self.redefine_callback :tx_rollback, &block
         self
@@ -270,78 +270,77 @@ module AMQ
 
 
 
-      def handle_open_ok(method)
+      def handle_open_ok(open_ok)
         self.status = :opened
-        self.exec_callback_once_yielding_self(:open, method)
+        self.exec_callback_once_yielding_self(:open, open_ok)
       end
 
-      def handle_close_ok(method)
+      def handle_close_ok(close_ok)
         self.status = :closed
-        self.exec_callback_once_yielding_self(:close, method)
+        self.exec_callback_once_yielding_self(:close, close_ok)
       end
 
-      def handle_close(method)
+      def handle_close(channel_close)
         self.status = :closed
-        self.exec_callback_yielding_self(:error, method)
+        self.exec_callback_yielding_self(:error, channel_close)
 
-        self.handle_connection_interruption(method)
+        self.handle_connection_interruption(channel_close)
       end
 
-      # === Handlers ===
 
-      self.handle(Protocol::Channel::OpenOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+
+      self.handle(Protocol::Channel::OpenOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.handle_open_ok(frame.decode_payload)
       end
 
-      self.handle(Protocol::Channel::CloseOk) do |client, frame|
+      self.handle(Protocol::Channel::CloseOk) do |connection, frame|
         method   = frame.decode_payload
-        channels = client.connection.channels
+        channels = connection.channels
 
         channel  = channels[frame.channel]
         channels.delete(channel)
-
         channel.handle_close_ok(method)
       end
 
-      self.handle(Protocol::Channel::Close) do |client, frame|
+      self.handle(Protocol::Channel::Close) do |connection, frame|
         method   = frame.decode_payload
-        channels = client.connection.channels
+        channels = connection.channels
         channel  = channels[frame.channel]
 
         channel.handle_close(method)
       end
 
-      self.handle(Protocol::Basic::QosOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::QosOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.exec_callback(:qos, frame.decode_payload)
       end
 
-      self.handle(Protocol::Basic::RecoverOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::RecoverOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.exec_callback(:recover, frame.decode_payload)
       end
 
-      self.handle(Protocol::Channel::FlowOk) do |client, frame|
-        channel  = client.connection.channels[frame.channel]
+      self.handle(Protocol::Channel::FlowOk) do |connection, frame|
+        channel  = connection.channels[frame.channel]
         method   = frame.decode_payload
 
         channel.flow_is_active = method.active
         channel.exec_callback(:flow, method)
       end
 
-      self.handle(Protocol::Tx::SelectOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Tx::SelectOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.exec_callback(:tx_select, frame.decode_payload)
       end
 
-      self.handle(Protocol::Tx::CommitOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Tx::CommitOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.exec_callback(:tx_commit, frame.decode_payload)
       end
 
-      self.handle(Protocol::Tx::RollbackOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Tx::RollbackOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         channel.exec_callback(:tx_rollback, frame.decode_payload)
       end
     end # Channel

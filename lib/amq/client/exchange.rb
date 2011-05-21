@@ -34,12 +34,12 @@ module AMQ
       # @return [Symbol] One of :direct, :fanout, :topic, :headers
       attr_reader :type
 
-      def initialize(client, channel, name, type = :fanout)
+      def initialize(connection, channel, name, type = :fanout)
         if !(TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
           raise IncompatibleExchangeTypeError.new(TYPES, type)
         end
 
-        @client  = client
+        @connection  = connection
         @channel = channel
         @name    = name
         @type    = type
@@ -49,7 +49,7 @@ module AMQ
           @channel.register_exchange(self)
         end
 
-        super(client)
+        super(connection)
       end
 
 
@@ -68,7 +68,7 @@ module AMQ
 
 
       def declare(passive = false, durable = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        @client.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
+        @connection.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
         unless nowait
           self.define_callback(:declare, &block)
@@ -80,7 +80,7 @@ module AMQ
 
 
       def delete(if_unused = false, nowait = false, &block)
-        @client.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
+        @connection.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
 
         unless nowait
           self.define_callback(:delete, &block)
@@ -95,7 +95,7 @@ module AMQ
 
       def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = {}, mandatory = false, immediate = false, frame_size = nil, &block)
         headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }.merge(user_headers)
-        @client.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @client.connection.frame_max)))
+        @connection.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @connection.frame_max)))
 
         block.call if block
 
@@ -125,32 +125,24 @@ module AMQ
 
 
 
-      # === Handlers ===
-      # Get the first exchange which didn't receive Exchange.Declare-Ok yet and run its declare callback.
-      # The cache includes only exchanges with {nowait: false}.
-      self.handle(Protocol::Exchange::DeclareOk) do |client, frame|
-        method = frame.decode_payload
-
-        # We should have cache API, so it'll be easy to change caching behaviour easily.
-        # So in the amq-client we don't want to cache more than just the last instance per each channel,
-        # whereas more opinionated clients might want to have every single instance in the cache,
-        # so they can iterate over it etc.
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Exchange::DeclareOk) do |connection, frame|
+        method   = frame.decode_payload
+        channel  = connection.channels[frame.channel]
         exchange = channel.exchanges_awaiting_declare_ok.shift
 
         exchange.handle_declare_ok(method)
       end # handle
 
 
-      self.handle(Protocol::Exchange::DeleteOk) do |client, frame|
-        channel  = client.connection.channels[frame.channel]
+      self.handle(Protocol::Exchange::DeleteOk) do |connection, frame|
+        channel  = connection.channels[frame.channel]
         exchange = channel.exchanges_awaiting_delete_ok.shift
         exchange.handle_delete_ok(frame.decode_payload)
       end # handle
 
 
-      self.handle(Protocol::Basic::Return) do |client, frame, content_frames|
-        channel  = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::Return) do |connection, frame, content_frames|
+        channel  = connection.channels[frame.channel]
         method   = frame.decode_payload
         exchange = channel.find_exchange(method.exchange)
 

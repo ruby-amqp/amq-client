@@ -15,7 +15,7 @@ module AMQ
 
       include Entity
       include ServerNamedEntity
-      extend ProtocolMethodHandlers      
+      extend ProtocolMethodHandlers
 
 
       #
@@ -35,8 +35,8 @@ module AMQ
       # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.
       # @param  [String]                Queue name. Please note that AMQP spec does not require brokers to support Unicode for queue names.
       # @api public
-      def initialize(client, channel, name = AMQ::Protocol::EMPTY_STRING)
-        super(client)
+      def initialize(connection, channel, name = AMQ::Protocol::EMPTY_STRING)
+        super(connection)
 
         @name    = name
         @channel = channel
@@ -87,7 +87,7 @@ module AMQ
         @auto_delete = auto_delete
 
         nowait = true if !block && !@name.empty?
-        @client.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
+        @connection.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         if !nowait
           self.append_callback(:declare, &block)
@@ -108,7 +108,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.9.)
       def delete(if_unused = false, if_empty = false, nowait = false, &block)
         nowait = true unless block
-        @client.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
+        @connection.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
 
         if !nowait
           self.append_callback(:delete, &block)
@@ -134,7 +134,7 @@ module AMQ
                           exchange
                         end
 
-        @client.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
+        @connection.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
 
         if !nowait
           self.append_callback(:bind, &block)
@@ -159,7 +159,7 @@ module AMQ
                           exchange
                         end
 
-        @client.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
+        @connection.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
 
         self.append_callback(:unbind, &block)
         # TODO: handle channel & connection-level exceptions
@@ -179,7 +179,7 @@ module AMQ
 
         nowait        = true unless block
         @consumer_tag = generate_consumer_tag(name)
-        @client.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
+        @connection.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @channel.consumers[@consumer_tag] = self
 
@@ -220,7 +220,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.10.)
       def get(no_ack = false, &block)
-        @client.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
+        @connection.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
 
         # most people only want one callback per #get call. Consider the following example:
         #
@@ -241,7 +241,7 @@ module AMQ
       def cancel(nowait = false, &block)
         raise "There is no consumer tag for this queue. This usually means that you are trying to unsubscribe a queue that never was subscribed for messages in the first place." if @consumer_tag.nil?
 
-        @client.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
+        @connection.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
         @consumer_tag = nil
         self.clear_callbacks(:delivery)
         self.clear_callbacks(:consume)
@@ -261,7 +261,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.7.)
       def purge(nowait = false, &block)
         nowait = true unless block
-        @client.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
+        @connection.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         if !nowait
           self.redefine_callback(:purge, &block)
@@ -358,49 +358,49 @@ module AMQ
 
       # Get the first queue which didn't receive Queue.Declare-Ok yet and run its declare callback.
       # The cache includes only queues with {nowait: false}.
-      self.handle(Protocol::Queue::DeclareOk) do |client, frame|
+      self.handle(Protocol::Queue::DeclareOk) do |connection, frame|
         method  = frame.decode_payload
 
-        channel = client.connection.channels[frame.channel]
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_declare_ok.shift
 
         queue.handle_declare_ok(method)
       end
 
 
-      self.handle(Protocol::Queue::DeleteOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Queue::DeleteOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_delete_ok.shift
         queue.handle_delete_ok(frame.decode_payload)
       end
 
 
-      self.handle(Protocol::Queue::BindOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Queue::BindOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_bind_ok.shift
 
         queue.handle_bind_ok(frame.decode_payload)
       end
 
 
-      self.handle(Protocol::Queue::UnbindOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Queue::UnbindOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_unbind_ok.shift
 
         queue.handle_unbind_ok(frame.decode_payload)
       end
 
 
-      self.handle(Protocol::Basic::ConsumeOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::ConsumeOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_consume_ok.shift
 
         queue.handle_consume_ok(frame.decode_payload)
       end
 
 
-      self.handle(Protocol::Basic::CancelOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::CancelOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_cancel_ok.shift
 
         queue.handle_consume_ok(frame.decode_payload)
@@ -408,8 +408,8 @@ module AMQ
 
 
       # Basic.Deliver
-      self.handle(Protocol::Basic::Deliver) do |client, method_frame, content_frames|
-        channel  = client.connection.channels[method_frame.channel]
+      self.handle(Protocol::Basic::Deliver) do |connection, method_frame, content_frames|
+        channel  = connection.channels[method_frame.channel]
         method   = method_frame.decode_payload
         queue    = channel.consumers[method.consumer_tag]
 
@@ -420,16 +420,16 @@ module AMQ
       end
 
 
-      self.handle(Protocol::Queue::PurgeOk) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Queue::PurgeOk) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_purge_ok.shift
 
         queue.handle_purge_ok(frame.decode_payload)
       end
 
 
-      self.handle(Protocol::Basic::GetOk) do |client, frame, content_frames|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::GetOk) do |connection, frame, content_frames|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_get_response.shift
         method  = frame.decode_payload
 
@@ -440,8 +440,8 @@ module AMQ
       end
 
 
-      self.handle(Protocol::Basic::GetEmpty) do |client, frame|
-        channel = client.connection.channels[frame.channel]
+      self.handle(Protocol::Basic::GetEmpty) do |connection, frame|
+        channel = connection.channels[frame.channel]
         queue   = channel.queues_awaiting_get_response.shift
 
         queue.handle_get_empty(frame.decode_payload)

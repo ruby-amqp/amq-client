@@ -4,37 +4,37 @@
 __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "example_helper")
 
-amq_client_example "An example that combines several AMQ operations" do |client|
-  puts "AMQP connection is open: #{client.connection.server_properties.inspect}"
+amq_client_example "An example that combines several AMQ operations" do |connection|
+  puts "AMQP connection is open: #{connection.server_properties.inspect}"
 
-  channel = AMQ::Client::Channel.new(client, 1)
+  channel = AMQ::Client::Channel.new(connection, 1)
   channel.open do
     puts "Channel #{channel.id} is now open!"
   end
 
-  queue = AMQ::Client::Queue.new(client, channel, "amqclient.queue2")
+  queue = AMQ::Client::Queue.new(connection, channel, "amqclient.queue2")
   queue.declare(false, false, false, true) do
     puts "Queue #{queue.name.inspect} is now declared!"
   end
 
-  exchange = AMQ::Client::Exchange.new(client, channel, "amqclient.adapters.em.exchange1", :fanout)
+  exchange = AMQ::Client::Exchange.new(connection, channel, "amqclient.adapters.em.exchange1", :fanout)
   exchange.declare { puts "Exchange #{exchange.name.inspect} is now declared!" }
 
-  queue.consume do |msg|
-    puts msg
+  queue.consume do |consume_ok|
+    puts "basic.consume_ok callback has fired for #{queue.name}, consumer_tag = #{consume_ok.consumer_tag}"
   end
 
 
   show_stopper = Proc.new {
     puts
     puts "Deleting queue #{queue.name}"
-    queue.delete do |message_count|
+    queue.delete do |delete_ok|
       puts
-      puts "Deleted #{queue.name}. It had #{message_count} messages in it."
+      puts "Deleted #{queue.name}. It had #{delete_ok.message_count} messages in it."
       puts
       puts "Deleting exchange #{exchange.name}"
       exchange.delete do
-        client.disconnect do
+        connection.disconnect do
           puts
           puts "AMQP connection is now properly closed"
           EM.stop

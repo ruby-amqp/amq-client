@@ -4,24 +4,24 @@
 __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "example_helper")
 
-amq_client_example "Declare a new fanout exchange" do |client|
-  puts "AMQP connection is open: #{client.connection.server_properties.inspect}"
+amq_client_example "Declare a new fanout exchange" do |connection|
+  puts "AMQP connection is open: #{connection.server_properties.inspect}"
 
-  channel = AMQ::Client::Channel.new(client, 1)
+  channel = AMQ::Client::Channel.new(connection, 1)
   channel.open do
     puts "Channel #{channel.id} is now open!"
 
     exchange_name = "amqclient.adapters.em.exchange"
 
     10.times do
-      exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
+      exchange = AMQ::Client::Exchange.new(connection, channel, exchange_name, :fanout)
       exchange.declare
     end
 
-    exchange2 = AMQ::Client::Exchange.new(client, channel, exchange_name + "-2", :fanout)
+    exchange2 = AMQ::Client::Exchange.new(connection, channel, exchange_name + "-2", :fanout)
     exchange2.declare
 
-    AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout).declare do |exchange, declare_ok|
+    AMQ::Client::Exchange.new(connection, channel, exchange_name, :fanout).declare do |exchange, declare_ok|
       puts "Channel is aware of the following exchanges: #{channel.exchanges.map { |e| e.name }.join(', ')}"
 
       exchange.delete do
@@ -29,7 +29,7 @@ amq_client_example "Declare a new fanout exchange" do |client|
         exchange2.delete do
           puts "Exchange #{exchange2.name} was successfully deleted"
 
-          client.disconnect do
+          connection.disconnect do
             puts
             puts "AMQP connection is now properly closed"
             EM.stop
@@ -39,7 +39,7 @@ amq_client_example "Declare a new fanout exchange" do |client|
     end
 
     show_stopper = Proc.new {
-      client.disconnect do
+      connection.disconnect do
         puts
         puts "AMQP connection is now properly closed"
         EM.stop

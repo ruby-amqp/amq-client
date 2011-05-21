@@ -34,12 +34,15 @@ describe "AMQ::Client::CoolioClient", "Connection.Start", :nojruby => true do
       it "should raise an error" do
         expect {
           coolio do
-            AMQ::Client::CoolioClient.connect(:port => 12938) { }
-            done(0.5)
+            begin
+              AMQ::Client::CoolioClient.connect(:port => 12938) { }
+              done
+            rescue Exception => e
+              done(0.5)
+            end
           end
         }.to raise_error(AMQ::Client::TCPConnectionFailed)
       end
-    end
-  end
-
-end
+    end # context
+  end # context
+end # describe

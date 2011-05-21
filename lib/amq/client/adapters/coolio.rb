@@ -13,6 +13,19 @@ module AMQ
     # cool.io style.
     #
     class CoolioClient
+
+      #
+      # Behaviors
+      #
+
+      include AMQ::Client::Adapter
+
+
+      #
+      # API
+      #
+
+
       #
       # Cool.io socket delegates most of its operations to the parent adapter.
       # Thus, 99.9% of the time you don't need to deal with this class.
@@ -73,17 +86,7 @@ module AMQ
         end
       end
 
-      #
-      # Behaviors
-      #
 
-      include AMQ::Client::Adapter
-      include AMQ::Client::Callbacks
-
-
-      #
-      # API
-      #
 
       # Cool.io socket for multiplexing et al.
       #
@@ -93,11 +96,6 @@ module AMQ
       # Hash with available callbacks
       attr_accessor :callbacks
 
-      # AMQP connections
-      #
-      # @see AMQ::Client::Connection
-      attr_accessor :connections
-
       # Creates a socket and attaches it to cool.io default loop.
       #
       # Called from CoolioClient.connect
@@ -106,9 +104,24 @@ module AMQ
       # @param [Hash] connection settings
       # @api private
       def establish_connection(settings)
-        socket = Socket.connect(self, settings[:host], settings[:port])
+        @settings     = Settings.configure(settings)
+
+        socket = Socket.connect(self, @settings[:host], @settings[:port])
         socket.attach(Cool.io::Loop.default)
         self.socket = socket
+
+
+        @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
+          raise self.class.tcp_connection_failure_exception_class.new(settings)
+        }
+        @on_possible_authentication_failure = @settings[:on_possible_authentication_failure] || Proc.new { |settings|
+          raise self.class.authentication_failure_exception_class.new(settings)
+        }
+
+        @locale            = @settings.fetch(:locale, "en_GB")
+        @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
+
+        socket
       end
 
       # Registers on_open callback
@@ -127,11 +140,13 @@ module AMQ
         # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
         # won't assign anything to :key. MK.
         @callbacks   = {}
-        @connections = []
-        super
-        if settings[:on_tcp_connection_failure]
-          on_tcp_connection_failure(&settings.delete(:on_tcp_connection_failure))
-        end
+
+        self.logger   = self.class.logger
+
+        @frames            = Array.new
+        @channels          = Hash.new
+
+        @mechanism         = "PLAIN"
       end
 
       # Sets a callback for successful connection (after we receive open-ok)
@@ -177,16 +192,6 @@ module AMQ
       end
 
 
-      # Called by Socket if it could not connect.
-      #
-      # @api private
-      def tcp_connection_failed
-        if has_callback?(:tcp_connection_failure)
-          exec_callback_yielding_self(:tcp_connection_failure)
-        else
-          raise self.class.tcp_connection_failure_exception_class.new(settings)
-        end
-      end # tcp_connection_failed
 
       # Called when socket is connected but before handshake is done
       #
@@ -201,6 +206,35 @@ module AMQ
       def socket_disconnected
       end
 
+      alias close disconnect
+
+
+      self.handle(Protocol::Connection::Start) do |connection, frame|
+        connection.start_ok(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::Tune) do |connection, frame|
+        connection.handle_tune(frame.decode_payload)
+
+        connection.open(connection.vhost)
+      end
+
+      self.handle(Protocol::Connection::OpenOk) do |connection, frame|
+        connection.handle_open_ok(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::Close) do |connection, frame|
+        connection.handle_close(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::CloseOk) do |connection, frame|
+        connection.handle_close_ok(frame.decode_payload)
+      end
+
+
+
+
+
       # Sends raw data through the socket
       #
       # @param [String] binary data
@@ -208,6 +242,7 @@ module AMQ
       def send_raw(data)
         socket.send_raw data
       end
+
 
       # The story about the buffering is kinda similar to EventMachine,
       # you keep receiving more than one frame in a single packet.
@@ -240,32 +275,15 @@ module AMQ
 
       # @api private
       def post_init
-        reset
-        handshake
+        self.reset
+        self.handshake
       end
 
       # @api private
       def reset
         @chunk_buffer = ""
+        @frames       = Array.new
       end
-
-      # Returns next frame from buffer whenever possible
-      #
-      # @api private
-      def get_next_frame
-        return nil unless @chunk_buffer.size > 7 # otherwise, cannot read the length
-        # octet + short
-        offset = 1 + 2
-        # length
-        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
-        # 4 bytes for long payload length, 1 byte final octet
-        frame_length = offset + 4 + payload_length + 1
-        if frame_length <= @chunk_buffer.size
-          @chunk_buffer.slice!(0, frame_length)
-        else
-          nil
-        end
-      end
-    end
-  end
-end
+    end # CoolioClient
+  end # Client
+end # AMQ

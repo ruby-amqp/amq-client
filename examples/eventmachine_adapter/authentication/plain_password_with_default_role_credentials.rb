@@ -8,7 +8,7 @@ EM.run do
   AMQ::Client::EventMachineClient.connect(:port => 5672, :vhost => "/amq_client_testbed", :user => "guest", :password => "guest") do |client|
     puts "Connected, authenticated"
 
-    puts client.authenticating?
+    puts "client.authenticating? => #{client.authenticating?}"
 
 
     show_stopper = Proc.new {

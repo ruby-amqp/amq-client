@@ -53,11 +53,11 @@ module AMQ
       attr_reader :callbacks
 
 
-      def initialize(client)
-        @client    = client
+      def initialize(connection)
+        @connection = connection
         # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
         # won't assign anything to :key. MK.
-        @callbacks = Hash.new
+        @callbacks  = Hash.new
       end
 
 
@@ -65,7 +65,7 @@ module AMQ
         # Asynchronous error handling.
         # Set callback for given class (Queue for example)
         # or for the Connection class (or instance, of course).
-        callbacks = [self.callbacks[:close], self.client.connection.callbacks[:close]].flatten.compact
+        callbacks = [self.callbacks[:close], self.connection.callbacks[:close]].flatten.compact
 
         callbacks.map { |c| c.call(exception) } if callbacks.any?
       end

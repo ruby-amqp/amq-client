@@ -7,14 +7,14 @@ describe AMQ::Client::EventMachineClient, "Channel.Close" do
 
   it "should close the channel" do
     @events = []
-    em_amqp_connect do |client|
+    em_amqp_connect do |connection|
       @events << :connect
-      channel = AMQ::Client::Channel.new(client, 1)
+      channel = AMQ::Client::Channel.new(connection, 1)
       channel.open do
         @events << :open
         channel.close do
           @events << :close
-          client.disconnect do
+          connection.disconnect do
             @events << :disconnect
             done
           end

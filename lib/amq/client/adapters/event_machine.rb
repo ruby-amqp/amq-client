@@ -7,10 +7,6 @@ require "amq/client/framing/string/frame"
 module AMQ
   module Client
     class EventMachineClient < EM::Connection
-      # @private
-      class Deferrable
-        include EventMachine::Deferrable
-      end
 
       #
       # Behaviors
@@ -23,10 +19,7 @@ module AMQ
       # API
       #
 
-      attr_reader :connections
-
-
-      def self.connect(settings = nil, &block)
+      def self.connect(settings = {}, &block)
         @settings = Settings.configure(settings)
 
         instance = EventMachine.connect(@settings[:host], @settings[:port], self, @settings)
@@ -50,12 +43,16 @@ module AMQ
 
         if !@reconnecting
           @reconnecting = true
-          @connections.each { |c| c.handle_connection_interruption }
+
+          self.handle_connection_interruption
           self.reset
         end
 
         EventMachine.reconnect(@settings[:host], @settings[:port], self)
       end
+
+
+
 
 
       # Defines a callback that will be executed when AMQP connection is considered open:
@@ -116,10 +113,18 @@ module AMQ
       end
 
 
+
+
       def initialize(*args)
         super(*args)
+
+        self.logger   = self.class.logger
+
+        @frames            = Array.new
+        @channels          = Hash.new
+
         opening!
-        @connections                        = Array.new
+
         # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established       = false
         @tcp_connection_failed            = false
@@ -127,7 +132,7 @@ module AMQ
 
         # EventMachine::Connection's and Adapter's constructors arity
         # make it easier to use *args. MK.
-        @settings                           = args.first
+        @settings                           = Settings.configure(args.first)
         @on_tcp_connection_failure          = @settings[:on_tcp_connection_failure] || Proc.new { |settings|
           raise self.class.tcp_connection_failure_exception_class.new(settings)
         }
@@ -135,9 +140,11 @@ module AMQ
           raise self.class.authentication_failure_exception_class.new(settings)
         }
 
+        @mechanism         = "PLAIN"
+        @locale            = @settings.fetch(:locale, "en_GB")
+        @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
         self.reset
-
         self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
         if self.heartbeat_interval > 0
@@ -147,7 +154,17 @@ module AMQ
       end # initialize(*args)
 
 
-      alias send_raw send_data
+
+      # For EventMachine adapter, this is a no-op.
+      # @api public
+      def establish_connection(settings)
+        # Unfortunately there doesn't seem to be any sane way
+        # how to get EventMachine connect to the instance level.
+      end
+
+      alias close disconnect
+
+
 
       # Whether we are in authentication state (after TCP connection was estabilished
       # but before broker authenticated us).
@@ -165,18 +182,21 @@ module AMQ
         @tcp_connection_established
       end # tcp_connection_established?
 
-      # For EventMachine adapter, this is a no-op.
-      # @api public
-      def establish_connection(settings)
-        # Unfortunately there doesn't seem to be any sane way
-        # how to get EventMachine connect to the instance level.
-      end
+
+
 
 
 
       #
       # Implementation
       #
+
+      # Backwards compatibility with 0.7.0.a25. MK.
+      Deferrable = EventMachine::DefaultDeferrable
+
+
+      alias send_raw send_data
+
 
       # EventMachine reactor callback. Is run when TCP connection is estabilished
       # but before resumption of the network loop. Note that this includes cases
@@ -195,6 +215,8 @@ module AMQ
       rescue Exception => error
         raise error
       end # post_init
+
+
 
       # Called by EventMachine reactor once TCP connection is successfully estabilished.
       # @private
@@ -236,7 +258,7 @@ module AMQ
         closing!
         @tcp_connection_established = false
 
-        @connections.each { |c| c.handle_connection_interruption }
+        self.handle_connection_interruption
         @disconnection_deferrable.succeed
 
         closed!
@@ -289,32 +311,36 @@ module AMQ
       end # disconnection_successful
 
 
-      # Called when previously established TCP connection fails.
-      # @api public
-      def tcp_connection_lost
-        @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
+
+
+
+      self.handle(Protocol::Connection::Start) do |connection, frame|
+        connection.start_ok(frame.decode_payload)
       end
 
-      # Called when initial TCP connection fails.
-      # @api public
-      def tcp_connection_failed
-        @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
+      self.handle(Protocol::Connection::Tune) do |connection, frame|
+        connection.handle_tune(frame.decode_payload)
+
+        connection.open(connection.vhost)
       end
+
+      self.handle(Protocol::Connection::OpenOk) do |connection, frame|
+        connection.handle_open_ok(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::Close) do |connection, frame|
+        connection.handle_close(frame.decode_payload)
+      end
+
+      self.handle(Protocol::Connection::CloseOk) do |connection, frame|
+        connection.handle_close_ok(frame.decode_payload)
+      end
+
+
 
 
       protected
 
-      def handshake(mechanism = "PLAIN", response = nil, locale = "en_GB")
-        username = @settings[:user] || @settings[:username]
-        password = @settings[:pass] || @settings[:password]
-
-        # self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
-
-        self.connection = AMQ::Client::Connection.new(self, mechanism, self.encode_credentials(username, password), locale)
-
-        @authenticating = true
-        self.send_preamble
-      end
 
       def reset
         @size    = 0
@@ -322,8 +348,8 @@ module AMQ
         @frames  = Array.new
 
         @chunk_buffer                 = ""
-        @connection_deferrable        = Deferrable.new
-        @disconnection_deferrable     = Deferrable.new
+        @connection_deferrable        = EventMachine::DefaultDeferrable.new
+        @disconnection_deferrable     = EventMachine::DefaultDeferrable.new
 
         # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
         # that on authentication failure broker must close TCP connection without sending
@@ -331,26 +357,6 @@ module AMQ
         # authentication stage to signal possible authentication failures.
         @authenticating           = false
       end
-
-      # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
-      def encode_credentials(username, password)
-        "\0#{username}\0#{password}"
-      end # encode_credentials(username, password)
-
-      def get_next_frame
-        return unless @chunk_buffer.size > 7 # otherwise, cannot read the length
-        # octet + short
-        offset = 3 # 1 + 2
-        # length
-        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
-        # 5: 4 bytes for long payload length, 1 byte final octet
-        frame_length = offset + 5 + payload_length
-        if frame_length <= @chunk_buffer.size
-          @chunk_buffer.slice!(0, frame_length)
-        else
-          nil
-        end
-      end # get_next_frame
 
       def upgrade_to_tls_if_necessary
         tls_options = @settings[:ssl]
