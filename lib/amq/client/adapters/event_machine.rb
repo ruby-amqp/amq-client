@@ -43,7 +43,8 @@ module AMQ
 
         if !@reconnecting
           @reconnecting = true
-          @connections.each { |c| c.handle_connection_interruption }
+
+          self.handle_connection_interruption
           self.reset
         end
 
