@@ -34,22 +34,31 @@ module AMQ
 
       def exec_callback(name, *args, &block)
         list = Array(self.callbacks[name])
-        list.each { |c| c.call(*args, &block) } if list.any?
+        if list.any?
+          list.each { |c| c.call(*args, &block) }
+        end
       end
 
       def exec_callback_once(name, *args, &block)
-        list = Array(self.callbacks.delete(name))
-        list.each { |c| c.call(*args, &block) } if list.any?
+        list = (self.callbacks.delete(name) || Array.new)
+        if list.any?
+          list.each { |c| c.call(*args, &block) }
+        end
       end
 
       def exec_callback_yielding_self(name, *args, &block)
         list = Array(self.callbacks[name])
-        list.each { |c| c.call(self, *args, &block) } if list.any?
+        if list.any?
+          list.each { |c| c.call(self, *args, &block) }
+        end
       end
 
       def exec_callback_once_yielding_self(name, *args, &block)
-        list = Array(self.callbacks.delete(name))
-        list.each { |c| c.call(self, *args, &block) } if list.any?
+        list = (self.callbacks.delete(name) || Array.new)
+
+        if list.any?
+          list.each { |c| c.call(self, *args, &block) }
+        end
       end
 
       def has_callback?(name)
