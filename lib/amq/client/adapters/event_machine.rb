@@ -7,10 +7,6 @@ require "amq/client/framing/string/frame"
 module AMQ
   module Client
     class EventMachineClient < EM::Connection
-      # @private
-      class Deferrable
-        include EventMachine::Deferrable
-      end
 
       #
       # Behaviors
@@ -117,9 +113,16 @@ module AMQ
 
 
       def initialize(*args)
-        puts args.inspect
         super(*args)
+
+        self.logger   = self.class.logger
+        self.settings = self.class.settings
+
+        @frames            = Array.new
+        @channels          = Hash.new
+
         opening!
+
         @connections                        = Array.new
         # track TCP connection state, used to detect initial TCP connection failures.
         @tcp_connection_established       = false
@@ -136,9 +139,11 @@ module AMQ
           raise self.class.authentication_failure_exception_class.new(settings)
         }
 
+        @mechanism         = "PLAIN"
+        @locale            = @settings.fetch(:locale, "en_GB")
+        @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
         self.reset
-
         self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
         if self.heartbeat_interval > 0
@@ -306,26 +311,26 @@ module AMQ
 
 
 
-      self.handle(Protocol::Connection::Start) do |client, frame|
-        client.connection.start_ok(frame.decode_payload)
+      self.handle(Protocol::Connection::Start) do |connection, frame|
+        connection.start_ok(frame.decode_payload)
       end
 
-      self.handle(Protocol::Connection::Tune) do |client, frame|
-        client.connection.handle_tune(frame.decode_payload)
+      self.handle(Protocol::Connection::Tune) do |connection, frame|
+        connection.handle_tune(frame.decode_payload)
 
-        client.connection.open(client.settings[:vhost] || "/")
+        connection.open(connection.vhost)
       end
 
-      self.handle(Protocol::Connection::OpenOk) do |client, frame|
-        client.connection.handle_open_ok(frame.decode_payload)
+      self.handle(Protocol::Connection::OpenOk) do |connection, frame|
+        connection.handle_open_ok(frame.decode_payload)
       end
 
-      self.handle(Protocol::Connection::Close) do |client, frame|
-        client.connection.handle_close(frame.decode_payload)
+      self.handle(Protocol::Connection::Close) do |connection, frame|
+        connection.handle_close(frame.decode_payload)
       end
 
-      self.handle(Protocol::Connection::CloseOk) do |client, frame|
-        client.connection.handle_close_ok(frame.decode_payload)
+      self.handle(Protocol::Connection::CloseOk) do |connection, frame|
+        connection.handle_close_ok(frame.decode_payload)
       end
 
 
@@ -333,16 +338,7 @@ module AMQ
 
       protected
 
-      def handshake(mechanism = "PLAIN", response = nil, locale = "en_GB")
-        username = @settings[:user] || @settings[:username]
-        password = @settings[:pass] || @settings[:password]
-
-        # self.logger.info "[authentication] Credentials are #{username}/#{'*' * password.bytesize}"
-
-        @mechanism = mechanism
-        @username  = username
-        @locale    = locale
-
+      def handshake
         @authenticating = true
         self.send_preamble
       end
@@ -353,8 +349,8 @@ module AMQ
         @frames  = Array.new
 
         @chunk_buffer                 = ""
-        @connection_deferrable        = Deferrable.new
-        @disconnection_deferrable     = Deferrable.new
+        @connection_deferrable        = EventMachine::DefaultDeferrable.new
+        @disconnection_deferrable     = EventMachine::DefaultDeferrable.new
 
         # used to track down whether authentication succeeded. AMQP 0.9.1 dictates
         # that on authentication failure broker must close TCP connection without sending

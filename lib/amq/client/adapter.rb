@@ -38,13 +38,9 @@ module AMQ
           # API
           #
 
-          attr_accessor :logger, :settings, :connection
-
-          # Authentication mechanism
-          attr_accessor :mechanism
-
-          # Security response data
-          attr_accessor :response
+          attr_accessor :logger
+          attr_accessor :settings
+          attr_accessor :connection
 
           # The locale defines the language in which the server will send reply texts.
           #
@@ -66,16 +62,6 @@ module AMQ
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
           attr_reader :mechanism
 
-          # Security response data.
-          #
-          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.4.2.2 and 1.4.2.4.1)
-          attr_reader :response
-
-          # The locale defines the language in which the server will send reply texts.
-          #
-          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
-          attr_reader :locale
-
           # Channels within this connection.
           #
           # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.2.5)
@@ -93,11 +79,6 @@ module AMQ
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.4.2.5.2 and 1.4.2.6.2)
           attr_accessor :frame_max
 
-          # The delay, in seconds, of the connection heartbeat that the server wants.
-          # Zero means the server does not want a heartbeat.
-          #
-          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.5.3)
-          attr_accessor :heartbeat_interval
 
           attr_reader :known_hosts
 
@@ -199,31 +180,10 @@ module AMQ
 
       register_entity :channel,  AMQ::Client::Channel
 
+
       #
       # API
       #
-
-      def initialize(*args)
-        super(*args) if defined?(super)
-
-        self.logger   = self.class.logger
-        self.settings = self.class.settings
-
-        @frames       = Array.new
-
-        @mechanism         = mechanism
-        @response          = response
-        @locale            = locale
-
-        @channels          = Hash.new
-        # @client_properties = Settings.client_properties.merge(client_properties)
-
-        reset_state!
-
-        # Default errback.
-        # self.define_callback(:close) { |exception| raise(exception) }
-      end
-
 
 
       # Establish socket connection to the server.
@@ -240,18 +200,24 @@ module AMQ
       # @see  #close_connection
       def disconnect(reply_code = 200, reply_text = "Goodbye", &block)
         @intentionally_closing_connection = true
-
-        self.on_disconnection(&block)
-        closing!
+        @disconnection_deferrable.callback(&block)
 
         # ruby-amqp/amqp#66, MK.
-        if self.connection
-          self.connection.close(reply_code, reply_text)
+        if self.open?
+          closing!
+          self.close(reply_code, reply_text)
+        elsif self.closing?
+          # no-op
         else
           self.disconnection_successful
         end
       end
-      alias close disconnect
+
+      # (see #disconnect)
+      def close(*args, &block)
+        # alias won't work since this is a module. MK.
+        disconnect(*args, &block)
+      end
 
       # Sends AMQ protocol header (also known as preamble).
       #
@@ -263,7 +229,7 @@ module AMQ
       end
 
       def send(frame)
-        if self.connection.closed?
+        if closed?
           raise ConnectionClosedError.new(frame)
         else
           self.send_raw(frame.encode)
@@ -353,6 +319,7 @@ module AMQ
 
       # Returns heartbeat interval this client uses, in seconds.
       # This value may or may not be used depending on broker capabilities.
+      # Zero means the server does not want a heartbeat.
       #
       # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
@@ -360,6 +327,10 @@ module AMQ
         @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
       end # heartbeat_interval
 
+
+      def vhost
+        @settings.fetch(:vhost, "/")
+      end # vhost
 
 
 
@@ -375,12 +346,15 @@ module AMQ
       def start_ok(method)
         @server_properties = method.server_properties
 
+        username = @settings[:user] || @settings[:username]
+        password = @settings[:pass] || @settings[:password]
+
         # It's not clear whether we should transition to :opening state here
         # or in #open but in case authentication fails, it would be strange to have
         # @status undefined. So lets do this. MK.
         opening!
 
-        @client.send Protocol::Connection::StartOk.encode(@client_properties, @mechanism, @response, @locale)
+        self.send Protocol::Connection::StartOk.encode(@client_properties, @mechanism, self.encode_credentials(username, password), @locale)
       end
 
 
@@ -392,7 +366,7 @@ module AMQ
         @known_hosts = method.known_hosts
 
         opened!
-        @client.connection_successful if @client.respond_to?(:connection_successful)
+        self.connection_successful if self.respond_to?(:connection_successful)
       end
 
       # Handles Connection.Tune-Ok.
@@ -402,13 +376,13 @@ module AMQ
       def handle_tune(method)
         @channel_max        = method.channel_max
         @frame_max          = method.frame_max
-        @heartbeat_interval = @client.heartbeat_interval || method.heartbeat
+        @heartbeat_interval = self.heartbeat_interval || method.heartbeat
 
-        @client.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
+        self.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
       end # handle_tune(method)
 
 
-      # Handles Connection.Close.
+      # Handles connection.close. When broker detects a connection level exception, this method is called.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
@@ -421,13 +395,14 @@ module AMQ
         self.error(error)
       end
 
+
       # Handles Connection.Close-Ok.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
       def handle_close_ok(method)
         closed!
-        @client.disconnection_successful
+        self.disconnection_successful
       end # handle_close_ok(method)
 
       # @api plugin
