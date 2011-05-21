@@ -19,9 +19,6 @@ module AMQ
       # API
       #
 
-      attr_reader :connections
-
-
       def self.connect(settings = {}, &block)
         @settings = Settings.configure(settings)
 
