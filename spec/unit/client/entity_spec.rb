@@ -53,15 +53,10 @@ describe AMQ::Client::Entity do
 
 
     it "should pass arguments to the callback" do
-      subject.define_callback :init, Proc.new { |*args| args.first }
+      f = Proc.new { |*args| args.first }
+      subject.define_callback :init, f
 
-      subject.exec_callback(:init, 1).should eql([1])
-    end
-
-    it "should pass block to the callback" do
-      subject.define_callback :init, Proc.new { |*args, &block| block.call }
-
-      subject.exec_callback(:init) { "block" }.should == ["block"]
+      subject.exec_callback(:init, 1).should eql([f])
     end
   end
 end
