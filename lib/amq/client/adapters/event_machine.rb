@@ -305,7 +305,8 @@ module AMQ
       def disconnection_successful
         @disconnection_deferrable.succeed
 
-        self.close_connection
+        # true for "after writing buffered data"
+        self.close_connection(true)
         self.reset
         closed!
       end # disconnection_successful
