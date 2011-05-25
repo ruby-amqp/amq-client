@@ -290,6 +290,7 @@ module AMQ
       end
 
       # Sends connection preamble to the broker.
+      # @api plugin
       def handshake
         @authenticating = true
         self.send_preamble
