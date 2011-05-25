@@ -371,8 +371,8 @@ module AMQ
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
-      def start_ok(method)
-        @server_properties = method.server_properties
+      def start_ok(connection_start)
+        @server_properties = connection_start.server_properties
 
         username = @settings[:user] || @settings[:username]
         password = @settings[:pass] || @settings[:password]
@@ -391,7 +391,6 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
       def handle_tune(tune_ok)
-        puts tune_ok.inspect
         @channel_max        = tune_ok.channel_max
         @frame_max          = tune_ok.frame_max
         @heartbeat_interval = self.heartbeat_interval || tune_ok.heartbeat
