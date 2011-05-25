@@ -34,7 +34,7 @@ amq_client_example "Acknowledge a message using basic.ack" do |client|
     client.disconnect do
       puts
       puts "AMQP connection is now properly closed"
-      EM.stop
+      EventMachine.stop
     end
   }
 
