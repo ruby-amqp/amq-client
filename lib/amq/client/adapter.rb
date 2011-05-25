@@ -403,8 +403,8 @@ module AMQ
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
-      def handle_open_ok(method)
-        @known_hosts = method.known_hosts
+      def handle_open_ok(open_ok)
+        @known_hosts = open_ok.known_hosts
 
         opened!
         self.connection_successful if self.respond_to?(:connection_successful)
@@ -415,12 +415,12 @@ module AMQ
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
-      def handle_close(method)
+      def handle_close(conn_close)
         self.handle_connection_interruption
 
         closed!
-        # TODO: use proper exception class, provide protocol class (we know method.class_id and method.method_id) as well!
-        error = RuntimeError.new(method.reply_text)
+        # TODO: use proper exception class, provide protocol class (we know conn_close.class_id and conn_close.method_id) as well!
+        error = RuntimeError.new(conn_close.reply_text)
         self.error(error)
       end
 
@@ -429,10 +429,10 @@ module AMQ
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
-      def handle_close_ok(method)
+      def handle_close_ok(close_ok)
         closed!
         self.disconnection_successful
-      end # handle_close_ok(method)
+      end # handle_close_ok(close_ok)
 
       # @api plugin
       def handle_connection_interruption
