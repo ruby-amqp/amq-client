@@ -210,7 +210,7 @@ module AMQ
 
 
       self.handle(Protocol::Connection::Start) do |connection, frame|
-        connection.start_ok(frame.decode_payload)
+        connection.handle_start(frame.decode_payload)
       end
 
       self.handle(Protocol::Connection::Tune) do |connection, frame|
