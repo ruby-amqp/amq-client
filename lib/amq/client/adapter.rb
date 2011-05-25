@@ -345,8 +345,7 @@ module AMQ
         if Protocol::HeartbeatFrame === frame
           @last_server_heartbeat = Time.now
         else
-          callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
-          if callable
+          if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
             callable.call(self, frames.first, frames[1..-1])
           else
             raise MissingHandlerError.new(frames.first)
