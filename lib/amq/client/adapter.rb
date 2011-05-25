@@ -367,11 +367,11 @@ module AMQ
 
 
 
-      # Handles Connection.Start.
+      # Handles connection.start.
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
-      def start_ok(connection_start)
+      def handle_start(connection_start)
         @server_properties = connection_start.server_properties
 
         username = @settings[:user] || @settings[:username]
