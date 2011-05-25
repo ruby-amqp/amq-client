@@ -390,10 +390,11 @@ module AMQ
       #
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
-      def handle_tune(method)
-        @channel_max        = method.channel_max
-        @frame_max          = method.frame_max
-        @heartbeat_interval = self.heartbeat_interval || method.heartbeat
+      def handle_tune(tune_ok)
+        puts tune_ok.inspect
+        @channel_max        = tune_ok.channel_max
+        @frame_max          = tune_ok.frame_max
+        @heartbeat_interval = self.heartbeat_interval || tune_ok.heartbeat
 
         self.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
       end # handle_tune(method)
