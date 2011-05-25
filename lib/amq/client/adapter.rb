@@ -319,6 +319,10 @@ module AMQ
       end # encode_credentials(username, password)
 
 
+      # Processes a single frame.
+      #
+      # @param [AMQ::Protocol::Frame] frame
+      # @api plugin
       def receive_frame(frame)
         @frames << frame
         if frameset_complete?(@frames)
@@ -329,12 +333,12 @@ module AMQ
         end
       end
 
-      # When the adapter receives all the frames related to
-      # given method frame, it's supposed to call this method.
-      # It calls handler for method class of the first (method)
-      # frame with all the other frames as arguments. Handlers
-      # are defined in amq/client/* by the handle(klass, &block)
-      # method.
+      # Processes a frameset by finding and invoking a suitable handler.
+      # Heartbeat frames are treated in a special way: they simply update @last_server_heartbeat
+      # value.
+      #
+      # @param [Array<AMQ::Protocol::Frame>] frames
+      # @api plugin
       def receive_frameset(frames)
         frame = frames.first
 
@@ -350,6 +354,8 @@ module AMQ
         end
       end
 
+      # Sends a heartbeat frame.
+      # @api plugin
       def send_heartbeat
         if tcp_connection_established?
           if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2))
