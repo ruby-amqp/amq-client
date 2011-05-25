@@ -19,6 +19,21 @@ module AMQ
       # API
       #
 
+      # Initiates connection to AMQP broker. If callback is given, runs it when (and if) AMQP connection
+      # succeeds.
+      #
+      # @option settings [String] :host ("127.0.0.1") Hostname AMQ broker runs on.
+      # @option settings [String] :port (5672) Port AMQ broker listens on.
+      # @option settings [String] :vhost ("/") Virtual host to use.
+      # @option settings [String] :user ("guest") Username to use for authentication.
+      # @option settings [String] :pass ("guest") Password to use for authentication.
+      # @option settings [String] :ssl (false) Should be use TLS (SSL) for connection?
+      # @option settings [String] :timeout (nil) Connection timeout.
+      # @option settings [String] :logging (false) Turns logging on or off.
+      # @option settings [String] :broker (nil) Broker name (use if you intend to use broker-specific features).
+      # @option settings [Fixnum] :frame_max (131072) Maximum frame size to use. If broker cannot support frames this large, broker's maximum value will be used instead.
+      #
+      # @params [Hash] settings
       def self.connect(settings = {}, &block)
         @settings = Settings.configure(settings)
 
