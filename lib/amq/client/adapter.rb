@@ -381,17 +381,6 @@ module AMQ
       end
 
 
-      # Handles Connection.Open-Ok.
-      #
-      # @api plugin
-      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
-      def handle_open_ok(method)
-        @known_hosts = method.known_hosts
-
-        opened!
-        self.connection_successful if self.respond_to?(:connection_successful)
-      end
-
       # Handles Connection.Tune-Ok.
       #
       # @api plugin
@@ -403,6 +392,18 @@ module AMQ
 
         self.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
       end # handle_tune(method)
+
+
+      # Handles Connection.Open-Ok.
+      #
+      # @api plugin
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
+      def handle_open_ok(method)
+        @known_hosts = method.known_hosts
+
+        opened!
+        self.connection_successful if self.respond_to?(:connection_successful)
+      end
 
 
       # Handles connection.close. When broker detects a connection level exception, this method is called.
@@ -445,9 +446,9 @@ module AMQ
         # octet + short
         offset = 3 # 1 + 2
         # length
-        payload_length = @chunk_buffer[offset, 4].unpack('N')[0]
+        payload_length = @chunk_buffer[offset, 4].unpack(AMQ::Protocol::PACK_UINT32).first
         # 4 bytes for long payload length, 1 byte final octet
-        frame_length = offset + 4 + payload_length + 1
+        frame_length = offset + payload_length + 5
         if frame_length <= @chunk_buffer.size
           @chunk_buffer.slice!(0, frame_length)
         else
