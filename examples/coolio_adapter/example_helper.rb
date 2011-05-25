@@ -17,7 +17,7 @@ end
 
 
 def amq_client_example(description = "", &block)
-  AMQ::Client::CoolioClient.connect(:port => 5672, :vhost => "/amq_client_testbed") do |client|
+  AMQ::Client::CoolioClient.connect(:port => 5672, :vhost => "amq_client_testbed") do |client|
     begin
       puts
       puts
