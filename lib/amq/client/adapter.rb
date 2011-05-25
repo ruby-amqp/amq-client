@@ -353,7 +353,7 @@ module AMQ
         end
       end
 
-      # Sends a heartbeat frame.
+      # Sends a heartbeat frame if connection is open.
       # @api plugin
       def send_heartbeat
         if tcp_connection_established?
