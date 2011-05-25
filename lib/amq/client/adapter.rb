@@ -252,6 +252,11 @@ module AMQ
       end # heartbeat_interval
 
 
+      # vhost this connection uses. Default is "/", a historically estabilished convention
+      # of RabbitMQ and amqp gem.
+      #
+      # @return [String] vhost this connection uses
+      # @api public
       def vhost
         @settings.fetch(:vhost, "/")
       end # vhost
