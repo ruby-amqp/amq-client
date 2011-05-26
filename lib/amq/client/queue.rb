@@ -36,6 +36,8 @@ module AMQ
       # @param  [String]                Queue name. Please note that AMQP spec does not require brokers to support Unicode for queue names.
       # @api public
       def initialize(connection, channel, name = AMQ::Protocol::EMPTY_STRING)
+        raise ArgumentError.new("queue name must not be nil; if you want broker to generate queue name for you, pass an empty string") if name.nil?
+
         super(connection)
 
         @name    = name
