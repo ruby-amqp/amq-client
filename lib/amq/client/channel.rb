@@ -261,6 +261,8 @@ module AMQ
         @queues_awaiting_cancel_ok     = Array.new
 
         @queues_awaiting_get_response  = Array.new
+
+        @callbacks                     = Hash.new
       end # reset_state!
 
 
