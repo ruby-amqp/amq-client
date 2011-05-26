@@ -62,10 +62,7 @@ module AMQ
 
 
       def error(exception)
-        # Asynchronous error handling.
-        # Set callback for given class (Queue for example)
-        # or for the Connection class (or instance, of course).
-        callbacks = [self.callbacks[:close], self.connection.callbacks[:close]].flatten.compact
+        callbacks = [@callbacks[:close]].flatten.compact
 
         callbacks.map { |c| c.call(exception) } if callbacks.any?
       end
