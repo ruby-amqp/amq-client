@@ -104,7 +104,7 @@ module AMQ
 
               @uses_publisher_confirmations = true
               self.redefine_callback(:confirm_select, &block)
-              @client.send(Protocol::Confirm::Select.encode(@id, nowait))
+              @client.send_frame(Protocol::Confirm::Select.encode(@id, nowait))
 
               self
             end

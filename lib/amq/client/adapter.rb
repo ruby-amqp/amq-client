@@ -203,7 +203,7 @@ module AMQ
         # ruby-amqp/amqp#66, MK.
         if self.open?
           closing!
-          self.send Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id)
+          self.send_frame(Protocol::Connection::Close.encode(reply_code, reply_text, class_id, method_id))
         elsif self.closing?
           # no-op
         else
@@ -224,7 +224,7 @@ module AMQ
       # Sends frame to the peer, checking that connection is open.
       #
       # @raise [ConnectionClosedError]
-      def send(frame)
+      def send_frame(frame)
         if closed?
           raise ConnectionClosedError.new(frame)
         else
@@ -236,7 +236,7 @@ module AMQ
       #
       # @api public
       def send_frameset(frames)
-        frames.each { |frame| self.send(frame) }
+        frames.each { |frame| self.send_frame(frame) }
       end # send_frameset(frames)
 
 
@@ -302,7 +302,7 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
       def open(vhost = "/")
-        self.send Protocol::Connection::Open.encode(vhost)
+        self.send_frame(Protocol::Connection::Open.encode(vhost))
       end
 
       # Resets connection state.
@@ -361,7 +361,7 @@ module AMQ
             logger.error "Reconnecting due to missing server heartbeats"
             # TODO: reconnect
           end
-          send(Protocol::HeartbeatFrame)
+          send_frame(Protocol::HeartbeatFrame)
         end
       end # send_heartbeat
 
@@ -382,7 +382,7 @@ module AMQ
         # @status undefined. So lets do this. MK.
         opening!
 
-        self.send Protocol::Connection::StartOk.encode(@client_properties, @mechanism, self.encode_credentials(username, password), @locale)
+        self.send_frame(Protocol::Connection::StartOk.encode(@client_properties, @mechanism, self.encode_credentials(username, password), @locale))
       end
 
 
@@ -395,7 +395,7 @@ module AMQ
         @frame_max          = tune_ok.frame_max
         @heartbeat_interval = self.heartbeat_interval || tune_ok.heartbeat
 
-        self.send Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval)
+        self.send_frame(Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval))
       end # handle_tune(method)
 
 

@@ -91,7 +91,7 @@ module AMQ
       #
       # @api public
       def open(&block)
-        @connection.send Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING)
+        @connection.send_frame(Protocol::Channel::Open.encode(@id, AMQ::Protocol::EMPTY_STRING))
         @connection.channels[@id] = self
         self.status = :opening
 
@@ -102,7 +102,7 @@ module AMQ
       #
       # @api public
       def close(reply_code = 200, reply_text = DEFAULT_REPLY_TEXT, class_id = 0, method_id = 0, &block)
-        @connection.send Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id)
+        @connection.send_frame(Protocol::Channel::Close.encode(@id, reply_code, reply_text, class_id, method_id))
 
         self.redefine_callback :close, &block
       end
@@ -113,7 +113,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
       def acknowledge(delivery_tag, multiple = false)
-        @connection.send(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
+        @connection.send_frame(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
 
         self
       end # acknowledge(delivery_tag, multiple = false)
@@ -123,7 +123,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
       def reject(delivery_tag, requeue = true)
-        @connection.send(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
+        @connection.send_frame(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
 
         self
       end # reject(delivery_tag, requeue = true)
@@ -134,7 +134,7 @@ module AMQ
       # @note RabbitMQ as of 2.3.1 does not support prefetch_size.
       # @api public
       def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
-        @connection.send Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global)
+        @connection.send_frame(Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global))
 
         self.redefine_callback :qos, &block
         self
@@ -149,7 +149,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
       # @api public
       def recover(requeue = true, &block)
-        @connection.send(Protocol::Basic::Recover.encode(@id, requeue))
+        @connection.send_frame(Protocol::Basic::Recover.encode(@id, requeue))
 
         self.redefine_callback :recover, &block
         self
@@ -166,7 +166,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.3.)
       # @api public
       def flow(active = false, &block)
-        @connection.send Protocol::Channel::Flow.encode(@id, active)
+        @connection.send_frame(Protocol::Channel::Flow.encode(@id, active))
 
         self.redefine_callback :flow, &block
         self
@@ -178,7 +178,7 @@ module AMQ
       #
       # @api public
       def tx_select(&block)
-        @connection.send Protocol::Tx::Select.encode(@id)
+        @connection.send_frame(Protocol::Tx::Select.encode(@id))
 
         self.redefine_callback :tx_select, &block
         self
@@ -188,7 +188,7 @@ module AMQ
       #
       # @api public
       def tx_commit(&block)
-        @connection.send Protocol::Tx::Commit.encode(@id)
+        @connection.send_frame(Protocol::Tx::Commit.encode(@id))
 
         self.redefine_callback :tx_commit, &block
         self
@@ -198,7 +198,7 @@ module AMQ
       #
       # @api public
       def tx_rollback(&block)
-        @connection.send Protocol::Tx::Rollback.encode(@id)
+        @connection.send_frame(Protocol::Tx::Rollback.encode(@id))
 
         self.redefine_callback :tx_rollback, &block
         self

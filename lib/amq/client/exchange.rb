@@ -68,7 +68,7 @@ module AMQ
 
 
       def declare(passive = false, durable = false, auto_delete = false, nowait = false, arguments = nil, &block)
-        @connection.send(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
+        @connection.send_frame(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
         unless nowait
           self.define_callback(:declare, &block)
@@ -80,7 +80,7 @@ module AMQ
 
 
       def delete(if_unused = false, nowait = false, &block)
-        @connection.send(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
+        @connection.send_frame(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
 
         unless nowait
           self.define_callback(:delete, &block)

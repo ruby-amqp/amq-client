@@ -89,7 +89,7 @@ module AMQ
         @auto_delete = auto_delete
 
         nowait = true if !block && !@name.empty?
-        @connection.send(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
+        @connection.send_frame(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
         if !nowait
           self.append_callback(:declare, &block)
@@ -110,7 +110,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.9.)
       def delete(if_unused = false, if_empty = false, nowait = false, &block)
         nowait = true unless block
-        @connection.send(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
+        @connection.send_frame(Protocol::Queue::Delete.encode(@channel.id, @name, if_unused, if_empty, nowait))
 
         if !nowait
           self.append_callback(:delete, &block)
@@ -136,7 +136,7 @@ module AMQ
                           exchange
                         end
 
-        @connection.send(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
+        @connection.send_frame(Protocol::Queue::Bind.encode(@channel.id, @name, exchange_name, routing_key, nowait, arguments))
 
         if !nowait
           self.append_callback(:bind, &block)
@@ -161,7 +161,7 @@ module AMQ
                           exchange
                         end
 
-        @connection.send(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
+        @connection.send_frame(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
 
         self.append_callback(:unbind, &block)
         # TODO: handle channel & connection-level exceptions
@@ -181,7 +181,7 @@ module AMQ
 
         nowait        = true unless block
         @consumer_tag = generate_consumer_tag(name)
-        @connection.send(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
+        @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
         @channel.consumers[@consumer_tag] = self
 
@@ -222,7 +222,7 @@ module AMQ
       # @api public
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.10.)
       def get(no_ack = false, &block)
-        @connection.send(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
+        @connection.send_frame(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
 
         # most people only want one callback per #get call. Consider the following example:
         #
@@ -243,7 +243,7 @@ module AMQ
       def cancel(nowait = false, &block)
         raise "There is no consumer tag for this queue. This usually means that you are trying to unsubscribe a queue that never was subscribed for messages in the first place." if @consumer_tag.nil?
 
-        @connection.send(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
+        @connection.send_frame(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
         @consumer_tag = nil
         self.clear_callbacks(:delivery)
         self.clear_callbacks(:consume)
@@ -263,7 +263,7 @@ module AMQ
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.7.2.7.)
       def purge(nowait = false, &block)
         nowait = true unless block
-        @connection.send(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
+        @connection.send_frame(Protocol::Queue::Purge.encode(@channel.id, @name, nowait))
 
         if !nowait
           self.redefine_callback(:purge, &block)
