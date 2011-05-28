@@ -87,6 +87,9 @@ module AMQ
         @connection
       end # connection
 
+
+      # @group Channel lifecycle
+
       # Opens AMQP channel.
       #
       # @api public
@@ -107,6 +110,11 @@ module AMQ
         self.redefine_callback :close, &block
       end
 
+      # @endgroup
+
+
+
+      # @group Message acknowledgements
 
       # Acknowledge one or all messages on the channel.
       #
@@ -128,18 +136,6 @@ module AMQ
         self
       end # reject(delivery_tag, requeue = true)
 
-      # Requests a specific quality of service. The QoS can be specified for the current channel
-      # or for all channels on the connection.
-      #
-      # @note RabbitMQ as of 2.3.1 does not support prefetch_size.
-      # @api public
-      def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
-        @connection.send_frame(Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global))
-
-        self.redefine_callback :qos, &block
-        self
-      end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
-
       # Notifies AMQ broker that consumer has recovered and unacknowledged messages need
       # to be redelivered.
       #
@@ -154,6 +150,24 @@ module AMQ
         self.redefine_callback :recover, &block
         self
       end # recover(requeue = false, &block)
+
+      # @endgroup
+
+
+
+      # @group QoS and flow handling
+
+      # Requests a specific quality of service. The QoS can be specified for the current channel
+      # or for all channels on the connection.
+      #
+      # @note RabbitMQ as of 2.3.1 does not support prefetch_size.
+      # @api public
+      def qos(prefetch_size = 0, prefetch_count = 32, global = false, &block)
+        @connection.send_frame(Protocol::Basic::Qos.encode(@id, prefetch_size, prefetch_count, global))
+
+        self.redefine_callback :qos, &block
+        self
+      end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
 
       # Asks the peer to pause or restart the flow of content data sent to a consumer.
       # This is a simple flow­control mechanism that a peer can use to avoid overflowing its
@@ -172,6 +186,18 @@ module AMQ
         self
       end # flow(active = false, &block)
 
+      # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
+      #
+      # @api public
+      def flow_is_active?
+        @flow_is_active
+      end # flow_is_active?
+
+      # @endgroup
+
+
+
+      # @group Transactions
 
       # Sets the channel to use standard transactions. One must use this method at least
       # once on a channel before using #tx_tommit or tx_rollback methods.
@@ -204,12 +230,11 @@ module AMQ
         self
       end # tx_rollback(&block)
 
-      # @return [Boolean]  True if flow in this channel is active (messages will be delivered to consumers that use this channel).
-      #
-      # @api public
-      def flow_is_active?
-        @flow_is_active
-      end # flow_is_active?
+      # @endgroup
+
+
+
+      # @group Error handling
 
       # Defines a callback that will be executed when channel is closed after
       # channel-level exception.
@@ -218,6 +243,8 @@ module AMQ
       def on_error(&block)
         self.define_callback(:error, &block)
       end
+
+      # @endgroup
 
 
       #
