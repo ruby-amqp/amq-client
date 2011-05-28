@@ -175,7 +175,7 @@ module AMQ
       # this method is not intended for window control. It does not affect contents returned to
       # Queue#get callers.
       #
-      # @param [Boolean] Desired flow state.
+      # @param [Boolean] active Desired flow state.
       #
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.3.)
       # @api public
@@ -257,6 +257,12 @@ module AMQ
         @exchanges[exchange.name] = exchange
       end # register_exchange(exchange)
 
+      # Finds exchange in the exchanges cache on this channel by name. Exchange only exists in the cache if
+      # it was previously instantiated on this channel.
+      #
+      # @param [String] name Exchange name
+      # @return [AMQ::Client::Exchange] Exchange (if found)
+      # @api plugin
       def find_exchange(name)
         @exchanges[name]
       end
