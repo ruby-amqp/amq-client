@@ -33,7 +33,7 @@ module AMQ
       # @option settings [String] :broker (nil) Broker name (use if you intend to use broker-specific features).
       # @option settings [Fixnum] :frame_max (131072) Maximum frame size to use. If broker cannot support frames this large, broker's maximum value will be used instead.
       #
-      # @params [Hash] settings
+      # @param [Hash] settings
       def self.connect(settings = {}, &block)
         @settings = Settings.configure(settings)
 
