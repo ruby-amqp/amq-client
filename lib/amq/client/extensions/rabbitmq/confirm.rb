@@ -104,7 +104,7 @@ module AMQ
 
               @uses_publisher_confirmations = true
               self.redefine_callback(:confirm_select, &block)
-              @client.send_frame(Protocol::Confirm::Select.encode(@id, nowait))
+              @connection.send_frame(Protocol::Confirm::Select.encode(@id, nowait))
 
               self
             end
@@ -190,21 +190,21 @@ module AMQ
 
 
             def self.included(host)
-              host.handle(Protocol::Confirm::SelectOk) do |client, frame|
+              host.handle(Protocol::Confirm::SelectOk) do |connection, frame|
                 method  = frame.decode_payload
-                channel = client.connection.channels[frame.channel]
+                channel = connection.channels[frame.channel]
                 channel.handle_select_ok(method)
               end
 
-              host.handle(Protocol::Basic::Ack) do |client, frame|
+              host.handle(Protocol::Basic::Ack) do |connection, frame|
                 method  = frame.decode_payload
-                channel = client.connection.channels[frame.channel]
+                channel = connection.channels[frame.channel]
                 channel.handle_basic_ack(method)
               end
 
-              host.handle(Protocol::Basic::Nack) do |client, frame|
+              host.handle(Protocol::Basic::Nack) do |connection, frame|
                 method  = frame.decode_payload
-                channel = client.connection.channels[frame.channel]
+                channel = connection.channels[frame.channel]
                 channel.handle_basic_nack(method)
               end
             end # self.included(host)

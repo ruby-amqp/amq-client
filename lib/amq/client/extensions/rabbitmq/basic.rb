@@ -16,7 +16,7 @@ module AMQ
             # @see http://www.rabbitmq.com/amqp-0-9-1-quickref.html#basic.nack
             def reject(delivery_tag, requeue = true, multi = false)
               if multi
-                @client.send_frame(Protocol::Basic::Nack.encode(self.id, delivery_tag, multi, requeue))
+                @connection.send_frame(Protocol::Basic::Nack.encode(self.id, delivery_tag, multi, requeue))
               else
                 super(delivery_tag, requeue)
               end
@@ -28,8 +28,8 @@ module AMQ
     end # Extensions
 
     class Channel
-      # use modules, a native Ruby way of extension of existing classes,
-      # instead of reckless monkey-patching. MK.      
+      # use modules, the native Ruby way of extension of existing classes,
+      # instead of reckless monkey-patching. MK.
       include Extensions::RabbitMQ::Basic::ChannelMixin
     end
   end # Client
