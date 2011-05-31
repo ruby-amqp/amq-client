@@ -58,14 +58,7 @@ module AMQ
         # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
         # won't assign anything to :key. MK.
         @callbacks  = Hash.new
-      end
-
-
-      def error(exception)
-        callbacks = [@callbacks[:close]].flatten.compact
-
-        callbacks.map { |c| c.call(exception) } if callbacks.any?
-      end
-    end
-  end
-end
+      end # initialize
+    end # Entity
+  end # Client
+end # AMQ
