@@ -364,6 +364,23 @@ module AMQ
 
 
 
+
+      # @group Error handling
+
+      # Defines a callback that will be executed when channel is closed after
+      # channel-level exception. Only one callback can be added (the one added last
+      # replaces previous added ones).
+      #
+      # @api public
+      def on_error(&block)
+        self.redefine_callback(:error, &block)
+      end
+
+      # @endgroup
+
+
+
+
       # Handles connection.start.
       #
       # @api plugin
