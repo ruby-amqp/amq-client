@@ -139,7 +139,7 @@ module AMQ
       def initialize
         # Be careful with default values for #ruby hashes: h = Hash.new(Array.new); h[:key] ||= 1
         # won't assign anything to :key. MK.
-        @callbacks   = {}
+        @callbacks    = Hash.new
 
         self.logger   = self.class.logger
 

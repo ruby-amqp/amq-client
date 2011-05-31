@@ -27,20 +27,15 @@ module AMQ
         host.class_eval do
 
           #
-          # Behaviors
-          #
-
-          include Entity
-
-
-
-          #
           # API
           #
 
           attr_accessor :logger
           attr_accessor :settings
-          attr_accessor :connection
+
+          # @return [Array<#call>]
+          attr_reader :callbacks
+
 
           # The locale defines the language in which the server will send reply texts.
           #
@@ -172,7 +167,9 @@ module AMQ
       # Behaviors
       #
 
-      include AMQ::Client::Openable
+      include Openable
+      include Callbacks
+
 
       extend RegisterEntityMixin
 
@@ -420,8 +417,7 @@ module AMQ
 
         closed!
         # TODO: use proper exception class, provide protocol class (we know conn_close.class_id and conn_close.method_id) as well!
-        error = RuntimeError.new(conn_close.reply_text)
-        self.error(error)
+        self.exec_callback_yielding_self(:error, channel_close)
       end
 
 

@@ -137,6 +137,7 @@ module AMQ
 
         @frames            = Array.new
         @channels          = Hash.new
+        @callbacks         = Hash.new
 
         opening!
 
@@ -359,9 +360,9 @@ module AMQ
 
 
       def reset
-        @size    = 0
-        @payload = ""
-        @frames  = Array.new
+        @size      = 0
+        @payload   = ""
+        @frames    = Array.new
 
         @chunk_buffer                 = ""
         @connection_deferrable        = EventMachine::DefaultDeferrable.new
