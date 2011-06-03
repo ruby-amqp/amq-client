@@ -47,15 +47,30 @@ module AMQ
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2.1)
           attr_accessor :client_properties
 
-          # Server capabilities
+          # Server properties
           #
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
           attr_reader :server_properties
+
+          # Server capabilities
+          #
+          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
+          attr_reader :server_capabilities
+
+          # Locales server supports
+          #
+          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
+          attr_reader :server_locales
 
           # Authentication mechanism used.
           #
           # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
           attr_reader :mechanism
+
+          # Authentication mechanisms broker supports.
+          #
+          # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+          attr_reader :server_authentication_mechanisms
 
           # Channels within this connection.
           #
@@ -386,7 +401,11 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
       def handle_start(connection_start)
-        @server_properties = connection_start.server_properties
+        @server_properties                = connection_start.server_properties.dup.freeze
+        @server_capabilities              = @server_properties["capabilities"].dup.freeze
+
+        @server_authentication_mechanisms = connection_start.mechanisms.split(" ").freeze
+        @server_locales                   = Array(connection_start.locales).freeze
 
         username = @settings[:user] || @settings[:username]
         password = @settings[:pass] || @settings[:password]
@@ -405,8 +424,8 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
       def handle_tune(tune_ok)
-        @channel_max        = tune_ok.channel_max
-        @frame_max          = tune_ok.frame_max
+        @channel_max        = tune_ok.channel_max.freeze
+        @frame_max          = tune_ok.frame_max.freeze
         @heartbeat_interval = self.heartbeat_interval || tune_ok.heartbeat
 
         self.send_frame(Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval))
@@ -418,7 +437,7 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
       def handle_open_ok(open_ok)
-        @known_hosts = open_ok.known_hosts
+        @known_hosts = open_ok.known_hosts.dup.freeze
 
         opened!
         self.connection_successful if self.respond_to?(:connection_successful)
