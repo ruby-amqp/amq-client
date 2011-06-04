@@ -401,11 +401,11 @@ module AMQ
       # @api plugin
       # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
       def handle_start(connection_start)
-        @server_properties                = connection_start.server_properties.dup.freeze
-        @server_capabilities              = @server_properties["capabilities"].dup.freeze
+        @server_properties                = connection_start.server_properties
+        @server_capabilities              = @server_properties["capabilities"]
 
-        @server_authentication_mechanisms = connection_start.mechanisms.split(" ").freeze
-        @server_locales                   = Array(connection_start.locales).freeze
+        @server_authentication_mechanisms = (connection_start.mechanisms || "").split(" ")
+        @server_locales                   = Array(connection_start.locales)
 
         username = @settings[:user] || @settings[:username]
         password = @settings[:pass] || @settings[:password]
