@@ -2,8 +2,8 @@ script: "bundle exec rspec spec"
 rvm:
   - 1.8.7
   - ree
-  - rbx
   - rbx-2.0.0pre
+  - rbx
   - 1.9.2
   - jruby
 gemfile:
