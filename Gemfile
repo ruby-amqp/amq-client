@@ -22,7 +22,7 @@ custom_gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git"
 group :development do
   gem "yard"
   # yard tags this buddy along
-  gem "RedCloth"
+  gem "RedCloth", :platform => :mri
 
   gem "nake",          :platform => :ruby_19
   gem "contributors",  :platform => :ruby_19
