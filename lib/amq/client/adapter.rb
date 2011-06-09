@@ -383,8 +383,8 @@ module AMQ
       # @group Error handling
 
       # Defines a callback that will be executed when channel is closed after
-      # channel-level exception. Only one callback can be added (the one added last
-      # replaces previous added ones).
+      # channel-level exception. Only one callback can be defined (the one defined last
+      # replaces previously added ones).
       #
       # @api public
       def on_error(&block)
