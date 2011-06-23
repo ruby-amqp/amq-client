@@ -92,30 +92,6 @@ module AMQ
         end # on_closed(&block)
         alias on_disconnection on_closed
 
-        # Defines a callback that will be run when initial TCP connection fails.
-        # You can define only one callback.
-        #
-        # @api public
-        def on_tcp_connection_failure(&block)
-          @on_tcp_connection_failure = block
-        end
-
-        # Defines a callback that will be run when TCP connection to AMQP broker is lost (interrupted).
-        # You can define only one callback.
-        #
-        # @api public
-        def on_tcp_connection_loss(&block)
-          @on_tcp_connection_loss = block
-        end
-
-        # Defines a callback that will be run when TCP connection is closed before authentication
-        # finishes. Usually this means authentication failure. You can define only one callback.
-        #
-        # @api public
-        def on_possible_authentication_failure(&block)
-          @on_possible_authentication_failure = block
-        end
-
         # @see #on_open
         # @private
         def register_connection_callback(&block)
@@ -243,9 +219,17 @@ module AMQ
           # software that calls #post_init before #unbind even when TCP connection
           # fails. MK.
           @tcp_connection_established       = true
+
+
           # again, this is because #unbind is called in different situations
           # and there is no easy way to tell initial connection failure
           # from connection loss. Not in EventMachine 0.12.x, anyway. MK.
+
+          if @had_successfull_connected_before
+            @recovered = true
+          end
+
+          # now we can set it. MK.
           @had_successfull_connected_before = true
 
           @reconnecting                     = false

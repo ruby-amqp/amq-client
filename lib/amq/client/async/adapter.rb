@@ -277,18 +277,47 @@ module AMQ
 
         # @group Error handling
 
+        # Called when initial TCP connection fails.
+        # @api public
+        def tcp_connection_failed
+          @recovered = false
+
+          @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
+        end
 
         # Called when previously established TCP connection fails.
         # @api public
         def tcp_connection_lost
+          @recovered = false
+
           @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
         end
 
-        # Called when initial TCP connection fails.
+
+        # Defines a callback that will be run when initial TCP connection fails.
+        # You can define only one callback.
+        #
         # @api public
-        def tcp_connection_failed
-          @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
+        def on_tcp_connection_failure(&block)
+          @on_tcp_connection_failure = block
         end
+
+        # Defines a callback that will be run when TCP connection to AMQP broker is lost (interrupted).
+        # You can define only one callback.
+        #
+        # @api public
+        def on_tcp_connection_loss(&block)
+          @on_tcp_connection_loss = block
+        end
+
+        # Defines a callback that will be run when TCP connection is closed before authentication
+        # finishes. Usually this means authentication failure. You can define only one callback.
+        #
+        # @api public
+        def on_possible_authentication_failure(&block)
+          @on_possible_authentication_failure = block
+        end
+
 
         # Defines a callback that will be executed when connection is closed after
         # connection-level exception. Only one callback can be defined (the one defined last
