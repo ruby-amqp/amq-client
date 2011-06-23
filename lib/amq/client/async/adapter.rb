@@ -274,6 +274,10 @@ module AMQ
         end # vhost
 
 
+
+        # @group Error handling
+
+
         # Called when previously established TCP connection fails.
         # @api public
         def tcp_connection_lost
@@ -285,6 +289,26 @@ module AMQ
         def tcp_connection_failed
           @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
         end
+
+        # Defines a callback that will be executed when connection is closed after
+        # connection-level exception. Only one callback can be defined (the one defined last
+        # replaces previously added ones).
+        #
+        # @api public
+        def on_error(&block)
+          self.redefine_callback(:error, &block)
+        end
+
+        # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_recovery(&block)
+          self.redefine_callback(:recovery, &block)
+        end # on_recovery(&block)
+
+        # @endgroup
+
 
 
 
@@ -379,20 +403,6 @@ module AMQ
         end # send_heartbeat
 
 
-
-
-        # @group Error handling
-
-        # Defines a callback that will be executed when channel is closed after
-        # channel-level exception. Only one callback can be defined (the one defined last
-        # replaces previously added ones).
-        #
-        # @api public
-        def on_error(&block)
-          self.redefine_callback(:error, &block)
-        end
-
-        # @endgroup
 
 
 
