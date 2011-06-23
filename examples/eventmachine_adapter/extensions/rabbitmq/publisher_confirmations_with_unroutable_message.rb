@@ -22,7 +22,7 @@ amq_client_example "Publisher confirmations using RabbitMQ extension: unroutable
     end
 
     x = AMQ::Client::Exchange.new(client, channel, AMQ::Protocol::EMPTY_STRING, :direct)
-    x.on_return { |basic_return|
+    x.on_return { |basic_return, metadata, payload|
       puts "Received basic.return: reply_text = #{basic_return.reply_text}, reply_code = #{basic_return.reply_code}"
     }
 

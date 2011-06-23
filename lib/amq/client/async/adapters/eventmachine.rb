@@ -1,0 +1,1 @@
+require "amq/client/async/adapters/event_machine"

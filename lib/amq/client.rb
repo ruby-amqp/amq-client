@@ -12,7 +12,7 @@ begin
   require "amq/protocol/client"
 rescue LoadError => exception
   if exception.message.match("amq/protocol")
-    raise LoadError.new("You have to install amq-protocol library first!")
+    raise LoadError.new("amq-client could not load amq-protocol.")
   else
     raise exception
   end
@@ -20,25 +20,37 @@ end
 
 module AMQ
   module Client
-    # List all the available as a hash of {adapter_name: metadata},
+    # List available adapters as a hash of { :adapter_name => metadata },
     # where metadata are hash with :path and :const_name keys.
     #
-    # @example
-    #   AMQ::Client.adapters[:event_machine] # => {path: "...", const_name: "EventMachineClient"}}
+    # @return [Hash]
+    # @api plugin
+    def self.adapters
+      @adapters ||= (self.async_adapters)
+    end
+
+    # List available asynchronous adapters.
     #
     # @return [Hash]
-    # @api public
-    def self.adapters
-      @adapters ||= begin
-        root = File.expand_path("../client/adapters", __FILE__)
-        Dir.glob("#{root}/*.rb").inject(Hash.new) do |buffer, path|
-          name = path.match(/([^\/]+)\.rb$/)[1]
-          const_base = name.to_s.gsub(/(^|_)(.)/) { $2.upcase! }
-          meta = {:path => path, :const_name => "#{const_base}Client"}
-          buffer.merge!(name.to_sym => meta)
-        end
-      end
+    # @api plugin
+    # @see AMQ::Client.adapters
+    def self.async_adapters
+      @async_adapters ||= {
+        :eventmachine  => {
+          :path       => "amq/client/async/adapters/eventmachine",
+          :const_name => "Async::EventMachineClient"
+        },
+        :event_machine => {
+          :path       => "amq/client/async/adapters/eventmachine",
+          :const_name => "Async::EventMachineClient"
+        },
+        :coolio        => {
+          :path       => "amq/client/async/adapters/coolio",
+          :const_name => "Async::CoolioClient"
+        }
+      }
     end
+
 
     # Establishes connection to AMQ broker using given adapter
     # (defaults to the socket adapter) and returns it. The new
@@ -56,14 +68,14 @@ module AMQ
       adapter.connect(settings, &block)
     end
 
-    # Loads adapter from amq/client/adapters.
+    # Loads adapter given its name as a Symbol.
     #
     # @raise [InvalidAdapterNameError] When loading attempt failed (LoadError was raised).
     def self.load_adapter(adapter)
       meta = self.adapters[adapter.to_sym]
 
       require meta[:path]
-      const_get(meta[:const_name])
+      eval(meta[:const_name])
     rescue LoadError
       raise InvalidAdapterNameError.new(adapter)
     end

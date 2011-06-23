@@ -7,12 +7,12 @@ require "amq/client"
 describe AMQ::Client do
   if RUBY_PLATFORM =~ /java/
     ADAPTERS = {
-      :event_machine => "EventMachineClient"
+      :event_machine => "Async::EventMachineClient"
     }
   else
     ADAPTERS = {
-      :event_machine => "EventMachineClient",
-      :coolio        => "CoolioClient"
+      :event_machine => "Async::EventMachineClient",
+      :coolio        => "Async::CoolioClient"
     }
   end
 
@@ -41,43 +41,23 @@ describe AMQ::Client do
     default_timeout 1
 
     context "with specified adapter" do
-      it "should connect using socket adapter" do
-        pending "Socket adapter is currently broken" do
-          AMQ::Client.connect(:adapter => :socket) do |client|
-            client.class.name.should eql("AMQ::Client::SocketClient")
-            done
-          end
-        end
-      end
-
       it "should connect using event_machine adapter" do
         em do
           AMQ::Client.connect(:adapter => :event_machine) do |client|
-            client.class.name.should eql("AMQ::Client::EventMachineClient")
+            client.class.name.should eql("AMQ::Client::Async::EventMachineClient")
             done
           end
         end
-      end
+      end # it
 
       it "should connect using coolio adapter", :nojruby => true do
         coolio do
           AMQ::Client.connect(:adapter => :coolio) do |client|
-            client.class.name.should eql("AMQ::Client::CoolioClient")
+            client.class.name.should eql("AMQ::Client::Async::CoolioClient")
             done
           end
         end
-      end
-    end
-
-    context "without any specified adapter" do
-      it "should default to the socket adapter" do
-        pending "Socket adapter is currently broken" do
-          AMQ::Client.connect do |client|
-            client.class.name.should eql("AMQ::Client::SocketClient")
-            done
-          end
-        end
-      end
-    end
-  end
-end
+      end # it
+    end # context "with specified adapter"
+  end # describe .connect
+end # describe AMQ::Client

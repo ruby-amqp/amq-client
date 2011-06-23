@@ -24,7 +24,7 @@ amq_client_example "Publisher confirmations using RabbitMQ extension: routable m
     x = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
 
     q = AMQ::Client::Queue.new(client, channel, AMQ::Protocol::EMPTY_STRING)
-    q.declare(false, false, true, true) do |_|
+    q.declare(false, false, true, true) do |_, declare_ok|
       puts "Defined a new server-named queue: #{q.name}"
 
       q.bind("amq.fanout").consume(false, true, true) { |consume_ok|

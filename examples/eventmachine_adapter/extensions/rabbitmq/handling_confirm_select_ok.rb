@@ -11,7 +11,7 @@ amq_client_example "confirm.select (a RabbitMQ extension)" do |client|
   channel.open do
     puts "Channel #{channel.id} is now open"
 
-    channel.confirmations do |select_ok|
+    channel.confirm_select do |select_ok|
       puts "Broker replied with confirm.select_ok"
     end
 
