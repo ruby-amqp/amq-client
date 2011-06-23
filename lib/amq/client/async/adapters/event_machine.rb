@@ -21,6 +21,8 @@ module AMQ
         # API
         #
 
+        # @group Connection operations
+
         # Initiates connection to AMQP broker. If callback is given, runs it when (and if) AMQP connection
         # succeeds.
         #
@@ -68,6 +70,7 @@ module AMQ
           EventMachine.reconnect(@settings[:host], @settings[:port], self)
         end
 
+        # @endgroup
 
 
 
@@ -227,11 +230,14 @@ module AMQ
 
           if @had_successfull_connected_before
             @recovered = true
+
+            self.register_connection_callback do
+              self.exec_callback_yielding_self(:recovery, @settings)
+            end
           end
 
           # now we can set it. MK.
           @had_successfull_connected_before = true
-
           @reconnecting                     = false
 
           self.handshake
