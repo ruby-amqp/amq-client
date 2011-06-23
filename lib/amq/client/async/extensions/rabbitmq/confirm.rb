@@ -220,9 +220,9 @@ module AMQ
               # @see AMQ::Client::Exchange#publish
               # @see AMQ::Client::Extensions::RabbitMQ::Channel#publisher_index
               # @return [self] self
-              def publish(*args)
+              def publish(*args, &block)
                 super(*args)
-                @channel.after_publish(*args)
+                @channel.after_publish(*args, &block)
 
                 self
               end # publish
