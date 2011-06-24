@@ -25,7 +25,7 @@ describe AMQ::Client::EventMachineClient, "Exchange.Declare" do
           channel.open do
             begin
               AMQ::Client::Exchange.new(client, channel, exchange_name, "my_shiny_metal_exchange_type")
-            rescue AMQ::Client::Exchange::IncompatibleExchangeTypeError => e
+            rescue AMQ::Client::UnknownExchangeTypeError => e
               done
             end
           end # channel.open

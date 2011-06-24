@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require "amq/client/exceptions"
 require "amq/client/entity"
 require "amq/client/server_named_entity"
 
@@ -13,13 +14,8 @@ module AMQ
         include ServerNamedEntity
         extend ProtocolMethodHandlers
 
-        TYPES = [:fanout, :direct, :topic, :headers].freeze
+        BUILTIN_TYPES = [:fanout, :direct, :topic, :headers].freeze
 
-        class IncompatibleExchangeTypeError < StandardError
-          def initialize(types, given)
-            super("#{given.inspect} exchange type is unknown. Standard types are #{TYPES.inspect}, custom exchange types must begin with x-, for example: x-recent-history")
-          end
-        end
 
 
         #
@@ -42,8 +38,8 @@ module AMQ
 
 
         def initialize(connection, channel, name, type = :fanout)
-          if !(TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
-            raise IncompatibleExchangeTypeError.new(TYPES, type)
+          if !(BUILTIN_TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
+            raise UnknownExchangeTypeError.new(BUILTIN_TYPES, type)
           end
 
           @connection = connection
@@ -52,7 +48,7 @@ module AMQ
           @type       = type
 
           # register pre-declared exchanges
-          if @name == AMQ::Protocol::EMPTY_STRING || @name =~ /^amq\.(fanout|topic)/
+          if @name == AMQ::Protocol::EMPTY_STRING || @name =~ /^amq\.(direct|fanout|topic|match|headers)/
             @channel.register_exchange(self)
           end
 
