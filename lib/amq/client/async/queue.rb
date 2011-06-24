@@ -3,7 +3,9 @@
 require "amq/client/async/entity"
 require "amq/client/adapter"
 require "amq/client/server_named_entity"
+
 require "amq/protocol/get_response"
+require "amq/client/consumer"
 
 module AMQ
   module Client
@@ -31,11 +33,11 @@ module AMQ
         # @return [AMQ::Client::Channel]
         attr_reader :channel
 
-        # Consumer tag identifies subscription for message delivery. It is nil for queues that are not subscribed for messages.
-        #
-        # @return [String]
-        # @see AMQ::Client::Queue#subscribe.
-        attr_reader :consumer_tag
+        # @return [Array<Hash>] All consumers on this queue.
+        attr_reader :consumers
+
+        # @return [AMQ::Client::Consumer] Default consumer (registered with {Queue#consume}).
+        attr_reader :default_consumer
 
         # @return [Hash] Additional arguments given on queue declaration. Typically used by AMQP extensions.
         attr_reader :arguments
@@ -54,21 +56,15 @@ module AMQ
 
           super(connection)
 
-          @name     = name
-          @channel  = channel
+          @name         = name
+          # this has to stay true even after queue.declare-ok arrives. MK.
+          @server_named = @name.empty?
+          @channel      = channel
 
           # primarily for autorecovery. MK.
           @bindings  = Array.new
-        end
 
-        def dup
-          if @name.empty?
-            raise RuntimeError.new("You can't clone anonymous queue until it receives server-generated name. Move the code with #dup to the callback for the #declare method.")
-          end
-
-          o = super
-          o.reset_consumer_tag!
-          o
+          @consumers = Hash.new
         end
 
 
@@ -237,53 +233,28 @@ module AMQ
         # @endgroup
 
 
+
+
+        # @group Consuming messages
+
         #
         # @return [Queue]  self
         #
         # @api public
         # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.3.)
         def consume(no_ack = false, exclusive = false, nowait = false, no_local = false, arguments = nil, &block)
-          raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
+          raise RuntimeError.new("This queue already has default consumer. Please instantiate AMQ::Client::Consumer directly to register additional consumers.") if @default_consumer
 
-          nowait        = true unless block
-
-          @consumer_tag       = generate_consumer_tag(@name)
-          @explicit_ack       = !no_ack
-          @exclusive_consumer = exclusive
-          @consumer_arguments = arguments
-
-          @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
-          @channel.consumers[@consumer_tag] = self
-
-          if !nowait
-            # unlike #get, here it is reasonable to expect more than one callback
-            # so we use #append_callback
-            self.append_callback(:consume, &block)
-
-            @channel.queues_awaiting_consume_ok.push(self)
-          end
+          nowait            = true unless block
+          @default_consumer = AMQ::Client::Consumer.new(@channel, self, generate_consumer_tag(@name), exclusive, no_ack, arguments, no_local, &block)
+          @default_consumer.consume(nowait, &block)
 
           self
         end
 
         # @api plugin
         def resubscribe(&block)
-          nowait        = true unless block
-
-          @channel.consumers[@consumer_tag] = nil
-
-          @consumer_tag = generate_consumer_tag(@name)
-          @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, !@explicit_ack, @exclusive_consumer, false, @consumer_arguments))
-
-          @channel.consumers[@consumer_tag] = self
-
-          if !nowait
-            # unlike #get, here it is reasonable to expect more than one callback
-            # so we use #append_callback
-            self.append_callback(:consume, &block)
-
-            @channel.queues_awaiting_consume_ok.push(self)
-          end
+          @default_consumer.resubscribe(&block)
 
           self
         end # resubscribe(&block)
@@ -295,20 +266,26 @@ module AMQ
         # @api public
         # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.5.)
         def cancel(nowait = false, &block)
-          raise "There is no consumer tag for this queue. This usually means that you are trying to unsubscribe a queue that never was subscribed for messages in the first place." if @consumer_tag.nil?
+          raise "There is no default consumer for this queue. This usually means that you are trying to unsubscribe a queue that never was subscribed for messages in the first place." if @default_consumer.nil?
 
-          @connection.send_frame(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
-          @consumer_tag = nil
-          self.clear_callbacks(:delivery)
-          self.clear_callbacks(:consume)
-
-          if !nowait
-            self.redefine_callback(:cancel, &block)
-            @channel.queues_awaiting_cancel_ok.push(self)
-          end
+          @default_consumer.cancel(nowait, &block)
 
           self
         end # cancel(&block)
+
+        # @endgroup
+
+
+
+
+        # @group Working With Messages
+
+
+        # @api public
+        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.8.3.9)
+        def on_delivery(&block)
+          @default_consumer.on_delivery(&block)
+        end # on_delivery(&block)
 
 
         # Fetches messages from the queue.
@@ -331,6 +308,7 @@ module AMQ
         end # get(no_ack = false, &block)
 
 
+
         # Purges (removes all messagse from) the queue.
         # @return [Queue]  self
         #
@@ -349,7 +327,13 @@ module AMQ
           self
         end # purge(nowait = false, &block)
 
-        #
+        # @endgroup
+
+
+
+        # @group Acknowledging & Rejecting Messages
+
+        # Acknowledge a delivery tag.
         # @return [Queue]  self
         #
         # @api public
@@ -371,6 +355,13 @@ module AMQ
           self
         end # reject(delivery_tag, requeue = true)
 
+        # @endgroup
+
+
+
+
+        # @group Error Handling & Recovery
+
         # Called by associated connection object when AMQP connection has been re-established
         # (for example, after a network failure).
         #
@@ -382,13 +373,7 @@ module AMQ
           end
         end # auto_recover
 
-
-        # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.8.3.9)
-        def on_delivery(&block)
-          self.append_callback(:delivery, &block)
-        end # on_delivery(&block)
-
+        # @endgroup
 
 
         #
@@ -404,20 +389,10 @@ module AMQ
           "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
         end
 
-        # Resets consumer tag by setting it to nil.
-        # @return [String]  Consumer tag this queue previously used.
-        #
-        # @api plugin
-        def reset_consumer_tag!
-          ct = @consumer_tag.dup
-          @consumer_tag = nil
-
-          ct
-        end
 
 
         def handle_declare_ok(method)
-          @name = method.queue if self.anonymous?
+          @name = method.queue if @name.empty?
           @channel.register_queue(self)
 
           self.exec_callback_once_yielding_self(:declare, method)
@@ -426,10 +401,6 @@ module AMQ
         def handle_delete_ok(method)
           self.exec_callback_once(:delete, method)
         end # handle_delete_ok(method)
-
-        def handle_consume_ok(method)
-          self.exec_callback_once(:consume, method)
-        end # handle_consume_ok(method)
 
         def handle_purge_ok(method)
           self.exec_callback_once(:purge, method)
@@ -442,15 +413,6 @@ module AMQ
         def handle_unbind_ok(method)
           self.exec_callback_once(:unbind, method)
         end # handle_unbind_ok(method)
-
-        def handle_delivery(method, header, payload)
-          self.exec_callback(:delivery, method, header, payload)
-        end # handle_delivery
-
-        def handle_cancel_ok(method)
-          @consumer_tag = nil
-          self.exec_callback_once(:cancel, method)
-        end # handle_cancel_ok(method)
 
         def handle_get_ok(method, header, payload)
           method = Protocol::GetResponse.new(method)
@@ -496,35 +458,6 @@ module AMQ
           queue   = channel.queues_awaiting_unbind_ok.shift
 
           queue.handle_unbind_ok(frame.decode_payload)
-        end
-
-
-        self.handle(Protocol::Basic::ConsumeOk) do |connection, frame|
-          channel = connection.channels[frame.channel]
-          queue   = channel.queues_awaiting_consume_ok.shift
-
-          queue.handle_consume_ok(frame.decode_payload)
-        end
-
-
-        self.handle(Protocol::Basic::CancelOk) do |connection, frame|
-          channel = connection.channels[frame.channel]
-          queue   = channel.queues_awaiting_cancel_ok.shift
-
-          queue.handle_consume_ok(frame.decode_payload)
-        end
-
-
-        # Basic.Deliver
-        self.handle(Protocol::Basic::Deliver) do |connection, method_frame, content_frames|
-          channel  = connection.channels[method_frame.channel]
-          method   = method_frame.decode_payload
-          queue    = channel.consumers[method.consumer_tag]
-
-          header = content_frames.shift
-          body   = content_frames.map { |frame| frame.payload }.join
-          queue.handle_delivery(method, header, body)
-          # TODO: ack if necessary
         end
 
 
