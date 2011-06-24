@@ -87,31 +87,31 @@ module AMQ
       end # on_delivery(&block)
 
 
-        # @group Acknowledging & Rejecting Messages
+      # @group Acknowledging & Rejecting Messages
 
-        # Acknowledge a delivery tag.
-        # @return [Consumer]  self
-        #
-        # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
-        def acknowledge(delivery_tag)
-          @channel.acknowledge(delivery_tag)
+      # Acknowledge a delivery tag.
+      # @return [Consumer]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
+      def acknowledge(delivery_tag)
+        @channel.acknowledge(delivery_tag)
 
-          self
-        end # acknowledge(delivery_tag)
+        self
+      end # acknowledge(delivery_tag)
 
-        #
-        # @return [Consumer]  self
-        #
-        # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
-        def reject(delivery_tag, requeue = true)
-          @channel.reject(delivery_tag, requeue)
+      #
+      # @return [Consumer]  self
+      #
+      # @api public
+      # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
+      def reject(delivery_tag, requeue = true)
+        @channel.reject(delivery_tag, requeue)
 
-          self
-        end # reject(delivery_tag, requeue = true)
+        self
+      end # reject(delivery_tag, requeue = true)
 
-        # @endgroup
+      # @endgroup
 
 
 
