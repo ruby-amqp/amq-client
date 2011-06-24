@@ -101,6 +101,7 @@ module AMQ
 
           self.redefine_callback :open, &block
         end
+        alias reopen open
 
         # Closes AMQP channel.
         #
@@ -245,6 +246,17 @@ module AMQ
           self.define_callback(:error, &block)
         end
 
+
+        # Called by associated connection object when AMQP connection has been re-established
+        # (for example, after a network failure).
+        #
+        # @api plugin
+        def auto_recover
+          self.reopen do
+            self.queues.each { |q| q.auto_recover }
+          end
+        end # auto_recover
+
         # @endgroup
 
 
@@ -379,7 +391,7 @@ module AMQ
           channel = connection.channels[frame.channel]
           channel.exec_callback(:tx_rollback, frame.decode_payload)
         end
-      end # Channel      
+      end # Channel
     end # Async
   end # Client
 end # AMQ

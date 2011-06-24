@@ -24,13 +24,23 @@ module AMQ
         #
 
         # Qeueue name. May be server-generated or assigned directly.
+        # @return [String]
         attr_reader :name
 
         # Channel this queue belongs to.
+        # @return [AMQ::Client::Channel]
         attr_reader :channel
 
-        # Consumer tag identifies subscription for message delivery. It is nil for queues that are not subscribed for messages. See AMQ::Client::Queue#subscribe.
+        # Consumer tag identifies subscription for message delivery. It is nil for queues that are not subscribed for messages.
+        #
+        # @return [String]
+        # @see AMQ::Client::Queue#subscribe.
         attr_reader :consumer_tag
+
+        # @return [Hash] Additional arguments given on queue declaration. Typically used by AMQP extensions.
+        attr_reader :arguments
+
+
 
         # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
         # @param  [AMQ::Client::Channel]  AMQ channel this queue object uses.
@@ -75,6 +85,8 @@ module AMQ
         end # auto_delete?
 
 
+        # @group Declaration
+
         # Declares this queue.
         #
         #
@@ -85,9 +97,14 @@ module AMQ
         def declare(passive = false, durable = false, exclusive = false, auto_delete = false, nowait = false, arguments = nil, &block)
           raise ArgumentError, "declaration with nowait does not make sense for server-named queues! Either specify name other than empty string or use #declare without nowait" if nowait && self.anonymous?
 
+          # these two are for autorecovery. MK.
+          @passive      = passive
+          @server_named = @name.empty?
+
           @durable     = durable
           @exclusive   = exclusive
           @auto_delete = auto_delete
+          @arguments   = arguments
 
           nowait = true if !block && !@name.empty?
           @connection.send_frame(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
@@ -99,6 +116,31 @@ module AMQ
 
           self
         end
+
+        # Re-declares queue with the same attributes
+        # @api public
+        def redeclare(&block)
+          nowait = true if !block && !@name.empty?
+
+          # server-named queues get their new generated names.
+          new_name = if @server_named
+                       AMQ::Protocol::EMPTY_STRING
+                     else
+                       @name
+                     end
+          @connection.send_frame(Protocol::Queue::Declare.encode(@channel.id, new_name, @passive, @durable, @exclusive, @auto_delete, false, @arguments))
+
+          if !nowait
+            self.append_callback(:declare, &block)
+            @channel.queues_awaiting_declare_ok.push(self)
+          end
+
+          self
+        end
+
+        # @endgroup
+
+
 
         # Deletes this queue.
         #
@@ -297,6 +339,13 @@ module AMQ
           self
         end # reject(delivery_tag, requeue = true)
 
+        # Called by associated connection object when AMQP connection has been re-established
+        # (for example, after a network failure).
+        #
+        # @api plugin
+        def auto_recover
+          self.redeclare
+        end # auto_recover
 
 
         # @api public
@@ -449,7 +498,7 @@ module AMQ
 
           queue.handle_get_empty(frame.decode_payload)
         end
-      end # Queue      
+      end # Queue
     end # Async
   end # Client
 end # AMQ

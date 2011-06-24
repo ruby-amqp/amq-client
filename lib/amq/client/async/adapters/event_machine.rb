@@ -141,6 +141,11 @@ module AMQ
           @locale            = @settings.fetch(:locale, "en_GB")
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
+          @auto_recovery     = (!!@settings[:auto_recovery])
+          if @auto_recovery
+            register_auto_recovery_handler
+          end
+
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
@@ -179,6 +184,12 @@ module AMQ
           @tcp_connection_established
         end # tcp_connection_established?
 
+        # @return [Boolean] whether connection is in the automatic recovery mode
+        # @api public
+        def auto_recovering?
+          !!@auto_recovery
+        end # auto_recovering?
+        alias auto_recovery? auto_recovering?
 
 
 
@@ -351,6 +362,13 @@ module AMQ
         protected
 
 
+        def register_auto_recovery_handler
+          on_recovery do
+            @channels.each { |n, c| c.auto_recover }
+          end
+        end # register_auto_recovery_handler
+
+
         def reset
           @size      = 0
           @payload   = ""
@@ -376,7 +394,7 @@ module AMQ
             start_tls
           end
         end # upgrade_to_tls_if_necessary
-      end # EventMachineClient      
+      end # EventMachineClient
     end # Async
   end # Client
 end # AMQ
