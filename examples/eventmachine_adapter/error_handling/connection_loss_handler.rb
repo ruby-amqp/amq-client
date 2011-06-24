@@ -18,11 +18,6 @@ EM.run do
       puts "Connection is auto-recovering..."
     end
 
-    connection.on_tcp_connection_loss do |conn, settings|
-      puts "tcp_connection_loss handler kicks in"
-      conn.reconnect(false, 2)
-    end
-
     ch1 = AMQ::Client::Channel.new(connection, 1)
     ch1.open do
       puts "Channel 1 open now"
@@ -32,20 +27,28 @@ EM.run do
       puts "Channel 2 open now"
     end
 
-    4.times do
+    queues = Array.new(4) do
       q = AMQ::Client::Queue.new(connection, ch1, AMQ::Protocol::EMPTY_STRING)
-      q.declare(false, false, false, true)
+      q.declare(false, false, false, true).
+        consume.
+        on_delivery { |*args| puts(args.inspect) }
+
+      q
     end
 
-    2.times do
-      q = AMQ::Client::Queue.new(connection, ch2, AMQ::Protocol::EMPTY_STRING)
-      q.declare(false, false, false, true)
+    x = AMQ::Client::Exchange.new(connection, ch1, "amqclient.examples.exchanges.fanout", :fanout)
+    x.declare(false, false, true)
+    queues.each { |q| q.bind(x) }
+
+
+    connection.on_tcp_connection_loss do |conn, settings|
+      puts "Trying to reconnect..."
+      conn.reconnect(false, 2)
     end
 
-
-    # connection.on_recovery do |conn, settings|
-    #   puts "Recovered!"
-    # end
+    connection.on_recovery do |conn, settings|
+      puts "Recovered!"
+    end
 
     show_stopper = Proc.new {
       connection.disconnect { puts "Disconnected. Exiting…"; EventMachine.stop }

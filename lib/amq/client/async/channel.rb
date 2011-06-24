@@ -253,7 +253,8 @@ module AMQ
         # @api plugin
         def auto_recover
           self.reopen do
-            self.queues.each { |q| q.auto_recover }
+            self.queues.each    { |q| q.auto_recover }
+            self.exchanges.each { |q| q.auto_recover }
           end
         end # auto_recover
 

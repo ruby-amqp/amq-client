@@ -328,12 +328,23 @@ module AMQ
           self.redefine_callback(:error, &block)
         end
 
+
+        # Defines a callback that will be executed after TCP connection is recovered after a network failure
+        # but before AMQP connection is re-opened.
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def before_recovery(&block)
+          self.redefine_callback(:before_recovery, &block)
+        end # before_recovery(&block)
+
+
         # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
         # Only one callback can be defined (the one defined last replaces previously added ones).
         #
         # @api public
         def on_recovery(&block)
-          self.redefine_callback(:recovery, &block)
+          self.redefine_callback(:after_recovery, &block)
         end # on_recovery(&block)
 
         # @endgroup

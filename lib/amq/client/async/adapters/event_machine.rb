@@ -142,9 +142,6 @@ module AMQ
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
           @auto_recovery     = (!!@settings[:auto_recovery])
-          if @auto_recovery
-            register_auto_recovery_handler
-          end
 
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
@@ -239,16 +236,19 @@ module AMQ
           # and there is no easy way to tell initial connection failure
           # from connection loss. Not in EventMachine 0.12.x, anyway. MK.
 
-          if @had_successfull_connected_before
+          if @had_successfully_connected_before
             @recovered = true
 
+            self.exec_callback_yielding_self(:before_recovery, @settings)
+
             self.register_connection_callback do
-              self.exec_callback_yielding_self(:recovery, @settings)
+              self.auto_recover if self.auto_recovering?
+              self.exec_callback_yielding_self(:after_recovery, @settings)
             end
           end
 
           # now we can set it. MK.
-          @had_successfull_connected_before = true
+          @had_successfully_connected_before = true
           @reconnecting                     = false
 
           self.handshake
@@ -269,7 +269,7 @@ module AMQ
         # * Initial TCP connection fails
         # @private
         def unbind(exception = nil)
-          if !@tcp_connection_established && !@had_successfull_connected_before && !@intentionally_closing_connection
+          if !@tcp_connection_established && !@had_successfully_connected_before && !@intentionally_closing_connection
             @tcp_connection_failed = true
             self.tcp_connection_failed
           end
@@ -283,7 +283,7 @@ module AMQ
           closed!
 
 
-          self.tcp_connection_lost if !@intentionally_closing_connection && @had_successfull_connected_before
+          self.tcp_connection_lost if !@intentionally_closing_connection && @had_successfully_connected_before
 
           # since AMQP spec dictates that authentication failure is a protocol exception
           # and protocol exceptions result in connection closure, check whether we are
@@ -331,6 +331,11 @@ module AMQ
         end # disconnection_successful
 
 
+        def auto_recover
+          @channels.each { |n, c| c.auto_recover }
+        end # auto_recover
+
+
 
 
 
@@ -360,13 +365,6 @@ module AMQ
 
 
         protected
-
-
-        def register_auto_recovery_handler
-          on_recovery do
-            @channels.each { |n, c| c.auto_recover }
-          end
-        end # register_auto_recovery_handler
 
 
         def reset

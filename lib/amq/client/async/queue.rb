@@ -40,6 +40,9 @@ module AMQ
         # @return [Hash] Additional arguments given on queue declaration. Typically used by AMQP extensions.
         attr_reader :arguments
 
+        # @return [Array<Hash>]
+        attr_reader :bindings
+
 
 
         # @param  [AMQ::Client::Adapter]  AMQ networking adapter to use.
@@ -51,8 +54,11 @@ module AMQ
 
           super(connection)
 
-          @name    = name
-          @channel = channel
+          @name     = name
+          @channel  = channel
+
+          # primarily for autorecovery. MK.
+          @bindings  = Array.new
         end
 
         def dup
@@ -165,6 +171,10 @@ module AMQ
           self
         end # delete(channel, queue, if_unused, if_empty, nowait, &block)
 
+
+
+        # @group Binding
+
         #
         # @return [Queue]  self
         #
@@ -188,6 +198,10 @@ module AMQ
             @channel.queues_awaiting_bind_ok.push(self)
           end
 
+
+          # store bindings for automatic recovery. MK.
+          @bindings.push({ :exchange => exchange_name, :routing_key => routing_key, :arguments => arguments })
+
           self
         end
 
@@ -207,11 +221,20 @@ module AMQ
           @connection.send_frame(Protocol::Queue::Unbind.encode(@channel.id, @name, exchange_name, routing_key, arguments))
 
           self.append_callback(:unbind, &block)
-          # TODO: handle channel & connection-level exceptions
           @channel.queues_awaiting_unbind_ok.push(self)
+
+
+          @bindings.delete_if { |b| b[:exchange] == exchange_name }
 
           self
         end
+
+
+        def rebind(&block)
+          @bindings.each { |b| self.bind(b[:exchange], b[:routing_key], true, b[:arguments]) }
+        end
+
+        # @endgroup
 
 
         #
@@ -223,9 +246,13 @@ module AMQ
           raise RuntimeError.new("This instance is already being consumed! Create another one using #dup.") if @consumer_tag
 
           nowait        = true unless block
-          @consumer_tag = generate_consumer_tag(name)
-          @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
 
+          @consumer_tag       = generate_consumer_tag(@name)
+          @explicit_ack       = !no_ack
+          @exclusive_consumer = exclusive
+          @consumer_arguments = arguments
+
+          @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, no_local, no_ack, exclusive, nowait, arguments))
           @channel.consumers[@consumer_tag] = self
 
           if !nowait
@@ -239,46 +266,30 @@ module AMQ
           self
         end
 
-        # Unique string supposed to be used as a consumer tag.
-        #
-        # @return [String]  Unique string.
         # @api plugin
-        def generate_consumer_tag(name)
-          "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
-        end
+        def resubscribe(&block)
+          nowait        = true unless block
 
-        # Resets consumer tag by setting it to nil.
-        # @return [String]  Consumer tag this queue previously used.
-        #
-        # @api plugin
-        def reset_consumer_tag!
-          ct = @consumer_tag.dup
-          @consumer_tag = nil
+          @channel.consumers[@consumer_tag] = nil
 
-          ct
-        end
+          @consumer_tag = generate_consumer_tag(@name)
+          @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @name, @consumer_tag, false, !@explicit_ack, @exclusive_consumer, false, @consumer_arguments))
 
+          @channel.consumers[@consumer_tag] = self
 
-        #
-        # @return [Queue]  self
-        #
-        # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.10.)
-        def get(no_ack = false, &block)
-          @connection.send_frame(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
+          if !nowait
+            # unlike #get, here it is reasonable to expect more than one callback
+            # so we use #append_callback
+            self.append_callback(:consume, &block)
 
-          # most people only want one callback per #get call. Consider the following example:
-          #
-          # 100.times { queue.get { ... } }
-          #
-          # most likely you won't expect 100 callback runs per message here. MK.
-          self.redefine_callback(:get, &block)
-          @channel.queues_awaiting_get_response.push(self)
+            @channel.queues_awaiting_consume_ok.push(self)
+          end
 
           self
-        end # get(no_ack = false, &block)
+        end # resubscribe(&block)
 
-        #
+
+        # Unsubscribes from message delivery.
         # @return [Queue]  self
         #
         # @api public
@@ -299,7 +310,28 @@ module AMQ
           self
         end # cancel(&block)
 
+
+        # Fetches messages from the queue.
+        # @return [Queue]  self
         #
+        # @api public
+        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.10.)
+        def get(no_ack = false, &block)
+          @connection.send_frame(Protocol::Basic::Get.encode(@channel.id, @name, no_ack))
+
+          # most people only want one callback per #get call. Consider the following example:
+          #
+          # 100.times { queue.get { ... } }
+          #
+          # most likely you won't expect 100 callback runs per message here. MK.
+          self.redefine_callback(:get, &block)
+          @channel.queues_awaiting_get_response.push(self)
+
+          self
+        end # get(no_ack = false, &block)
+
+
+        # Purges (removes all messagse from) the queue.
         # @return [Queue]  self
         #
         # @api public
@@ -344,7 +376,10 @@ module AMQ
         #
         # @api plugin
         def auto_recover
-          self.redeclare
+          self.redeclare do
+            self.rebind
+            self.resubscribe
+          end
         end # auto_recover
 
 
@@ -359,6 +394,27 @@ module AMQ
         #
         # Implementation
         #
+
+
+        # Unique string supposed to be used as a consumer tag.
+        #
+        # @return [String]  Unique string.
+        # @api plugin
+        def generate_consumer_tag(name)
+          "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        end
+
+        # Resets consumer tag by setting it to nil.
+        # @return [String]  Consumer tag this queue previously used.
+        #
+        # @api plugin
+        def reset_consumer_tag!
+          ct = @consumer_tag.dup
+          @consumer_tag = nil
+
+          ct
+        end
+
 
         def handle_declare_ok(method)
           @name = method.queue if self.anonymous?
