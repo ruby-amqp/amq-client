@@ -114,6 +114,21 @@ module AMQ
       # @endgroup
 
 
+      # @group Error Handling & Recovery
+
+      # Called by associated connection object when AMQP connection has been re-established
+      # (for example, after a network failure).
+      #
+      # @api plugin
+      def auto_recover
+        puts "tag = #{@consumer_tag}, auto-recovering"
+        self.redeclare
+      end # auto_recover
+
+      # @endgroup
+
+
+
 
       #
       # Implementation

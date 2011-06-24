@@ -252,14 +252,6 @@ module AMQ
           self
         end
 
-        # @api plugin
-        def resubscribe(&block)
-          @default_consumer.resubscribe(&block)
-
-          self
-        end # resubscribe(&block)
-
-
         # Unsubscribes from message delivery.
         # @return [Queue]  self
         #
@@ -369,7 +361,8 @@ module AMQ
         def auto_recover
           self.redeclare do
             self.rebind
-            self.resubscribe
+
+            @consumers.each { |tag, consumer| puts "c"; consumer.auto_recover }
           end
         end # auto_recover
 

@@ -25,13 +25,6 @@ module AMQ
         #
 
 
-        class ChannelOutOfBadError < StandardError # TODO: inherit from some AMQP error class defined in amq-protocol or use it straight away.
-          def initialize(max, given)
-            super("Channel max is #{max}, #{given} given.")
-          end
-        end
-
-
         DEFAULT_REPLY_TEXT = "Goodbye".freeze
 
         attr_reader :id
@@ -63,7 +56,7 @@ module AMQ
                         end
 
           if channel_max != 0 && !(0..channel_max).include?(id)
-            raise ChannelOutOfBadError.new(channel_max, id)
+            raise ArgumentError.new("Max channel for the connection is #{channel_max}, given: #{id}")
           end
         end
 

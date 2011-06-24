@@ -29,9 +29,9 @@ EM.run do
 
     queues = Array.new(4) do
       q = AMQ::Client::Queue.new(connection, ch1, AMQ::Protocol::EMPTY_STRING)
-      q.declare(false, false, false, true).
-        consume.
-        on_delivery { |*args| puts(args.inspect) }
+      q.declare(false, false, false, true) do
+        q.consume { puts "Added a consumer on #{q.name}"; q.on_delivery { |*args| puts(args.inspect) } }
+      end
 
       q
     end
@@ -55,6 +55,7 @@ EM.run do
     }
 
     Signal.trap "TERM", show_stopper
+    Signal.trap "INT",  show_stopper
     EM.add_timer(30, show_stopper)
 
 
