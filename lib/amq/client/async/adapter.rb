@@ -224,6 +224,16 @@ module AMQ
         end
 
 
+
+        # @return [Boolean] whether connection is in the automatic recovery mode
+        # @api public
+        def auto_recovering?
+          !!@auto_recovery
+        end # auto_recovering?
+        alias auto_recovery? auto_recovering?
+
+
+
         # Sends AMQ protocol header (also known as preamble).
         #
         # @note This must be implemented by all AMQP clients.

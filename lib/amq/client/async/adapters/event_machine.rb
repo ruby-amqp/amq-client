@@ -181,14 +181,6 @@ module AMQ
           @tcp_connection_established
         end # tcp_connection_established?
 
-        # @return [Boolean] whether connection is in the automatic recovery mode
-        # @api public
-        def auto_recovering?
-          !!@auto_recovery
-        end # auto_recovering?
-        alias auto_recovery? auto_recovering?
-
-
 
 
 
