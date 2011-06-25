@@ -36,13 +36,15 @@ module AMQ
         attr_accessor :flow_is_active
 
 
-        def initialize(connection, id)
+        def initialize(connection, id, options = {})
           super(connection)
 
           @id        = id
           @exchanges = Hash.new
           @queues    = Hash.new
           @consumers = Hash.new
+          @options       = options
+          @auto_recovery = (!!@options[:auto_recovery] || connection.auto_recovering?)
 
           reset_state!
 
@@ -59,6 +61,12 @@ module AMQ
             raise ArgumentError.new("Max channel for the connection is #{channel_max}, given: #{id}")
           end
         end
+
+
+        def auto_recovering?
+          @auto_recovery
+        end # auto_recovering?
+
 
         def consumers
           @consumers
@@ -246,6 +254,8 @@ module AMQ
         #
         # @api plugin
         def auto_recover
+          return unless auto_recovering?
+
           self.reopen do
             self.queues.each    { |q| q.auto_recover }
             self.exchanges.each { |e| e.auto_recover }

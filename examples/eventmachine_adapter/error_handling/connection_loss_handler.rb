@@ -11,21 +11,28 @@ EM.run do
                                           :user     => "amq_client_gem",
                                           :password => "amq_client_gem_password",
                                           :timeout        => 0.3,
-                                          :on_tcp_connection_failure => Proc.new { |settings| puts "Failed to connect, this was NOT expected"; EM.stop },
-                                          :auto_recovery             => true) do |connection|
+                                          :on_tcp_connection_failure => Proc.new { |settings| puts "Failed to connect, this was NOT expected"; EM.stop }) do |connection|
 
     if connection.auto_recovering?
       puts "Connection is auto-recovering..."
     end
 
-    ch1 = AMQ::Client::Channel.new(connection, 1)
+    ch1 = AMQ::Client::Channel.new(connection, 1, :auto_recovery => true)
     ch1.open do
       puts "Channel 1 open now"
     end
+    if ch1.auto_recovering?
+      puts "Channel 1 is auto-recovering"
+    end
+
     ch2 = AMQ::Client::Channel.new(connection, 2)
     ch2.open do
       puts "Channel 2 open now"
     end
+    if ch2.auto_recovering?
+      puts "Channel 2 is auto-recovering"
+    end
+
 
     queues = Array.new(4) do
       q = AMQ::Client::Queue.new(connection, ch1, AMQ::Protocol::EMPTY_STRING)

@@ -242,7 +242,7 @@ module AMQ
             self.exec_callback_yielding_self(:before_recovery, @settings)
 
             self.register_connection_callback do
-              self.auto_recover if self.auto_recovering?
+              self.auto_recover
               self.exec_callback_yielding_self(:after_recovery, @settings)
             end
           end
@@ -332,7 +332,7 @@ module AMQ
 
 
         def auto_recover
-          @channels.each { |n, c| c.auto_recover }
+          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, c| c.auto_recover }
         end # auto_recover
 
 
