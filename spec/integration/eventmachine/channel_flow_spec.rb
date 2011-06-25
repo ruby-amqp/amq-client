@@ -3,7 +3,7 @@ require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Channel#flow" do
   include EventedSpec::SpecHelper
-  default_timeout 1
+  default_timeout 2
 
   it "controls channel flow state" do
     em_amqp_connect do |client|
@@ -24,7 +24,7 @@ describe AMQ::Client::EventMachineClient, "Channel#flow" do
         end # channel.flow
       end # channel.open
 
-      done(0.5) { flow_states.should == [false, true] }
+      done(1.0) { flow_states.should == [false, true] }
     end # em_amqp_connect
   end # it
 end # describe
