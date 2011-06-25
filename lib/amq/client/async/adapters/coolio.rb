@@ -122,6 +122,8 @@ module AMQ
           @locale            = @settings.fetch(:locale, "en_GB")
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
+          @auto_recovery     = (!!@settings[:auto_recovery])
+
           socket
         end
 
@@ -191,6 +193,11 @@ module AMQ
           close_connection
           closed!
         end
+
+
+        def auto_recover
+          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, c| c.auto_recover }
+        end # auto_recover
 
 
 
@@ -276,6 +283,21 @@ module AMQ
 
         # @api private
         def post_init
+          if @had_successfully_connected_before
+            @recovered = true
+
+            self.exec_callback_yielding_self(:before_recovery, @settings)
+
+            self.register_connection_callback do
+              self.auto_recover
+              self.exec_callback_yielding_self(:after_recovery, @settings)
+            end
+          end
+
+          # now we can set it. MK.
+          @had_successfully_connected_before = true
+          @reconnecting                     = false
+
           self.reset
           self.handshake
         end

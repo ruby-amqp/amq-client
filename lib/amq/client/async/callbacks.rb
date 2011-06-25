@@ -34,28 +34,28 @@ module AMQ
 
 
         def exec_callback(name, *args, &block)
-          list = Array(self.callbacks[name])
+          list = Array(@callbacks[name])
           if list.any?
             list.each { |c| c.call(*args, &block) }
           end
         end
 
         def exec_callback_once(name, *args, &block)
-          list = (self.callbacks.delete(name) || Array.new)
+          list = (@callbacks.delete(name) || Array.new)
           if list.any?
             list.each { |c| c.call(*args, &block) }
           end
         end
 
         def exec_callback_yielding_self(name, *args, &block)
-          list = Array(self.callbacks[name])
+          list = Array(@callbacks[name])
           if list.any?
             list.each { |c| c.call(self, *args, &block) }
           end
         end
 
         def exec_callback_once_yielding_self(name, *args, &block)
-          list = (self.callbacks.delete(name) || Array.new)
+          list = (@callbacks.delete(name) || Array.new)
 
           if list.any?
             list.each { |c| c.call(self, *args, &block) }
@@ -63,9 +63,9 @@ module AMQ
         end
 
         def has_callback?(name)
-          self.callbacks[name] && !self.callbacks[name].empty?
+          @callbacks[name] && !@callbacks[name].empty?
         end # has_callback?
-      end # Callbacks      
+      end # Callbacks
     end # Async
   end # Client
 end # AMQ

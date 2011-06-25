@@ -224,6 +224,16 @@ module AMQ
         end
 
 
+
+        # @return [Boolean] whether connection is in the automatic recovery mode
+        # @api public
+        def auto_recovering?
+          !!@auto_recovery
+        end # auto_recovering?
+        alias auto_recovery? auto_recovering?
+
+
+
         # Sends AMQ protocol header (also known as preamble).
         #
         # @note This must be implemented by all AMQP clients.
@@ -274,17 +284,81 @@ module AMQ
         end # vhost
 
 
-        # Called when previously established TCP connection fails.
-        # @api public
-        def tcp_connection_lost
-          @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
-        end
+
+        # @group Error handling
 
         # Called when initial TCP connection fails.
         # @api public
         def tcp_connection_failed
+          @recovered = false
+
           @on_tcp_connection_failure.call(@settings) if @on_tcp_connection_failure
         end
+
+        # Called when previously established TCP connection fails.
+        # @api public
+        def tcp_connection_lost
+          @recovered = false
+
+          @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
+        end
+
+
+        # Defines a callback that will be run when initial TCP connection fails.
+        # You can define only one callback.
+        #
+        # @api public
+        def on_tcp_connection_failure(&block)
+          @on_tcp_connection_failure = block
+        end
+
+        # Defines a callback that will be run when TCP connection to AMQP broker is lost (interrupted).
+        # You can define only one callback.
+        #
+        # @api public
+        def on_tcp_connection_loss(&block)
+          @on_tcp_connection_loss = block
+        end
+
+        # Defines a callback that will be run when TCP connection is closed before authentication
+        # finishes. Usually this means authentication failure. You can define only one callback.
+        #
+        # @api public
+        def on_possible_authentication_failure(&block)
+          @on_possible_authentication_failure = block
+        end
+
+
+        # Defines a callback that will be executed when connection is closed after
+        # connection-level exception. Only one callback can be defined (the one defined last
+        # replaces previously added ones).
+        #
+        # @api public
+        def on_error(&block)
+          self.redefine_callback(:error, &block)
+        end
+
+
+        # Defines a callback that will be executed after TCP connection is recovered after a network failure
+        # but before AMQP connection is re-opened.
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def before_recovery(&block)
+          self.redefine_callback(:before_recovery, &block)
+        end # before_recovery(&block)
+
+
+        # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_recovery(&block)
+          self.redefine_callback(:after_recovery, &block)
+        end # on_recovery(&block)
+
+        # @endgroup
+
 
 
 
@@ -379,20 +453,6 @@ module AMQ
         end # send_heartbeat
 
 
-
-
-        # @group Error handling
-
-        # Defines a callback that will be executed when channel is closed after
-        # channel-level exception. Only one callback can be defined (the one defined last
-        # replaces previously added ones).
-        #
-        # @api public
-        def on_error(&block)
-          self.redefine_callback(:error, &block)
-        end
-
-        # @endgroup
 
 
 

@@ -97,5 +97,15 @@ module AMQ
       end # initialize(settings)
     end # PossibleAuthenticationFailureError
 
+
+
+    class UnknownExchangeTypeError < StandardError
+      BUILTIN_TYPES = [:fanout, :direct, :topic, :headers].freeze
+
+      def initialize(types, given)
+        super("#{given.inspect} exchange type is unknown. Standard types are #{BUILTIN_TYPES.inspect}, custom exchange types must begin with x-, for example: x-recent-history")
+      end
+    end
+
   end # Client
 end # AMQ

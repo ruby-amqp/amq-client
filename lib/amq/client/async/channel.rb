@@ -25,30 +25,26 @@ module AMQ
         #
 
 
-        class ChannelOutOfBadError < StandardError # TODO: inherit from some AMQP error class defined in amq-protocol or use it straight away.
-          def initialize(max, given)
-            super("Channel max is #{max}, #{given} given.")
-          end
-        end
-
-
         DEFAULT_REPLY_TEXT = "Goodbye".freeze
 
         attr_reader :id
 
         attr_reader :exchanges_awaiting_declare_ok, :exchanges_awaiting_delete_ok
-        attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_consume_ok, :queues_awaiting_cancel_ok, :queues_awaiting_get_response
+        attr_reader :queues_awaiting_declare_ok, :queues_awaiting_delete_ok, :queues_awaiting_bind_ok, :queues_awaiting_unbind_ok, :queues_awaiting_purge_ok, :queues_awaiting_get_response
+        attr_reader :consumers_awaiting_consume_ok, :consumers_awaiting_cancel_ok
 
         attr_accessor :flow_is_active
 
 
-        def initialize(connection, id)
+        def initialize(connection, id, options = {})
           super(connection)
 
           @id        = id
           @exchanges = Hash.new
           @queues    = Hash.new
           @consumers = Hash.new
+          @options       = options
+          @auto_recovery = (!!@options[:auto_recovery] || connection.auto_recovering?)
 
           reset_state!
 
@@ -62,9 +58,15 @@ module AMQ
                         end
 
           if channel_max != 0 && !(0..channel_max).include?(id)
-            raise ChannelOutOfBadError.new(channel_max, id)
+            raise ArgumentError.new("Max channel for the connection is #{channel_max}, given: #{id}")
           end
         end
+
+
+        def auto_recovering?
+          @auto_recovery
+        end # auto_recovering?
+
 
         def consumers
           @consumers
@@ -101,6 +103,7 @@ module AMQ
 
           self.redefine_callback :open, &block
         end
+        alias reopen open
 
         # Closes AMQP channel.
         #
@@ -245,6 +248,20 @@ module AMQ
           self.define_callback(:error, &block)
         end
 
+
+        # Called by associated connection object when AMQP connection has been re-established
+        # (for example, after a network failure).
+        #
+        # @api plugin
+        def auto_recover
+          return unless auto_recovering?
+
+          self.reopen do
+            self.queues.each    { |q| q.auto_recover }
+            self.exchanges.each { |e| e.auto_recover }
+          end
+        end # auto_recover
+
         # @endgroup
 
 
@@ -291,8 +308,8 @@ module AMQ
           @queues_awaiting_purge_ok      = Array.new
           @queues_awaiting_bind_ok       = Array.new
           @queues_awaiting_unbind_ok     = Array.new
-          @queues_awaiting_consume_ok    = Array.new
-          @queues_awaiting_cancel_ok     = Array.new
+          @consumers_awaiting_consume_ok = Array.new
+          @consumers_awaiting_cancel_ok  = Array.new
 
           @queues_awaiting_get_response  = Array.new
 
@@ -379,7 +396,7 @@ module AMQ
           channel = connection.channels[frame.channel]
           channel.exec_callback(:tx_rollback, frame.decode_payload)
         end
-      end # Channel      
+      end # Channel
     end # Async
   end # Client
 end # AMQ

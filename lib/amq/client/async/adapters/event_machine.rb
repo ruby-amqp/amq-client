@@ -21,6 +21,8 @@ module AMQ
         # API
         #
 
+        # @group Connection operations
+
         # Initiates connection to AMQP broker. If callback is given, runs it when (and if) AMQP connection
         # succeeds.
         #
@@ -68,6 +70,7 @@ module AMQ
           EventMachine.reconnect(@settings[:host], @settings[:port], self)
         end
 
+        # @endgroup
 
 
 
@@ -91,30 +94,6 @@ module AMQ
           @disconnection_deferrable.callback(&block)
         end # on_closed(&block)
         alias on_disconnection on_closed
-
-        # Defines a callback that will be run when initial TCP connection fails.
-        # You can define only one callback.
-        #
-        # @api public
-        def on_tcp_connection_failure(&block)
-          @on_tcp_connection_failure = block
-        end
-
-        # Defines a callback that will be run when TCP connection to AMQP broker is lost (interrupted).
-        # You can define only one callback.
-        #
-        # @api public
-        def on_tcp_connection_loss(&block)
-          @on_tcp_connection_loss = block
-        end
-
-        # Defines a callback that will be run when TCP connection is closed before authentication
-        # finishes. Usually this means authentication failure. You can define only one callback.
-        #
-        # @api public
-        def on_possible_authentication_failure(&block)
-          @on_possible_authentication_failure = block
-        end
 
         # @see #on_open
         # @private
@@ -162,6 +141,8 @@ module AMQ
           @locale            = @settings.fetch(:locale, "en_GB")
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
+          @auto_recovery     = (!!@settings[:auto_recovery])
+
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
@@ -199,8 +180,6 @@ module AMQ
         def tcp_connection_established?
           @tcp_connection_established
         end # tcp_connection_established?
-
-
 
 
 
@@ -243,11 +222,25 @@ module AMQ
           # software that calls #post_init before #unbind even when TCP connection
           # fails. MK.
           @tcp_connection_established       = true
+
+
           # again, this is because #unbind is called in different situations
           # and there is no easy way to tell initial connection failure
           # from connection loss. Not in EventMachine 0.12.x, anyway. MK.
-          @had_successfull_connected_before = true
 
+          if @had_successfully_connected_before
+            @recovered = true
+
+            self.exec_callback_yielding_self(:before_recovery, @settings)
+
+            self.register_connection_callback do
+              self.auto_recover
+              self.exec_callback_yielding_self(:after_recovery, @settings)
+            end
+          end
+
+          # now we can set it. MK.
+          @had_successfully_connected_before = true
           @reconnecting                     = false
 
           self.handshake
@@ -268,7 +261,7 @@ module AMQ
         # * Initial TCP connection fails
         # @private
         def unbind(exception = nil)
-          if !@tcp_connection_established && !@had_successfull_connected_before && !@intentionally_closing_connection
+          if !@tcp_connection_established && !@had_successfully_connected_before && !@intentionally_closing_connection
             @tcp_connection_failed = true
             self.tcp_connection_failed
           end
@@ -282,7 +275,7 @@ module AMQ
           closed!
 
 
-          self.tcp_connection_lost if !@intentionally_closing_connection && @had_successfull_connected_before
+          self.tcp_connection_lost if !@intentionally_closing_connection && @had_successfully_connected_before
 
           # since AMQP spec dictates that authentication failure is a protocol exception
           # and protocol exceptions result in connection closure, check whether we are
@@ -328,6 +321,11 @@ module AMQ
           self.reset
           closed!
         end # disconnection_successful
+
+
+        def auto_recover
+          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, c| c.auto_recover }
+        end # auto_recover
 
 
 
@@ -386,7 +384,7 @@ module AMQ
             start_tls
           end
         end # upgrade_to_tls_if_necessary
-      end # EventMachineClient      
+      end # EventMachineClient
     end # Async
   end # Client
 end # AMQ

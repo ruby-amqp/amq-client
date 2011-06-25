@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require "amq/client/exceptions"
 require "amq/client/entity"
 require "amq/client/server_named_entity"
 
@@ -13,13 +14,8 @@ module AMQ
         include ServerNamedEntity
         extend ProtocolMethodHandlers
 
-        TYPES = [:fanout, :direct, :topic, :headers].freeze
+        BUILTIN_TYPES = [:fanout, :direct, :topic, :headers].freeze
 
-        class IncompatibleExchangeTypeError < StandardError
-          def initialize(types, given)
-            super("#{given.inspect} exchange type is unknown. Standard types are #{TYPES.inspect}, custom exchange types must begin with x-, for example: x-recent-history")
-          end
-        end
 
 
         #
@@ -30,45 +26,77 @@ module AMQ
         attr_reader :channel
 
         # Exchange name. May be server-generated or assigned directly.
+        # @return [String]
         attr_reader :name
 
         # @return [Symbol] One of :direct, :fanout, :topic, :headers
         attr_reader :type
 
+        # @return [Hash] Additional arguments given on queue declaration. Typically used by AMQP extensions.
+        attr_reader :arguments
+
+
+
         def initialize(connection, channel, name, type = :fanout)
-          if !(TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
-            raise IncompatibleExchangeTypeError.new(TYPES, type)
+          if !(BUILTIN_TYPES.include?(type.to_sym) || type.to_s =~ /^x-.+/i)
+            raise UnknownExchangeTypeError.new(BUILTIN_TYPES, type)
           end
 
-          @connection  = connection
-          @channel = channel
-          @name    = name
-          @type    = type
+          @connection = connection
+          @channel    = channel
+          @name       = name
+          @type       = type
 
           # register pre-declared exchanges
-          if @name == AMQ::Protocol::EMPTY_STRING || @name =~ /^amq\.(fanout|topic)/
+          if @name == AMQ::Protocol::EMPTY_STRING || @name =~ /^amq\.(direct|fanout|topic|match|headers)/
             @channel.register_exchange(self)
           end
 
           super(connection)
         end
 
-
+        # @return [Boolean] true if this exchange is of type `fanout`
+        # @api public
         def fanout?
           @type == :fanout
         end
 
+        # @return [Boolean] true if this exchange is of type `direct`
+        # @api public
         def direct?
           @type == :direct
         end
 
+        # @return [Boolean] true if this exchange is of type `topic`
+        # @api public
         def topic?
           @type == :topic
         end
 
+        # @return [Boolean] true if this exchange is of type `headers`
+        # @api public
+        def headers?
+          @type == :headers
+        end
+
+        # @return [Boolean] true if this exchange is of a custom type (begins with x-)
+        # @api public
+        def custom_type?
+          @type.to_s =~ /^x-.+/i
+        end # custom_type?
 
 
+
+        # @group Declaration
+
+        # @api public
         def declare(passive = false, durable = false, auto_delete = false, nowait = false, arguments = nil, &block)
+          # for re-declaration
+          @passive     = passive
+          @durable     = durable
+          @auto_delete = auto_delete
+          @arguments   = arguments
+
           @connection.send_frame(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, passive, durable, auto_delete, false, nowait, arguments))
 
           unless nowait
@@ -80,6 +108,23 @@ module AMQ
         end
 
 
+        # @api public
+        def redeclare(&block)
+          nowait = block.nil?
+          @connection.send_frame(Protocol::Exchange::Declare.encode(@channel.id, @name, @type.to_s, @passive, @durable, @auto_delete, false, nowait, @arguments))
+
+          unless nowait
+            self.define_callback(:declare, &block)
+            @channel.exchanges_awaiting_declare_ok.push(self)
+          end
+
+          self
+        end # redeclare(&block)
+
+        # @endgroup
+
+
+        # @api public
         def delete(if_unused = false, nowait = false, &block)
           @connection.send_frame(Protocol::Exchange::Delete.encode(@channel.id, @name, if_unused, nowait))
 
@@ -94,6 +139,7 @@ module AMQ
         end # delete(if_unused = false, nowait = false)
 
 
+        # @api public
         def publish(payload, routing_key = AMQ::Protocol::EMPTY_STRING, user_headers = {}, mandatory = false, immediate = false, frame_size = nil)
           headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }.merge(user_headers)
           @connection.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @connection.frame_max)))
@@ -102,6 +148,7 @@ module AMQ
         end
 
 
+        # @api public
         def on_return(&block)
           self.redefine_callback(:return, &block)
 
@@ -109,6 +156,19 @@ module AMQ
         end # on_return(&block)
 
 
+        # Called by associated connection object when AMQP connection has been re-established
+        # (for example, after a network failure).
+        #
+        # @api plugin
+        def auto_recover
+          self.redeclare
+        end # auto_recover
+
+
+
+        #
+        # Implementation
+        #
 
 
         def handle_declare_ok(method)
@@ -151,7 +211,7 @@ module AMQ
           exchange.exec_callback(:return, method, header, body)
         end
 
-      end # Exchange      
+      end # Exchange
     end # Async
   end # Client
 end # AMQ
