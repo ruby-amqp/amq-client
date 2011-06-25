@@ -43,8 +43,8 @@ module AMQ
           @exchanges = Hash.new
           @queues    = Hash.new
           @consumers = Hash.new
-          @options       = options
-          @auto_recovery = (!!@options[:auto_recovery] || connection.auto_recovering?)
+          @options       = { :auto_recovery => connection.auto_recovering? }.merge(options)
+          @auto_recovery = (!!@options[:auto_recovery])
 
           reset_state!
 
