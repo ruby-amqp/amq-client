@@ -62,12 +62,13 @@ module AMQ
           end
         end
 
-
+        # @return [Boolean] true if this channel uses automatic recovery mode
         def auto_recovering?
           @auto_recovery
         end # auto_recovering?
 
 
+        # @return [Hash<String, Consumer>]
         def consumers
           @consumers
         end # consumers
@@ -249,6 +250,45 @@ module AMQ
         end
 
 
+        # Defines a callback that will be executed after TCP connection is interrupted (typically because of a network failure).
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_connection_interruption(&block)
+          self.redefine_callback(:after_connection_interruption, &block)
+        end # on_connection_interruption(&block)
+        alias after_connection_interruption on_connection_interruption
+
+        # @private
+        def handle_connection_interruption(method = nil)
+          @queues.each    { |name, q| q.handle_connection_interruption(method) }
+          @exchanges.each { |name, e| e.handle_connection_interruption(method) }
+          self.reset_state!
+
+          self.exec_callback_yielding_self(:after_connection_interruption)
+        end # handle_connection_interruption
+
+
+        # Defines a callback that will be executed after TCP connection has recovered after a network failure
+        # but before AMQP connection is re-opened.
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def before_recovery(&block)
+          self.redefine_callback(:before_recovery, &block)
+        end # before_recovery(&block)
+
+
+        # Defines a callback that will be executed after AMQP connection has recovered after a network failure.
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_recovery(&block)
+          self.redefine_callback(:after_recovery, &block)
+        end # on_recovery(&block)
+        alias after_recovery on_recovery
+
+
         # Called by associated connection object when AMQP connection has been re-established
         # (for example, after a network failure).
         #
@@ -285,17 +325,22 @@ module AMQ
           @exchanges[name]
         end
 
+        # @api plugin
+        # @private
         def register_queue(queue)
           raise ArgumentError, "argument is nil!" if queue.nil?
 
           @queues[queue.name] = queue
         end # register_queue(queue)
 
+        # @api plugin
+        # @private
         def find_queue(name)
           @queues[name]
         end
 
-
+        # @api plugin
+        # @private
         def reset_state!
           @flow_is_active                = true
 
@@ -317,22 +362,22 @@ module AMQ
         end # reset_state!
 
 
-        def handle_connection_interruption(method = nil)
-          self.reset_state!
-        end # handle_connection_interruption
-
-
-
+        # @api plugin
+        # @private
         def handle_open_ok(open_ok)
           self.status = :opened
           self.exec_callback_once_yielding_self(:open, open_ok)
         end
 
+        # @api plugin
+        # @private
         def handle_close_ok(close_ok)
           self.status = :closed
           self.exec_callback_once_yielding_self(:close, close_ok)
         end
 
+        # @api plugin
+        # @private
         def handle_close(channel_close)
           self.status = :closed
           self.exec_callback_yielding_self(:error, channel_close)

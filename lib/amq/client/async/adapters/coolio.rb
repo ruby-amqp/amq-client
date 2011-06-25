@@ -195,11 +195,6 @@ module AMQ
         end
 
 
-        def auto_recover
-          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, c| c.auto_recover }
-        end # auto_recover
-
-
 
         # Called when socket is connected but before handshake is done
         #
@@ -307,7 +302,7 @@ module AMQ
           @chunk_buffer = ""
           @frames       = Array.new
         end
-      end # CoolioClient      
+      end # CoolioClient
     end # Async
   end # Client
 end # AMQ

@@ -18,14 +18,23 @@ EM.run do
     end
 
     ch1 = AMQ::Client::Channel.new(connection, 1, :auto_recovery => true)
+    ch1.on_error do |ch, channel_close|
+      raise channel_close.reply_text
+    end
     ch1.open do
       puts "Channel 1 open now"
     end
     if ch1.auto_recovering?
       puts "Channel 1 is auto-recovering"
     end
+    ch1.on_recovery do |c|
+      puts "Channel #{c.id} has recovered"
+    end
 
     ch2 = AMQ::Client::Channel.new(connection, 2)
+    ch2.on_error do |ch, channel_close|
+      raise channel_close.reply_text
+    end
     ch2.open do
       puts "Channel 2 open now"
     end
@@ -40,11 +49,16 @@ EM.run do
         q.consume { puts "Added a consumer on #{q.name}"; q.on_delivery { |*args| puts(args.inspect) } }
       end
 
+      q.on_recovery { |_| puts "Queue #{q.name} has recovered" }
+
       q
     end
 
-    x = AMQ::Client::Exchange.new(connection, ch1, "amqclient.examples.exchanges.fanout", :fanout)
+    x  = AMQ::Client::Exchange.new(connection, ch1, "amqclient.examples.exchanges.fanout", :fanout)
+    x2 = AMQ::Client::Exchange.new(connection, ch1, "amq.fanout", :fanout)
     x.declare(false, false, true)
+    x.after_connection_interruption { |x| puts "Exchange #{x.name} has reacted to connection interruption" }
+    x.after_recovery { |x| puts "Exchange #{x.name} has recovered" }
     queues.each { |q| q.bind(x) }
 
 
@@ -54,7 +68,7 @@ EM.run do
     end
 
     connection.on_recovery do |conn, settings|
-      puts "Recovered!"
+      puts "Connection recovered"
     end
 
     show_stopper = Proc.new {

@@ -62,8 +62,6 @@ module AMQ
 
           if !@reconnecting
             @reconnecting = true
-
-            self.handle_connection_interruption
             self.reset
           end
 
@@ -269,7 +267,7 @@ module AMQ
           closing!
           @tcp_connection_established = false
 
-          self.handle_connection_interruption
+          self.handle_connection_interruption if @reconnecting
           @disconnection_deferrable.succeed
 
           closed!
@@ -321,11 +319,6 @@ module AMQ
           self.reset
           closed!
         end # disconnection_successful
-
-
-        def auto_recover
-          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, c| c.auto_recover }
-        end # auto_recover
 
 
 

@@ -59,6 +59,13 @@ module AMQ
           @name         = name
           # this has to stay true even after queue.declare-ok arrives. MK.
           @server_named = @name.empty?
+          if @server_named
+            self.on_connection_interruption do
+              # server-named queue need to get new names after recovery. MK.
+              @name = AMQ::Protocol::EMPTY_STRING
+            end
+          end
+
           @channel      = channel
 
           # primarily for autorecovery. MK.
@@ -353,15 +360,55 @@ module AMQ
 
         # @group Error Handling & Recovery
 
+        # Defines a callback that will be executed after TCP connection is interrupted (typically because of a network failure).
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_connection_interruption(&block)
+          self.redefine_callback(:after_connection_interruption, &block)
+        end # on_connection_interruption(&block)
+        alias after_connection_interruption on_connection_interruption
+
+        # @private
+        def handle_connection_interruption(method = nil)
+          @consumers.each { |tag, consumer| consumer.handle_connection_interruption(method) }
+
+          self.exec_callback_yielding_self(:after_connection_interruption)
+        end # handle_connection_interruption
+
+        # Defines a callback that will be executed after TCP connection is recovered after a network failure
+        # but before AMQP connection is re-opened.
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def before_recovery(&block)
+          self.redefine_callback(:before_recovery, &block)
+        end # before_recovery(&block)
+
+
+        # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_recovery(&block)
+          self.redefine_callback(:after_recovery, &block)
+        end # on_recovery(&block)
+        alias after_recovery on_recovery
+
+
+
         # Called by associated connection object when AMQP connection has been re-established
         # (for example, after a network failure).
         #
         # @api plugin
         def auto_recover
+          self.exec_callback_yielding_self(:before_recovery)
           self.redeclare do
             self.rebind
 
             @consumers.each { |tag, consumer| consumer.auto_recover }
+
+            self.exec_callback_yielding_self(:after_recovery)
           end
         end # auto_recover
 
@@ -381,6 +428,10 @@ module AMQ
           "#{name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
         end
 
+
+        def handle_connection_interruption(method = nil)
+          @consumers.each { |tag, c| c.handle_connection_interruption(method) }
+        end # handle_connection_interruption(method = nil)
 
 
         def handle_declare_ok(method)

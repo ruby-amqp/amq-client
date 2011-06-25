@@ -225,14 +225,6 @@ module AMQ
 
 
 
-        # @return [Boolean] whether connection is in the automatic recovery mode
-        # @api public
-        def auto_recovering?
-          !!@auto_recovery
-        end # auto_recovering?
-        alias auto_recovery? auto_recovering?
-
-
 
         # Sends AMQ protocol header (also known as preamble).
         #
@@ -285,7 +277,7 @@ module AMQ
 
 
 
-        # @group Error handling
+        # @group Error Handling and Recovery
 
         # Called when initial TCP connection fails.
         # @api public
@@ -339,7 +331,26 @@ module AMQ
         end
 
 
-        # Defines a callback that will be executed after TCP connection is recovered after a network failure
+        # Defines a callback that will be executed after TCP connection is interrupted (typically because of a network failure).
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_connection_interruption(&block)
+          self.redefine_callback(:after_connection_interruption, &block)
+        end # on_connection_interruption(&block)
+        alias after_connection_interruption on_connection_interruption
+
+
+        # @private
+        # @api plugin
+        def handle_connection_interruption
+          @channels.each { |n, c| c.handle_connection_interruption }
+          self.exec_callback_yielding_self(:after_connection_interruption)
+        end # handle_connection_interruption
+
+
+
+        # Defines a callback that will be executed after TCP connection has recovered after a network failure
         # but before AMQP connection is re-opened.
         # Only one callback can be defined (the one defined last replaces previously added ones).
         #
@@ -349,13 +360,34 @@ module AMQ
         end # before_recovery(&block)
 
 
-        # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
+        # Defines a callback that will be executed after AMQP connection has recovered after a network failure..
         # Only one callback can be defined (the one defined last replaces previously added ones).
         #
         # @api public
         def on_recovery(&block)
           self.redefine_callback(:after_recovery, &block)
         end # on_recovery(&block)
+        alias after_recovery on_recovery
+
+
+        # @return [Boolean] whether connection is in the automatic recovery mode
+        # @api public
+        def auto_recovering?
+          !!@auto_recovery
+        end # auto_recovering?
+        alias auto_recovery? auto_recovering?
+
+
+        # Performs recovery of channels that are in the automatic recovery mode.
+        #
+        # @see Channel#auto_recover
+        # @see Queue#auto_recover
+        # @see Exchange#auto_recover
+        # @api plugin
+        def auto_recover
+          @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, ch| ch.auto_recover }
+        end # auto_recover
+
 
         # @endgroup
 
@@ -510,8 +542,6 @@ module AMQ
         # @api plugin
         # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
         def handle_close(conn_close)
-          self.handle_connection_interruption
-
           closed!
           # TODO: use proper exception class, provide protocol class (we know conn_close.class_id and conn_close.method_id) as well!
           self.exec_callback_yielding_self(:error, conn_close)
@@ -526,11 +556,6 @@ module AMQ
           closed!
           self.disconnection_successful
         end # handle_close_ok(close_ok)
-
-        # @api plugin
-        def handle_connection_interruption
-          @channels.each { |n, c| c.handle_connection_interruption }
-        end # handle_connection_interruption
 
 
 
