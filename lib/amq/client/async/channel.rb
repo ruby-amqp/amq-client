@@ -248,7 +248,7 @@ module AMQ
         def auto_recover
           self.reopen do
             self.queues.each    { |q| q.auto_recover }
-            self.exchanges.each { |q| q.auto_recover }
+            self.exchanges.each { |e| e.auto_recover }
           end
         end # auto_recover
 

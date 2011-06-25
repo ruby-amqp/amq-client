@@ -189,14 +189,13 @@ module AMQ
 
           if !nowait
             self.append_callback(:bind, &block)
-
-            # TODO: handle channel & connection-level exceptions
             @channel.queues_awaiting_bind_ok.push(self)
           end
 
-
-          # store bindings for automatic recovery. MK.
-          @bindings.push({ :exchange => exchange_name, :routing_key => routing_key, :arguments => arguments })
+          # store bindings for automatic recovery, but BE VERY CAREFUL to
+          # not cause an infinite rebinding loop here when we recover. MK.
+          binding = { :exchange => exchange_name, :routing_key => routing_key, :arguments => arguments }
+          @bindings.push(binding) unless @bindings.include?(binding)
 
           self
         end
@@ -362,7 +361,7 @@ module AMQ
           self.redeclare do
             self.rebind
 
-            @consumers.each { |tag, consumer| puts "c"; consumer.auto_recover }
+            @consumers.each { |tag, consumer| consumer.auto_recover }
           end
         end # auto_recover
 

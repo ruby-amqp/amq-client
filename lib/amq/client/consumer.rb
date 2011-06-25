@@ -121,8 +121,7 @@ module AMQ
       #
       # @api plugin
       def auto_recover
-        puts "tag = #{@consumer_tag}, auto-recovering"
-        self.redeclare
+        self.resubscribe
       end # auto_recover
 
       # @endgroup
