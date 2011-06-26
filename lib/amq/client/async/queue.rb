@@ -245,6 +245,13 @@ module AMQ
 
         # @group Consuming messages
 
+        # @return [Class] AMQ::Client::Consumer or other class implementing consumer API. Used by libraries like {https://github.com/ruby-amqp/amqp Ruby amqp gem}.
+        # @api plugin
+        def self.consumer_class
+          AMQ::Client::Consumer
+        end # self.consumer_class
+
+
         #
         # @return [Queue]  self
         #
@@ -254,7 +261,7 @@ module AMQ
           raise RuntimeError.new("This queue already has default consumer. Please instantiate AMQ::Client::Consumer directly to register additional consumers.") if @default_consumer
 
           nowait            = true unless block
-          @default_consumer = AMQ::Client::Consumer.new(@channel, self, generate_consumer_tag(@name), exclusive, no_ack, arguments, no_local, &block)
+          @default_consumer = self.class.consumer_class.new(@channel, self, generate_consumer_tag(@name), exclusive, no_ack, arguments, no_local, &block)
           @default_consumer.consume(nowait, &block)
 
           self
