@@ -263,9 +263,9 @@ module AMQ
         def handle_connection_interruption(method = nil)
           @queues.each    { |name, q| q.handle_connection_interruption(method) }
           @exchanges.each { |name, e| e.handle_connection_interruption(method) }
-          self.reset_state!
 
           self.exec_callback_yielding_self(:after_connection_interruption)
+          self.reset_state!
         end # handle_connection_interruption
 
 
@@ -339,6 +339,10 @@ module AMQ
           @queues[name]
         end
 
+
+        RECOVERY_EVENTS = [:after_connection_interruption, :before_recovery, :after_recovery].freeze
+
+
         # @api plugin
         # @private
         def reset_state!
@@ -358,7 +362,7 @@ module AMQ
 
           @queues_awaiting_get_response  = Array.new
 
-          @callbacks                     = Hash.new
+          @callbacks                     = @callbacks.delete_if { |k, v| !RECOVERY_EVENTS.include?(k) }
         end # reset_state!
 
 
