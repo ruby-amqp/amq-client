@@ -232,7 +232,7 @@ module AMQ
             self.exec_callback_yielding_self(:before_recovery, @settings)
 
             self.register_connection_callback do
-              self.auto_recover
+              self.auto_recover if auto_recovering?
               self.exec_callback_yielding_self(:after_recovery, @settings)
             end
           end
