@@ -231,7 +231,9 @@ module AMQ
           self
         end
 
-
+        # Used by automatic recovery machinery.
+        # @private
+        # @api plugin
         def rebind(&block)
           @bindings.each { |b| self.bind(b[:exchange], b[:routing_key], true, b[:arguments]) }
         end
