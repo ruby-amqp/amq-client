@@ -5,7 +5,7 @@ require "amq/client/adapter"
 require "amq/client/server_named_entity"
 
 require "amq/protocol/get_response"
-require "amq/client/consumer"
+require "amq/client/async/consumer"
 
 module AMQ
   module Client
@@ -248,7 +248,7 @@ module AMQ
         # @return [Class] AMQ::Client::Consumer or other class implementing consumer API. Used by libraries like {https://github.com/ruby-amqp/amqp Ruby amqp gem}.
         # @api plugin
         def self.consumer_class
-          AMQ::Client::Consumer
+          AMQ::Client::Async::Consumer
         end # self.consumer_class
 
 
