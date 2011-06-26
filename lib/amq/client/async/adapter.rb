@@ -293,6 +293,7 @@ module AMQ
           @recovered = false
 
           @on_tcp_connection_loss.call(self, @settings) if @on_tcp_connection_loss
+          self.handle_connection_interruption
         end
 
 
