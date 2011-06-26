@@ -68,6 +68,19 @@ module AMQ
           EventMachine.reconnect(@settings[:host], @settings[:port], self)
         end
 
+        # Similar to #reconnect, but uses different connection settings
+        # @see #reconnect
+        # @api public
+        def reconnect_to(settings, period = 5)
+          if !@reconnecting
+            @reconnecting = true
+            self.reset
+          end
+
+          @settings = Settings.configure(settings)
+          EventMachine.reconnect(@settings[:host], @settings[:port], self)
+        end
+
         # @endgroup
 
 
