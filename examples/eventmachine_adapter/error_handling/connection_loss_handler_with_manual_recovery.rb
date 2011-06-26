@@ -17,7 +17,7 @@ EM.run do
       puts "Connection is auto-recovering..."
     end
 
-    ch1 = AMQ::Client::Channel.new(connection, 1, :auto_recovery => true)
+    ch1 = AMQ::Client::Channel.new(connection, 1)
     ch1.on_error do |ch, channel_close|
       raise channel_close.reply_text
     end

@@ -242,11 +242,14 @@ module AMQ
           if @had_successfully_connected_before
             @recovered = true
 
-            self.exec_callback_yielding_self(:before_recovery, @settings)
 
+            self.run_before_recovery_callbacks
             self.register_connection_callback do
-              self.auto_recover if auto_recovering?
-              self.exec_callback_yielding_self(:after_recovery, @settings)
+              # always run automatic recovery, because it is per-channel
+              # and connection has to start it. Channels that did not opt-in for
+              # autorecovery won't be selected. MK.
+              self.auto_recover
+              self.run_after_recovery_callbacks
             end
           end
 

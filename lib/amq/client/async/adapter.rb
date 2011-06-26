@@ -360,6 +360,13 @@ module AMQ
           self.redefine_callback(:before_recovery, &block)
         end # before_recovery(&block)
 
+        # @private
+        def run_before_recovery_callbacks
+          self.exec_callback_yielding_self(:before_recovery, @settings)
+
+          @channels.each { |n, ch| ch.run_before_recovery_callbacks }
+        end
+
 
         # Defines a callback that will be executed after AMQP connection has recovered after a network failure..
         # Only one callback can be defined (the one defined last replaces previously added ones).
@@ -369,6 +376,13 @@ module AMQ
           self.redefine_callback(:after_recovery, &block)
         end # on_recovery(&block)
         alias after_recovery on_recovery
+
+        # @private
+        def run_after_recovery_callbacks
+          self.exec_callback_yielding_self(:after_recovery, @settings)
+
+          @channels.each { |n, ch| ch.run_after_recovery_callbacks }
+        end
 
 
         # @return [Boolean] whether connection is in the automatic recovery mode

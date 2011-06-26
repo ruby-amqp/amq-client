@@ -194,6 +194,11 @@ module AMQ
           self.redefine_callback(:before_recovery, &block)
         end # before_recovery(&block)
 
+        # @private
+        def run_before_recovery_callbacks
+          self.exec_callback_yielding_self(:before_recovery)
+        end
+
 
         # Defines a callback that will be executed when AMQP connection is recovered after a network failure..
         # Only one callback can be defined (the one defined last replaces previously added ones).
@@ -204,15 +209,18 @@ module AMQ
         end # on_recovery(&block)
         alias after_recovery on_recovery
 
+        # @private
+        def run_after_recovery_callbacks
+          self.exec_callback_yielding_self(:after_recovery)
+        end
+
 
         # Called by associated connection object when AMQP connection has been re-established
         # (for example, after a network failure).
         #
         # @api plugin
         def auto_recover
-          self.exec_callback_yielding_self(:before_recovery)
           self.redeclare unless predefined?
-          self.exec_callback_yielding_self(:after_recovery)
         end # auto_recover
 
         # @endgroup
