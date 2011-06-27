@@ -23,7 +23,7 @@ module AMQ
         attr_reader :consumer_tag
         attr_reader :arguments
 
-        def initialize(channel, queue, consumer_tag, exclusive, no_ack, arguments, no_local, &block)
+        def initialize(channel, queue, consumer_tag = generate_consumer_tag, exclusive = false, no_ack = false, arguments = {}, no_local = false, &block)
           @callbacks    = Hash.new
 
           @channel      = channel            || raise(ArgumentError, "channel is nil")
@@ -240,6 +240,14 @@ module AMQ
         def register_with_queue
           @queue.consumers[@consumer_tag]   = self
         end # register_with_queue
+
+        # Unique string supposed to be used as a consumer tag.
+        #
+        # @return [String]  Unique string.
+        # @api plugin
+        def generate_consumer_tag
+          "consumer-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        end
 
       end # Consumer
     end # Async
