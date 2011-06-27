@@ -1,4 +1,5 @@
 require "amq/client/async/callbacks"
+require "amq/client/consumer_tag_generator"
 
 module AMQ
   module Client
@@ -23,16 +24,26 @@ module AMQ
         attr_reader :consumer_tag
         attr_reader :arguments
 
-        def initialize(channel, queue, consumer_tag = generate_consumer_tag(queue), exclusive = false, no_ack = false, arguments = {}, no_local = false, &block)
+
+        def self.tag_generator
+          @tag_generator ||= AMQ::Client::ConsumerTagGenerator.new
+        end # self.tag_generator
+
+        def self.tag_generator=(generator)
+          @tag_generator = generator
+        end
+
+
+        def initialize(channel, queue, consumer_tag = self.class.tag_generator.generate_for(queue), exclusive = false, no_ack = false, arguments = {}, no_local = false, &block)
           @callbacks    = Hash.new
 
-          @channel      = channel            || raise(ArgumentError, "channel is nil")
-          @connection   = channel.connection || raise(ArgumentError, "connection is nil")
-          @queue        = queue        || raise(ArgumentError, "queue is nil")
-          @consumer_tag = consumer_tag
-          @exclusive    = exclusive
-          @no_ack       = no_ack
-          @arguments    = arguments
+          @channel       = channel            || raise(ArgumentError, "channel is nil")
+          @connection    = channel.connection || raise(ArgumentError, "connection is nil")
+          @queue         = queue        || raise(ArgumentError, "queue is nil")
+          @consumer_tag  = consumer_tag
+          @exclusive     = exclusive
+          @no_ack        = no_ack
+          @arguments     = arguments
 
           @no_local     = no_local
 
@@ -240,14 +251,6 @@ module AMQ
         def register_with_queue
           @queue.consumers[@consumer_tag]   = self
         end # register_with_queue
-
-        # Unique string supposed to be used as a consumer tag.
-        #
-        # @return [String]  Unique string.
-        # @api plugin
-        def generate_consumer_tag(queue)
-          "#{queue.name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
-        end
 
       end # Consumer
     end # Async
