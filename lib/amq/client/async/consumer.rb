@@ -23,7 +23,7 @@ module AMQ
         attr_reader :consumer_tag
         attr_reader :arguments
 
-        def initialize(channel, queue, consumer_tag = generate_consumer_tag, exclusive = false, no_ack = false, arguments = {}, no_local = false, &block)
+        def initialize(channel, queue, consumer_tag = generate_consumer_tag(queue), exclusive = false, no_ack = false, arguments = {}, no_local = false, &block)
           @callbacks    = Hash.new
 
           @channel      = channel            || raise(ArgumentError, "channel is nil")
@@ -245,8 +245,8 @@ module AMQ
         #
         # @return [String]  Unique string.
         # @api plugin
-        def generate_consumer_tag
-          "consumer-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
+        def generate_consumer_tag(queue)
+          "#{queue.name}-#{Time.now.to_i * 1000}-#{Kernel.rand(999_999_999_999)}"
         end
 
       end # Consumer

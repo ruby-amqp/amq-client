@@ -145,3 +145,27 @@ describe "Multiple", AMQ::Client::Async::Consumer do
     end # it
   end # context
 end # describe
+
+
+
+describe AMQ::Client::Async::Consumer do
+  include EventedSpec::SpecHelper
+  default_timeout 4
+
+  context "registered with a callback" do
+    it "runs that callback when basic.consume-ok arrives" do
+      em_amqp_connect do |client|
+        channel = AMQ::Client::Channel.new(client, 1)
+        channel.open do
+          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
+          queue.bind("amq.fanout")
+
+          consumer1 = AMQ::Client::Async::Consumer.new(channel, queue, "#{queue.name}-consumer-#{Time.now}")
+          consumer1.consume do
+            done
+          end # consume do
+        end # open do
+      end # em_amqp_connect
+    end # it
+  end # context
+end # describe
