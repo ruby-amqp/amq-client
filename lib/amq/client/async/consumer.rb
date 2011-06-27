@@ -82,6 +82,9 @@ module AMQ
           self.clear_callbacks(:delivery)
           self.clear_callbacks(:consume)
 
+          self.unregister_with_channel
+          self.unregister_with_queue
+
           if !nowait
             self.redefine_callback(:cancel, &block)
             @channel.consumers_awaiting_cancel_ok.push(self)
@@ -252,6 +255,13 @@ module AMQ
           @queue.consumers[@consumer_tag]   = self
         end # register_with_queue
 
+        def unregister_with_channel
+          @channel.consumers.delete(@consumer_tag)
+        end # register_with_channel
+
+        def unregister_with_queue
+          @queue.consumers.delete(@consumer_tag)
+        end # register_with_queue
       end # Consumer
     end # Async
   end # Client
