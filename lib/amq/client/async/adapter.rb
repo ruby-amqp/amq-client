@@ -100,7 +100,7 @@ module AMQ
             #       AMQ protocol defines two-step process of closing connection (send Connection.Close
             #       to the peer and wait for Connection.Close-Ok), implemented by {Adapter#disconnect}
             def close_connection
-              raise MissingInterfaceMethodError.new("AMQ::Client.close_connection")
+              raise NotImplementedError
             end unless defined?(:close_connection) # since it is a module, this method may already be defined
           end
         end # self.included(host)
@@ -200,7 +200,7 @@ module AMQ
         #
         # @api plugin
         def establish_connection(settings)
-          raise MissingInterfaceMethodError.new("AMQ::Client#establish_connection(settings)")
+          raise NotImplementedError
         end
 
         # Properly close connection with AMQ broker, as described in
@@ -419,7 +419,7 @@ module AMQ
         # @note This must be implemented by all AMQP clients.
         # @api plugin
         def send_raw(data)
-          raise MissingInterfaceMethodError.new("AMQ::Client#send_raw(data)")
+          raise NotImplementedError
         end
 
         # Sends connection preamble to the broker.

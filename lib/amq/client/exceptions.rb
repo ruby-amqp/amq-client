@@ -51,12 +51,6 @@ module AMQ
     # Client
     #
 
-    class MissingInterfaceMethodError < NotImplementedError
-      def initialize(method_name)
-        super("Method #{method_name} is supposed to be overriden by adapter")
-      end
-    end
-
     class MissingHandlerError < StandardError
       def initialize(frame)
         super("No callback registered for #{frame.method_class}")
