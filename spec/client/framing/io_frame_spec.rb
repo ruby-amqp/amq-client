@@ -45,13 +45,16 @@ describe AMQ::Client::Framing::IO do
     subject.decode(@io).payload.should eql("\x00\n\x00(\x01/\x00\x00")
   end
 
-  it "should raise an error if the frame length is miscalculated" do
-    pending "How to do that with socket?"
+  context "if the frame length is miscalculated" do
+    it "should raise an error"
   end
 
-  it "should raise an error if the frame doesn't end with FINAL_OCTET" do
-    data = @io.read[0..-2] + "too long" + "\xCE"
-    io   = StringIO.new(data)
-    lambda { subject.decode(io) }.should raise_error(AMQ::Client::NoFinalOctetError)
+
+  context "if frame doesn't end with FINAL_OCTET" do
+    it "should raise an error" do
+      data = @io.read[0..-2] + "too long" + "\xCE"
+      io   = StringIO.new(data)
+      lambda { subject.decode(io) }.should raise_error(AMQ::Client::NoFinalOctetError)
+    end
   end
 end
