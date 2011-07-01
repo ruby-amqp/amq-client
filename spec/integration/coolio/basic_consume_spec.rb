@@ -89,7 +89,7 @@ describe "AMQ::Client::CoolioClient", "Basic.Consume", :nojruby => true do
 end # describe AMQ::Client::CoolioClient, "Basic.Consume"
 
 
-describe "Multiple", AMQ::Client::Async::Consumer do
+describe "Multiple", AMQ::Client::Async::Consumer, :nojruby => true do
   include EventedSpec::SpecHelper
   default_timeout 4
 
