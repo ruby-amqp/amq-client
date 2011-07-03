@@ -25,8 +25,6 @@ group :development do
   gem "RedCloth", :platform => :mri
 
   gem "nake",          :platform => :ruby_19
-  gem "contributors",  :platform => :ruby_19
-
   # excludes Windows and JRuby
   gem "perftools.rb",  :platform => :mri
 end
