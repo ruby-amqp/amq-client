@@ -63,7 +63,7 @@ describe AMQ::Client::EventMachineClient, "AMQP consumer" do
 
           # We're opening another channel and starting consuming the same queue,
           # assuming 1.5 secs was enough to receive all the messages
-          delayed(1.5) do
+          delayed(2.0) do
             other_channel = AMQ::Client::Channel.new(client, 2)
             other_channel.open do
               other_channel.qos(0, 1) # Maximum prefetch size = 1
