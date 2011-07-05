@@ -79,7 +79,7 @@ describe AMQ::Client::EventMachineClient, "AMQP consumer" do
         end
 
 
-        done(2.5) {
+        done(3.5) {
           @rereceived_messages.should == []
           @received_messages.should =~ messages
         }
