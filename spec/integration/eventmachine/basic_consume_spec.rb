@@ -8,7 +8,7 @@ require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "AMQP consumer" do
   include EventedSpec::SpecHelper
-  default_timeout 4
+  default_timeout 5
 
   context "sending 100 messages" do
     let(:messages) { (0..99).map {|i| "Message #{i}" } }
@@ -32,7 +32,7 @@ describe AMQ::Client::EventMachineClient, "AMQP consumer" do
             end
           end
 
-          done(1.5) {
+          done(3.5) {
             @received_messages.should =~ messages
           }
         end
@@ -62,7 +62,7 @@ describe AMQ::Client::EventMachineClient, "AMQP consumer" do
           end
 
           # We're opening another channel and starting consuming the same queue,
-          # assuming 1.5 secs was enough to receive all the messages
+          # assuming 2.0 secs was enough to receive all the messages
           delayed(2.0) do
             other_channel = AMQ::Client::Channel.new(client, 2)
             other_channel.open do
@@ -79,7 +79,7 @@ describe AMQ::Client::EventMachineClient, "AMQP consumer" do
         end
 
 
-        done(3.5) {
+        done(4.5) {
           @rereceived_messages.should == []
           @received_messages.should =~ messages
         }
