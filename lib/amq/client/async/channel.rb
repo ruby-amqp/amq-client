@@ -314,8 +314,9 @@ module AMQ
           return unless auto_recovering?
 
           self.open do
-            @queues.each    { |name, q| q.auto_recover }
+            # exchanges must be recovered first because queue recovery includes recovery of bindings. MK.
             @exchanges.each { |name, e| e.auto_recover }
+            @queues.each    { |name, q| q.auto_recover }
           end
         end # auto_recover
 
