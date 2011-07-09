@@ -104,7 +104,7 @@ module AMQ
                 end
 
                 @uses_publisher_confirmations = true
-                self.redefine_callback(:confirm_select, &block)
+                self.redefine_callback(:confirm_select, &block) unless nowait
                 @connection.send_frame(Protocol::Confirm::Select.encode(@id, nowait))
 
                 self
