@@ -100,7 +100,7 @@ module AMQ
               # @see #confirm
               def confirm_select(nowait = false, &block)
                 if nowait && block
-                  raise ArgumentError "You can't use Confirm.Select with nowait=true and a callback at the same time."
+                  raise ArgumentError, "confirm.select with nowait = true and a callback makes no sense"
                 end
 
                 @uses_publisher_confirmations = true
