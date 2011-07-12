@@ -4,20 +4,26 @@ source :rubygems
 
 # Use local clones if possible.
 # If you want to use your local copy, just symlink it to vendor.
-def custom_gem(name, options = Hash.new)
-  local_path = File.expand_path("../vendor/#{name}", __FILE__)
-  if File.exist?(local_path)
-    gem name, options.merge(:path => local_path).delete_if { |key, _| [:git, :branch].include?(key) }
-  else
-    gem name, options
-  end
-end
+# See http://blog.101ideas.cz/posts/custom-gems-in-gemfile.html
+extend Module.new {
+  def gem(name, *args)
+    options = args.last if args.last.is_a?(Hash)
 
-custom_gem "eventmachine"
+    local_path = File.expand_path("../vendor/#{name}", __FILE__)
+    if File.exist?(local_path)
+      super name, options.merge(path: local_path).
+        delete_if { |key, _| [:git, :branch].include?(key) }
+    else
+      super name, options
+    end
+  end
+}
+
+gem "eventmachine"
 # cool.io uses iobuffer that won't compile on JRuby
 # (and, probably, Windows)
 gem "cool.io", :platform => :ruby
-custom_gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git", :branch => "master"
+gem "amq-protocol", :git => "git://github.com/ruby-amqp/amq-protocol.git", :branch => "master"
 
 group :development do
   gem "yard"
@@ -32,5 +38,5 @@ end
 group :test do
   gem "rspec", ">=2.0.0"
   gem "autotest"
-  custom_gem "evented-spec", :git => "git://github.com/ruby-amqp/evented-spec.git", :branch => "master"
+  gem "evented-spec", :git => "git://github.com/ruby-amqp/evented-spec.git", :branch => "master"
 end
