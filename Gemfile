@@ -11,7 +11,7 @@ extend Module.new {
 
     local_path = File.expand_path("../vendor/#{name}", __FILE__)
     if File.exist?(local_path)
-      super name, options.merge(path: local_path).
+      super name, options.merge(:path => local_path).
         delete_if { |key, _| [:git, :branch].include?(key) }
     else
       super name, options
