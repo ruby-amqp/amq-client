@@ -7,14 +7,14 @@ source :rubygems
 # See http://blog.101ideas.cz/posts/custom-gems-in-gemfile.html
 extend Module.new {
   def gem(name, *args)
-    options = args.last if args.last.is_a?(Hash)
+    options = args.last.is_a?(Hash) ? args.last : Hash.new
 
     local_path = File.expand_path("../vendor/#{name}", __FILE__)
     if File.exist?(local_path)
       super name, options.merge(:path => local_path).
         delete_if { |key, _| [:git, :branch].include?(key) }
     else
-      super name, options
+      super name, *args
     end
   end
 }
