@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 begin
   require "amq/client/adapters/coolio"
 rescue LoadError => e

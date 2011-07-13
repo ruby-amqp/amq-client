@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "amq/client/async/callbacks"
 require "amq/client/consumer_tag_generator"
 

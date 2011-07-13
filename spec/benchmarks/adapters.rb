@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 Bundler.setup
 Bundler.require(:default)
 $LOAD_PATH.unshift(File.expand_path("../../../lib", __FILE__))
