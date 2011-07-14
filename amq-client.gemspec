@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
 
   # Dependencies
   s.add_dependency "eventmachine"
-  s.add_dependency "amq-protocol", ">= 0.7.0.beta1"
+  s.add_dependency "amq-protocol", ">= 0.7.0.beta2"
 
 
   # RubyForge
