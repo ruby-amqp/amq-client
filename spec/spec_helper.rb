@@ -6,9 +6,12 @@ Bundler.setup
 Bundler.require(:default, :test)
 
 require 'amq/client'
+
 #
 # Ruby version-specific
 #
+
+require "effin_utf8"
 
 case RUBY_VERSION
 when "1.8.7" then

@@ -39,4 +39,5 @@ group :test do
   gem "rspec", ">=2.0.0"
   gem "autotest"
   gem "evented-spec", :git => "git://github.com/ruby-amqp/evented-spec.git", :branch => "master"
+  gem "effin_utf8"
 end
