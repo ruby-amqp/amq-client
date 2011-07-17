@@ -296,6 +296,11 @@ module AMQ
           self.handle_connection_interruption
         end
 
+        # @return [Boolean]
+        def reconnecting?
+          @reconnecting
+        end # reconnecting?
+
 
         # Defines a callback that will be run when initial TCP connection fails.
         # You can define only one callback.
