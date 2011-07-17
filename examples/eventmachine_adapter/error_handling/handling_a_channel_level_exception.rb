@@ -4,7 +4,7 @@
 __dir = File.dirname(File.expand_path(__FILE__))
 require File.join(__dir, "..", "example_helper")
 
-amq_client_example "Declare a new fanout exchange" do |connection|
+amq_client_example "Handling a channel-level exception" do |connection|
   channel = AMQ::Client::Channel.new(connection, 1)
   channel.open do
     puts "Channel #{channel.id} is now open!"
@@ -30,10 +30,7 @@ amq_client_example "Declare a new fanout exchange" do |connection|
 
   show_stopper = Proc.new do
     $stdout.puts "Stopping..."
-
-    connection.close {
-      EM.stop { exit }
-    }
+    connection.close { EventMachine.stop }
   end
 
   Signal.trap "INT", show_stopper
