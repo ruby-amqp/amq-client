@@ -81,6 +81,21 @@ module AMQ
           EventMachine.reconnect(@settings[:host], @settings[:port], self)
         end
 
+
+        # Periodically try to reconnect.
+        #
+        # @param [Fixnum]  period Period of time, in seconds, to wait before reconnection attempt.
+        # @param [Boolean] force  If true, enforces immediate reconnection.
+        # @api public
+        def periodically_reconnect(period = 5)
+          @reconnecting = true
+          self.reset
+
+          @periodic_reconnection_timer = EventMachine::PeriodicTimer.new(period) {
+            EventMachine.reconnect(@settings[:host], @settings[:port], self)
+          }
+        end
+
         # @endgroup
 
 
@@ -233,6 +248,7 @@ module AMQ
           # software that calls #post_init before #unbind even when TCP connection
           # fails. MK.
           @tcp_connection_established       = true
+          @periodic_reconnection_timer.cancel if @periodic_reconnection_timer
 
 
           # again, this is because #unbind is called in different situations
