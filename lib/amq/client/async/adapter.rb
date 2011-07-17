@@ -393,7 +393,8 @@ module AMQ
         alias auto_recovery? auto_recovering?
 
 
-        # Performs recovery of channels that are in the automatic recovery mode.
+        # Performs recovery of channels that are in the automatic recovery mode. Does not run recovery
+        # callbacks.
         #
         # @see Channel#auto_recover
         # @see Queue#auto_recover
@@ -402,6 +403,29 @@ module AMQ
         def auto_recover
           @channels.select { |channel_id, ch| ch.auto_recovering? }.each { |n, ch| ch.auto_recover }
         end # auto_recover
+
+
+        # Performs recovery of channels that are in the automatic recovery mode. "before recovery" callbacks
+        # are run immediately, "after recovery" callbacks are run after AMQP connection is re-established and
+        # auto recovery is performed (using #auto_recover).
+        #
+        # Use this method if you want to run automatic recovery process after handling a connection-level exception,
+        # for example, 320 CONNECTION_FORCED (used by RabbitMQ when it is shut down gracefully).
+        #
+        # @see Channel#auto_recover
+        # @see Queue#auto_recover
+        # @see Exchange#auto_recover
+        # @api plugin
+        def start_automatic_recovery
+          self.run_before_recovery_callbacks
+          self.register_connection_callback do
+            # always run automatic recovery, because it is per-channel
+            # and connection has to start it. Channels that did not opt-in for
+            # autorecovery won't be selected. MK.
+            self.auto_recover
+            self.run_after_recovery_callbacks
+          end
+        end # start_automatic_recovery
 
 
         # @endgroup

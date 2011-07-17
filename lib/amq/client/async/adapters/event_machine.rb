@@ -243,14 +243,7 @@ module AMQ
             @recovered = true
 
 
-            self.run_before_recovery_callbacks
-            self.register_connection_callback do
-              # always run automatic recovery, because it is per-channel
-              # and connection has to start it. Channels that did not opt-in for
-              # autorecovery won't be selected. MK.
-              self.auto_recover
-              self.run_after_recovery_callbacks
-            end
+            self.start_automatic_recovery
           end
 
           # now we can set it. MK.
