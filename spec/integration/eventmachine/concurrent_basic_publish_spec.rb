@@ -48,11 +48,13 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
             end
 
             exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-            # ZOMG THREADS!
-            30.times do
-              Thread.new do
-                messages.each do |message|
-                  exchange.publish(message, queue.name, {}, false, true)
+            EventMachine.add_timer(2.0) do
+              # ZOMG THREADS!
+              30.times do
+                Thread.new do
+                  messages.each do |message|
+                    exchange.publish(message, queue.name, {}, false, true)
+                  end
                 end
               end
             end
@@ -60,7 +62,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
 
           # let it run for several seconds because you know, concurrency issues do not always manifest themselves
           # immediately. MK.
-          done(12.0) {
+          done(14.0) {
             # we don't care about the exact number, just the fact that there are
             # no UNEXPECTED_FRAME connection-level exceptions. MK.
             @received_messages.size.should > 120
