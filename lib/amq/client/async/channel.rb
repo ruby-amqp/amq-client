@@ -46,6 +46,9 @@ module AMQ
           @options       = { :auto_recovery => connection.auto_recovering? }.merge(options)
           @auto_recovery = (!!@options[:auto_recovery])
 
+          # we must synchronize frameset delivery. MK.
+          @mutex     = Mutex.new
+
           reset_state!
 
           # 65536 is here for cases when channel is opened without passing a callback in,
@@ -90,6 +93,12 @@ module AMQ
         def connection
           @connection
         end # connection
+
+        # Synchronizes given block using this channel's mutex.
+        # @api public
+        def synchronize(&block)
+          @mutex.synchronize(&block)
+        end
 
 
         # @group Channel lifecycle

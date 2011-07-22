@@ -196,6 +196,7 @@ module AMQ
         #
 
 
+
         # Establish socket connection to the server.
         #
         # @api plugin
@@ -249,8 +250,10 @@ module AMQ
         # Sends multiple frames, one by one.
         #
         # @api public
-        def send_frameset(frames)
-          frames.each { |frame| self.send_frame(frame) }
+        def send_frameset(frames, channel)
+          channel.synchronize do
+            frames.each { |frame| self.send_frame(frame) }
+          end
         end # send_frameset(frames)
 
 
