@@ -253,9 +253,9 @@ module AMQ
         # @api public
         def send_frameset(frames, channel)
           # some (many) developers end up sharing channels between threads and when multiple
-          # threads publish on the same channel aggressively, at some point frame will be
+          # threads publish on the same channel aggressively, at some point frames will be
           # delivered out of order and broker will raise 505 UNEXPECTED_FRAME exception.
-          # If we synchronize on channel, however, this is both thread safe and pretty fine-grained
+          # If we synchronize on the channel, however, this is both thread safe and pretty fine-grained
           # locking. Note that "single frame" methods do not need this kind of synchronization. MK.
           channel.synchronize do
             frames.each { |frame| self.send_frame(frame) }
