@@ -5,7 +5,7 @@ require 'integration/coolio/spec_helper'
 
 describe "AMQ::Client::CoolioClient", "Tx.Commit", :nojruby => true do
   include EventedSpec::SpecHelper
-  default_timeout 2
+  default_timeout 4
   let(:message) { "Hello, world!" }
 
 

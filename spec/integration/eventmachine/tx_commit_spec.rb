@@ -10,7 +10,7 @@ describe AMQ::Client::EventMachineClient, "Tx.Commit" do
   #
 
   include EventedSpec::SpecHelper
-  default_timeout 2
+  default_timeout 4
 
   let(:message) { "Hello, world!" }
 

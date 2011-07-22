@@ -4,7 +4,7 @@ require 'integration/eventmachine/spec_helper'
 
 describe AMQ::Client::EventMachineClient, "Tx.Rollback" do
   include EventedSpec::SpecHelper
-  default_timeout 2
+  default_timeout 4
   let(:message) { "Hello, world!" }
   it "should cancel all the changes done during transaction" do
     pending("Need to figure out details with AMQP protocol on that matter")
