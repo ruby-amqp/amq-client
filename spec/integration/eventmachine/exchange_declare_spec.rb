@@ -10,7 +10,7 @@ describe AMQ::Client::EventMachineClient, "Exchange.Declare" do
   #
 
   include EventedSpec::SpecHelper
-  default_timeout 1
+  default_timeout 2
   let(:exchange_name) { "amq-client.testexchange.#{Time.now.to_i}" }
 
 

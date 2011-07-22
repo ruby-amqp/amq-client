@@ -5,7 +5,7 @@ require 'integration/coolio/spec_helper'
 
 describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
   include EventedSpec::SpecHelper
-  default_timeout 1
+  default_timeout 2
   let(:exchange_name) { "amq-client.testexchange.#{Time.now.to_i}" }
   it "should create an exchange and trigger a callback" do
     coolio_amqp_connect do |client|
@@ -14,7 +14,7 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
         exchange = AMQ::Client::Exchange.new(client, channel, exchange_name, :fanout)
         exchange.declare do
           exchange.delete
-          done(0.2)
+          done(0.5)
         end
       end
     end
@@ -35,7 +35,7 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
                 @callback_fired = true
               end
               delayed(0.1) { exchange.delete }
-              done(0.3)
+              done(0.5)
             end
           end
 
@@ -57,7 +57,7 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
                 end
               end
               delayed(0.1) { exchange.delete }
-              done(0.3)
+              done(0.5)
             end
           end
 
@@ -79,7 +79,7 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
                 @callback_fired = true
               end
               delayed(0.1) { exchange.delete }
-              done(0.3)
+              done(0.5)
             end
           end
 
@@ -101,7 +101,7 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
                 end
               end
               delayed(0.1) { exchange.delete }
-              done(0.3)
+              done(0.5)
             end
           end
 
