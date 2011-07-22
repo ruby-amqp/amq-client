@@ -48,7 +48,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
             end
 
             exchange = AMQ::Client::Exchange.new(client, channel, "amq.fanout", :fanout)
-            EventMachine.add_timer(1.0) do
+            EventMachine.add_periodic_timer(1.0) do
               # ZOMG THREADS! 
               20.times do
                 Thread.new do
