@@ -60,9 +60,9 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
             end
           end
 
-          # 20 seconds because you know, concurrency issues do not always manifest themselves
+          # let it run for several seconds because you know, concurrency issues do not always manifest themselves
           # immediately. MK.
-          done(8.0) {
+          done(10.0) {
             # we don't care about the exact number, just the fact that there are
             # no UNEXPECTED_FRAME connection-level exceptions. MK.
             @received_messages.size.should > 200
