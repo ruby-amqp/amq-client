@@ -247,7 +247,8 @@ module AMQ
           end
         end
 
-        # Sends multiple frames, one by one.
+        # Sends multiple frames, one by one. For thread safety this method takes a channel
+        # object and synchronizes on it.
         #
         # @api public
         def send_frameset(frames, channel)
