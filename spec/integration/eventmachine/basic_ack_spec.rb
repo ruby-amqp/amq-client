@@ -30,7 +30,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Ack" do
             end
           end
 
-          done(2.5) {
+          done(3.5) {
             @received_messages =~ messages
           }
         end
