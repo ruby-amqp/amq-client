@@ -26,3 +26,10 @@ end
 RSpec.configure do |c|
   c.filter_run_excluding :nojruby => true if RUBY_PLATFORM =~ /java/
 end
+
+
+module PlatformDetection
+  def mri?
+    !defined?(RUBY_ENGINE) || (defined?(RUBY_ENGINE) && ("ruby" == RUBY_ENGINE))
+  end
+end
