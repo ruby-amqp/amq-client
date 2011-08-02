@@ -16,3 +16,7 @@ notifications:
     - jakub@rabbitmq.com
     - michaelklishin@me.com
     - markizko@gmail.com
+branches:
+  only:
+    - master
+    - 0.8.x-stable
