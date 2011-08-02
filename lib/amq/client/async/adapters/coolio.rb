@@ -16,7 +16,7 @@ module AMQ
       class CoolioClient
 
         #
-        # Behaviors
+        # Behaviours
         #
 
         include AMQ::Client::Async::Adapter

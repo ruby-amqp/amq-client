@@ -13,7 +13,7 @@ module AMQ
       class Queue
 
         #
-        # Behaviors
+        # Behaviours
         #
 
         include Entity

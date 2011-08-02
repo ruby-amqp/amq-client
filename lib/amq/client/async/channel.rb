@@ -10,7 +10,7 @@ module AMQ
       class Channel
 
         #
-        # Behaviors
+        # Behaviours
         #
 
         extend RegisterEntityMixin

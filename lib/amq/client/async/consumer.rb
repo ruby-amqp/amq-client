@@ -9,7 +9,7 @@ module AMQ
       class Consumer
 
         #
-        # Behaviors
+        # Behaviours
         #
 
         include Async::Callbacks

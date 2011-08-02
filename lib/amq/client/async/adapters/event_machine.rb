@@ -11,7 +11,7 @@ module AMQ
       class EventMachineClient < EM::Connection
 
         #
-        # Behaviors
+        # Behaviours
         #
 
         include AMQ::Client::Async::Adapter
