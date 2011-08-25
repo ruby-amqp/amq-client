@@ -260,6 +260,7 @@ module AMQ
 
 
             self.start_automatic_recovery
+            self.upgrade_to_tls_if_necessary
           end
 
           # now we can set it. MK.
