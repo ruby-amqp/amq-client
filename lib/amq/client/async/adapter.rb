@@ -442,6 +442,20 @@ module AMQ
         end # start_automatic_recovery
 
 
+        # Defines a callback that will be executed after time since last broker heartbeat is greater
+        # than or equal to the heartbeat interval (skipped heartbeat is detected).
+        # Only one callback can be defined (the one defined last replaces previously added ones).
+        #
+        # @api public
+        def on_skipped_heartbeats(&block)
+          self.redefine_callback(:skipped_heartbeats, &block)
+        end # on_skipped_heartbeats(&block)
+
+        # @private
+        def run_skipped_heartbeats_callbacks
+          self.exec_callback_yielding_self(:skipped_heartbeats, @settings)
+        end
+
         # @endgroup
 
 
@@ -528,10 +542,10 @@ module AMQ
         # Sends a heartbeat frame if connection is open.
         # @api plugin
         def send_heartbeat
-          if tcp_connection_established?
-            if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2))
-              logger.error "Reconnecting due to missing server heartbeats"
-              # TODO: reconnect
+          if tcp_connection_established? && !@handling_skipped_hearbeats
+            if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2)) && !reconnecting?
+              logger.error "[amqp] Detected missing server heartbeats"
+              self.handle_skipped_hearbeats
             end
             send_frame(Protocol::HeartbeatFrame)
           end

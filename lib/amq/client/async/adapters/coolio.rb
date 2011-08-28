@@ -274,6 +274,11 @@ module AMQ
           AMQ::Client::TCPConnectionFailed
         end # self.tcp_connection_failure_exception_class
 
+        def handle_skipped_hearbeats
+          # TODO
+        end
+
+
         protected
 
         # @api private
@@ -291,7 +296,8 @@ module AMQ
 
           # now we can set it. MK.
           @had_successfully_connected_before = true
-          @reconnecting                     = false
+          @reconnecting                      = false
+          @handling_skipped_hearbeats        = false
 
           self.reset
           self.handshake
