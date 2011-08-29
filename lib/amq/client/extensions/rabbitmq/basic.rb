@@ -7,6 +7,6 @@ module AMQ
   module Client
     # backwards compatibility
     # @private
-    Extensions = Async::Extensions
+    Extensions = Async::Extensions unless defined?(Extensions)
   end # Client
 end # AMQ
