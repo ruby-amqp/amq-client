@@ -7,3 +7,4 @@ doc/*
 # see http://bit.ly/h2WJPm for reasoning
 Gemfile.lock
 vendor
+.rbx/*
