@@ -10,7 +10,8 @@ describe AMQ::Client::EventMachineClient, "Basic.Cancel" do
   let(:messages) { (0..99).map {|i| "Message #{i}" } }
 
   it "should stop receiving messages after receiving cancel-ok" do
-    @received_messages = []
+    @received_messages        = []
+    @received_basic_cancel_ok = false
     em_amqp_connect do |client|
       channel = AMQ::Client::Channel.new(client, 1)
       channel.open do
@@ -31,12 +32,14 @@ describe AMQ::Client::EventMachineClient, "Basic.Cancel" do
         delayed(1.5) {
           @received_messages.should =~ messages
           queue.cancel do
+            @received_basic_cancel_ok = true
             exchange.publish("Extra message, should not be received")
           end
         }
 
         done(2.5) {
           @received_messages.should =~ messages
+          @received_basic_cancel_ok.should be_true
         }
       end
     end

@@ -231,7 +231,7 @@ module AMQ
           channel  = connection.channels[frame.channel]
           consumer = channel.consumers_awaiting_cancel_ok.shift
 
-          consumer.handle_consume_ok(frame.decode_payload)
+          consumer.handle_cancel_ok(frame.decode_payload)
         end
 
 
