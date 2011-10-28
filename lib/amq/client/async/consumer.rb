@@ -243,7 +243,9 @@ module AMQ
           metadata = content_frames.shift
           payload  = content_frames.map { |frame| frame.payload }.join
 
-          consumer.handle_delivery(basic_deliver, metadata, payload)
+          # Handle the delivery only if the consumer still exists.
+          # The broker has been known to deliver a few messages after the consumer has been shut down.
+          consumer.handle_delivery(basic_deliver, metadata, payload) if consumer
         end
 
 
