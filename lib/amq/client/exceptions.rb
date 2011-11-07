@@ -87,7 +87,7 @@ module AMQ
       #
 
       def initialize(settings)
-        super("AMQP broker closed TCP connection before authentication succeeded: this usually means authentication failure due to misconfiguration. Settings are #{settings.inspect}")
+        super("AMQP broker closed TCP connection before authentication succeeded: this usually means authentication failure due to misconfiguration or that RabbitMQ version does not support AMQP 0.9.1. Please see http://bit.ly/amqp-gem-080-and-rabbitmq-versions and check your configuration. Settings are #{settings.inspect}.")
       end # initialize(settings)
     end # PossibleAuthenticationFailureError
 
