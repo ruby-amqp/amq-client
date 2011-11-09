@@ -24,9 +24,3 @@ module AMQ
     end # Framing
   end # Client
 end # AMQ
-
-class AMQ::Protocol::Frame
-  def final?
-    true ####### HACK for testing, implement & move to amq-protocol!
-  end
-end
