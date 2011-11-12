@@ -509,12 +509,13 @@ module AMQ
         # @param [AMQ::Protocol::Frame] frame
         # @api plugin
         def receive_frame(frame)
-          @frames << frame
-          if frameset_complete?(@frames)
-            receive_frameset(@frames)
-            @frames.clear
-          else
-            # puts "#{frame.inspect} is NOT final"
+          @frames[frame.channel] ||= Array.new
+          @frames[frame.channel] << frame
+
+          if frameset_complete?(@frames[frame.channel])
+            receive_frameset(@frames[frame.channel])
+            # for channel.close, frame.channel will be nil. MK.
+            @frames[frame.channel].clear if @frames[frame.channel]
           end
         end
 

@@ -146,7 +146,8 @@ module AMQ
 
           self.logger   = self.class.logger
 
-          @frames            = Array.new
+          # channel => collected frames. MK.
+          @frames            = Hash.new { Array.new }
           @channels          = Hash.new
 
           @mechanism         = "PLAIN"
