@@ -2,6 +2,6 @@
 
 module AMQ
   module Client
-    VERSION = "0.8.7.pre1"
+    VERSION = "0.8.7.pre2"
   end
 end
