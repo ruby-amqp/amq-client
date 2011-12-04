@@ -611,7 +611,6 @@ module AMQ
         # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
         def handle_close(conn_close)
           closed!
-          # TODO: use proper exception class, provide protocol class (we know conn_close.class_id and conn_close.method_id) as well!
           self.exec_callback_yielding_self(:error, conn_close)
         end
 
