@@ -404,6 +404,7 @@ module AMQ
         # @private
         def handle_close_ok(close_ok)
           self.status = :closed
+          self.connection.clear_frames_on(self.id)
           self.exec_callback_once_yielding_self(:close, close_ok)
         end
 
@@ -411,6 +412,7 @@ module AMQ
         # @private
         def handle_close(channel_close)
           self.status = :closed
+          self.connection.clear_frames_on(self.id)
           self.exec_callback_yielding_self(:error, channel_close)
 
           self.handle_connection_interruption(channel_close)

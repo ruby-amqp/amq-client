@@ -211,7 +211,10 @@ module AMQ
         # @see  #close_connection
         def disconnect(reply_code = 200, reply_text = "Goodbye", class_id = 0, method_id = 0, &block)
           @intentionally_closing_connection = true
-          self.on_disconnection(&block)
+          self.on_disconnection do
+            @frames.clear
+            block.call if block
+          end
 
           # ruby-amqp/amqp#66, MK.
           if self.open?
@@ -515,7 +518,7 @@ module AMQ
           if frameset_complete?(@frames[frame.channel])
             receive_frameset(@frames[frame.channel])
             # for channel.close, frame.channel will be nil. MK.
-            @frames[frame.channel].clear if @frames[frame.channel]
+            clear_frames_on(frame.channel) if @frames[frame.channel]
           end
         end
 
@@ -538,6 +541,15 @@ module AMQ
               raise MissingHandlerError.new(frames.first)
             end
           end
+        end
+
+        # Clears frames that were received but not processed on given channel. Needs to be called
+        # when the channel is closed.
+        # @private
+        def clear_frames_on(channel_id)
+          raise ArgumentError, "channel id cannot be nil!" if channel_id.nil?
+
+          @frames[channel_id].clear
         end
 
         # Sends a heartbeat frame if connection is open.
