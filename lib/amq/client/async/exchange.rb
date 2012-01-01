@@ -87,7 +87,7 @@ module AMQ
 
         # @return [Boolean] true if this exchange is a pre-defined one (amq.direct, amq.fanout, amq.match and so on)
         def predefined?
-          @name && !!(@name =~ /^amq\.(direct|fanout|topic|headers|match)/i)
+          @name && ((@name == AMQ::Protocol::EMPTY_STRING) || !!(@name =~ /^amq\.(direct|fanout|topic|headers|match)/i))
         end # predefined?
 
 
