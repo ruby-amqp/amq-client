@@ -39,54 +39,54 @@ module AMQ
 
             # The locale defines the language in which the server will send reply texts.
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.2)
             attr_accessor :locale
 
             # Client capabilities
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2.1)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.2.1)
             attr_accessor :client_properties
 
             # Server properties
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.1.3)
             attr_reader :server_properties
 
             # Server capabilities
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.1.3)
             attr_reader :server_capabilities
 
             # Locales server supports
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.3)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.1.3)
             attr_reader :server_locales
 
             # Authentication mechanism used.
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.2)
             attr_reader :mechanism
 
             # Authentication mechanisms broker supports.
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.2)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.2)
             attr_reader :server_authentication_mechanisms
 
             # Channels within this connection.
             #
-            # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.2.5)
+            # @see http://bit.ly/amqp091spec AMQP 0.9.1 specification (Section 2.2.5)
             attr_reader :channels
 
             # Maximum channel number that the server permits this connection to use.
             # Usable channel numbers are in the range 1..channel_max.
             # Zero indicates no specified limit.
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.4.2.5.1 and 1.4.2.6.1)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Sections 1.4.2.5.1 and 1.4.2.6.1)
             attr_accessor :channel_max
 
             # Maximum frame size that the server permits this connection to use.
             #
-            # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Sections 1.4.2.5.2 and 1.4.2.6.2)
+            # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Sections 1.4.2.5.2 and 1.4.2.6.2)
             attr_accessor :frame_max
 
 
@@ -205,7 +205,7 @@ module AMQ
         end
 
         # Properly close connection with AMQ broker, as described in
-        # section 2.2.4 of the {http://bit.ly/hw2ELX AMQP 0.9.1 specification}.
+        # section 2.2.4 of the {http://bit.ly/amqp091spec AMQP 0.9.1 specification}.
         #
         # @api  plugin
         # @see  #close_connection
@@ -234,7 +234,7 @@ module AMQ
         #
         # @note This must be implemented by all AMQP clients.
         # @api plugin
-        # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.2)
+        # @see http://bit.ly/amqp091spec AMQP 0.9.1 specification (Section 2.2)
         def send_preamble
           self.send_raw(AMQ::Protocol::PREAMBLE)
         end
@@ -272,7 +272,7 @@ module AMQ
         # Zero means the server does not want a heartbeat.
         #
         # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
         def heartbeat_interval
           @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
         end # heartbeat_interval
@@ -488,7 +488,7 @@ module AMQ
         # Sends connection.open to the server.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.7)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.7)
         def open(vhost = "/")
           self.send_frame(Protocol::Connection::Open.encode(vhost))
         end
@@ -572,7 +572,7 @@ module AMQ
         # Handles connection.start.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.1.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.1.)
         def handle_start(connection_start)
           @server_properties                = connection_start.server_properties
           @server_capabilities              = @server_properties["capabilities"]
@@ -595,7 +595,7 @@ module AMQ
         # Handles Connection.Tune-Ok.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.6)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
         def handle_tune(tune_ok)
           @channel_max        = tune_ok.channel_max.freeze
           @frame_max          = tune_ok.frame_max.freeze
@@ -608,7 +608,7 @@ module AMQ
         # Handles Connection.Open-Ok.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.8.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.8.)
         def handle_open_ok(open_ok)
           @known_hosts = open_ok.known_hosts.dup.freeze
 
@@ -620,7 +620,7 @@ module AMQ
         # Handles connection.close. When broker detects a connection level exception, this method is called.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.9)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.5.2.9)
         def handle_close(conn_close)
           closed!
           self.exec_callback_yielding_self(:error, conn_close)
@@ -630,7 +630,7 @@ module AMQ
         # Handles Connection.Close-Ok.
         #
         # @api plugin
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.4.2.10)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.10)
         def handle_close_ok(close_ok)
           closed!
           self.disconnection_successful

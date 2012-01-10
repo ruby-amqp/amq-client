@@ -133,7 +133,7 @@ module AMQ
         # Acknowledge one or all messages on the channel.
         #
         # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.13.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.13.)
         def acknowledge(delivery_tag, multiple = false)
           @connection.send_frame(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
 
@@ -143,7 +143,7 @@ module AMQ
         # Reject a message with given delivery tag.
         #
         # @api public
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.14.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.14.)
         def reject(delivery_tag, requeue = true)
           @connection.send_frame(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
 
@@ -156,7 +156,7 @@ module AMQ
         # @return [Channel]  self
         #
         # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.8.3.16.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.16.)
         # @api public
         def recover(requeue = true, &block)
           @connection.send_frame(Protocol::Basic::Recover.encode(@id, requeue))
@@ -191,7 +191,7 @@ module AMQ
         #
         # @param [Boolean] active Desired flow state.
         #
-        # @see http://bit.ly/htCzCX AMQP 0.9.1 protocol documentation (Section 1.5.2.3.)
+        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.5.2.3.)
         # @api public
         def flow(active = false, &block)
           @connection.send_frame(Protocol::Channel::Flow.encode(@id, active))

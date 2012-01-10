@@ -29,7 +29,7 @@ module AMQ
     # Raised by adapters when frame does not end with {final octet AMQ::Protocol::Frame::FINAL_OCTET}.
     # This suggest that there is a bug in adapter or AMQ broker implementation.
     #
-    # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.3)
+    # @see http://bit.ly/amqp091spec AMQP 0.9.1 specification (Section 2.3)
     class NoFinalOctetError < InconsistentDataError
       def initialize
         super("Frame doesn't end with #{AMQ::Protocol::Frame::FINAL_OCTET} as it must, which means the size is miscalculated.")
@@ -40,7 +40,7 @@ module AMQ
     # to the size specified in that frame's header.
     # This suggest that there is a bug in adapter or AMQ broker implementation.
     #
-    # @see http://bit.ly/hw2ELX AMQP 0.9.1 specification (Section 2.3)
+    # @see http://bit.ly/amqp091spec AMQP 0.9.1 specification (Section 2.3)
     class BadLengthError < InconsistentDataError
       def initialize(expected_length, actual_length)
         super("Frame payload should be #{expected_length} long, but it's #{actual_length} long.")
