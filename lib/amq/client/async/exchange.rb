@@ -151,6 +151,8 @@ module AMQ
           headers = { :priority => 0, :delivery_mode => 2, :content_type => "application/octet-stream" }.merge(user_headers)
           @connection.send_frameset(Protocol::Basic::Publish.encode(@channel.id, payload, headers, @name, routing_key, mandatory, immediate, (frame_size || @connection.frame_max)), @channel)
 
+          # publisher confirms support. MK.
+          @channel.exec_callback(:after_publish)
           self
         end
 
