@@ -57,15 +57,15 @@ module AMQ
               attr_writer :publisher_index
 
               # Publisher index is an index of the last message since
-              # the confirmations were activated, started with 1. It's
-              # incremented by 1 after each Basic.Publish starting at 1.
+              # the confirmations were activated, started with 0. It's
+              # incremented by 1 every time a message is published.
               # This is done on both client and server, hence this
               # acknowledged messages can be matched via its delivery-tag.
               #
               # @return [Integer] Current publisher index.
               # @api public
               def publisher_index
-                @publisher_index ||= 1
+                @publisher_index ||= 0
               end
 
               # Resets publisher index to 0
@@ -81,8 +81,8 @@ module AMQ
               # can be actually matched.
               #
               # @api plugin
-              def after_publish(*args)
-                self.publisher_index += 1
+              def increment_publisher_index!
+                @publisher_index += 1
               end
 
               # Turn on confirmations for this channel and, if given,
@@ -104,7 +104,12 @@ module AMQ
                 end
 
                 @uses_publisher_confirmations = true
+                reset_publisher_index!
+
                 self.redefine_callback(:confirm_select, &block) unless nowait
+                self.redefine_callback(:after_publish) do
+                  increment_publisher_index!
+                end
                 @connection.send_frame(Protocol::Confirm::Select.encode(@id, nowait))
 
                 self
@@ -210,23 +215,6 @@ module AMQ
                 end
               end # self.included(host)
             end # ChannelMixin
-
-
-            module ExchangeMixin
-              # Publish message and then run #after_publish on channel belonging
-              # to the exchange. This is used for incrementing the publisher index.
-              #
-              # @api public
-              # @see AMQ::Client::Exchange#publish
-              # @see AMQ::Client::Extensions::RabbitMQ::Channel#publisher_index
-              # @return [self] self
-              def publish(*args, &block)
-                super(*args)
-                @channel.after_publish(*args, &block)
-
-                self
-              end # publish
-            end # ExchangeMixin
           end # Confirm
         end # RabbitMQ
       end # Extensions
@@ -237,12 +225,6 @@ module AMQ
         # instead of reckless monkey-patching. MK.
         include Extensions::RabbitMQ::Confirm::ChannelMixin
       end # Channel
-
-      class Exchange
-        # use modules, a native Ruby way of extension of existing classes,
-        # instead of reckless monkey-patching. MK.
-        include Extensions::RabbitMQ::Confirm::ExchangeMixin
-      end # Exchange      
     end # Async
   end # Client
 end # AMQ
