@@ -438,7 +438,7 @@ module AMQ
           method   = frame.decode_payload
           channels = connection.channels
           channel  = channels[frame.channel]
-
+          connection.send_frame(Protocol::Channel::CloseOk.encode(frame.channel))
           channel.handle_close(method)
         end
 
