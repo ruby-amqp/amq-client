@@ -4,6 +4,7 @@ script: "bundle exec rspec spec"
 before_script: ./bin/ci/before_build.sh
 rvm:
   - jruby-19mode
+  - jruby-head
   - 1.8.7
   - rbx-19mode
   - 1.9.2
