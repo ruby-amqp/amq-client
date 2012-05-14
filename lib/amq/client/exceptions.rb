@@ -18,7 +18,7 @@ module AMQ
       def initialize(settings)
         @settings = settings
 
-        super("Could not estabilish TCP connection to #{@settings[:host]}:#{@settings[:port]}")
+        super("Could not establish TCP connection to #{@settings[:host]}:#{@settings[:port]}")
       end
     end
 
