@@ -83,6 +83,7 @@ module AMQ
           @connection.send_frame(Protocol::Basic::Cancel.encode(@channel.id, @consumer_tag, nowait))
           self.clear_callbacks(:delivery)
           self.clear_callbacks(:consume)
+          self.clear_callbacks(:scancel)
 
           self.unregister_with_channel
           self.unregister_with_queue
