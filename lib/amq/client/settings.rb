@@ -45,14 +45,15 @@ module AMQ
         }
       end
 
-
+      CLIENT_PROPERTIES = {
+        :platform     => ::RUBY_DESCRIPTION,
+        :product      => "AMQ Client",
+        :information  => "http://github.com/ruby-amqp/amq-client",
+        :version      => AMQ::Client::VERSION
+      }
+      
       def self.client_properties
-        @client_properties ||= {
-          :platform    => ::RUBY_DESCRIPTION,
-          :product     => "AMQ Client",
-          :information => "http://github.com/ruby-amqp/amq-client",
-          :version     => AMQ::Client::VERSION
-        }
+        @client_properties ||= CLIENT_PROPERTIES
       end
 
 
