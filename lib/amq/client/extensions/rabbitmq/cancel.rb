@@ -10,7 +10,6 @@ module AMQ
     Extensions = Async::Extensions unless defined?(Extensions)
     
     module Settings
-      puts "Updating client properties"
       CLIENT_PROPERTIES[:capabilities] ||= {}
       CLIENT_PROPERTIES[:capabilities][:consumer_cancel_notify] = true
     end
