@@ -274,7 +274,7 @@ module AMQ
         # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
         # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
         def heartbeat_interval
-          @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
+          @settings[:heartbeat] || @settings[:heartbeat_interval] || 3
         end # heartbeat_interval
 
 
@@ -555,7 +555,7 @@ module AMQ
         # Sends a heartbeat frame if connection is open.
         # @api plugin
         def send_heartbeat
-          if tcp_connection_established? && !@handling_skipped_hearbeats
+          if tcp_connection_established? && !@handling_skipped_hearbeats && @last_server_heartbeat
             if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2)) && !reconnecting?
               logger.error "[amqp] Detected missing server heartbeats"
               self.handle_skipped_hearbeats
