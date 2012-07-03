@@ -173,9 +173,7 @@ module AMQ
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
 
-          if self.heartbeat_interval > 0
-            self.initialize_heartbeat_sender
-          end
+          self.initialize_heartbeat_sender if self.heartbeats_enabled?
         end # initialize(*args)
 
 
