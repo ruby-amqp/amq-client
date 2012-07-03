@@ -531,15 +531,14 @@ module AMQ
         def receive_frameset(frames)
           frame = frames.first
 
-          if Protocol::HeartbeatFrame === frame
-            @last_server_heartbeat = Time.now
+          # used by the heartbeat failure detection
+          @recent_traffic = true
+
+          if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
+            f = frames.shift
+            callable.call(self, f, frames)
           else
-            if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
-              f = frames.shift
-              callable.call(self, f, frames)
-            else
-              raise MissingHandlerError.new(frames.first)
-            end
+            raise MissingHandlerError.new(frames.first)
           end
         end
 
