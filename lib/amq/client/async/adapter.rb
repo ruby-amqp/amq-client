@@ -274,7 +274,7 @@ module AMQ
         # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
         # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
         def heartbeat_interval
-          @settings[:heartbeat] || @settings[:heartbeat_interval] || 3
+          @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
         end # heartbeat_interval
 
 
@@ -531,15 +531,14 @@ module AMQ
         def receive_frameset(frames)
           frame = frames.first
 
-          if Protocol::HeartbeatFrame === frame
-            @last_server_heartbeat = Time.now
+          # used by the heartbeat failure detection
+          @recent_traffic = true
+
+          if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
+            f = frames.shift
+            callable.call(self, f, frames)
           else
-            if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
-              f = frames.shift
-              callable.call(self, f, frames)
-            else
-              raise MissingHandlerError.new(frames.first)
-            end
+            raise MissingHandlerError.new(frames.first)
           end
         end
 
