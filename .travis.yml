@@ -20,3 +20,6 @@ branches:
     - master
     - 0.9.x-stable
     - 0.8.x-stable
+
+services:
+  - rabbitmq
