@@ -277,6 +277,12 @@ module AMQ
           @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
         end # heartbeat_interval
 
+        # Returns true if heartbeats are enabled (heartbeat interval is greater than 0)
+        # @return [Boolean]
+        def heartbeats_enabled?
+          self.heartbeat_interval > 0
+        end
+
 
         # vhost this connection uses. Default is "/", a historically estabilished convention
         # of RabbitMQ and amqp gem.
@@ -529,10 +535,16 @@ module AMQ
         # @param [Array<AMQ::Protocol::Frame>] frames
         # @api plugin
         def receive_frameset(frames)
+          if self.heartbeats_enabled?
+            # treat incoming traffic as heartbeats.
+            # this operation is pretty expensive under heavy traffic but heartbeats can be disabled
+            # (and are also disabled by default). MK.
+            @last_server_heartbeat = Time.now
+          end
           frame = frames.first
 
-          if Protocol::HeartbeatFrame === frame
-            @last_server_heartbeat = Time.now
+          if AMQ::Protocol::HeartbeatFrame === frame
+            # no-op
           else
             if callable = AMQ::Client::HandlersRegistry.find(frame.method_class)
               f = frames.shift
@@ -555,7 +567,7 @@ module AMQ
         # Sends a heartbeat frame if connection is open.
         # @api plugin
         def send_heartbeat
-          if tcp_connection_established? && !@handling_skipped_hearbeats
+          if tcp_connection_established? && !@handling_skipped_hearbeats && @last_server_heartbeat
             if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2)) && !reconnecting?
               logger.error "[amqp] Detected missing server heartbeats"
               self.handle_skipped_hearbeats
