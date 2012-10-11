@@ -412,7 +412,13 @@ module AMQ
         # @private
         def handle_close(channel_close)
           self.status = :closed
+          # Confirm closing the channel so that the broker will actually release all resources.
+          # TODO: channel.close-ok in the Java client takes no arguments. Almost certainly
+          #       this is an issue with our code generator. MK.
+          @connection.send_frame(Protocol::Channel::CloseOk.encode(@id))
+          
           self.connection.clear_frames_on(self.id)
+
           self.exec_callback_yielding_self(:error, channel_close)
 
           self.handle_connection_interruption(channel_close)

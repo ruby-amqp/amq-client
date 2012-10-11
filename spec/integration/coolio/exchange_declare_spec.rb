@@ -34,7 +34,6 @@ describe "AMQ::Client::CoolioClient", "Exchange.Declare", :nojruby => true do
               exchange.declare(true, false, false, false) do
                 @callback_fired = true
               end
-              delayed(0.1) { exchange.delete }
               done(0.5)
             end
           end
