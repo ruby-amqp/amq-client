@@ -65,7 +65,6 @@ describe AMQ::Client::EventMachineClient, "Exchange.Declare" do
               exchange.declare(true, false, false, false) do
                 @callback_fired = true
               end
-              delayed(0.1) { exchange.delete }
               done(0.3)
             end
           end
