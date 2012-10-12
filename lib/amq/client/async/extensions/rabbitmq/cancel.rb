@@ -10,17 +10,17 @@ module AMQ
         module RabbitMQ
           module Basic
             module ConsumerMixin
-              
+
               def on_cancel(&block)
                 self.append_callback(:scancel, &block)
 
                 self
               end # on_cancel(&block)
-              
+
               def handle_cancel(basic_cancel)
                 self.exec_callback(:scancel, basic_cancel)
               end # handle_cancel(basic_cancel)
-              
+
               def self.included receiver
                 receiver.handle(Protocol::Basic::Cancel) do |connection, method_frame|
                   channel      = connection.channels[method_frame.channel]
@@ -31,17 +31,17 @@ module AMQ
                   consumer.handle_cancel(basic_cancel) if consumer
                 end
               end
-              
+
             end # ConsumerMixin
-            
+
             module QueueMixin
-              
+
               # @api public
               def on_cancel(&block)
                 @default_consumer.on_cancel(&block)
               end # on_cancel(&block)
             end
-            
+
           end # Basic
         end # RabbitMQ
       end # Extensions
