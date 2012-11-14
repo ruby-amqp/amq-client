@@ -133,7 +133,7 @@ module AMQ
         # Acknowledge one or all messages on the channel.
         #
         # @api public
-        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.13.)
+        # @see files.travis-ci.org/docs/amqp/0.9.1/AMQP091Reference.pdf AMQP 0.9.1 protocol reference (Section 1.8.3.13.)
         def acknowledge(delivery_tag, multiple = false)
           @connection.send_frame(Protocol::Basic::Ack.encode(self.id, delivery_tag, multiple))
 
@@ -143,7 +143,7 @@ module AMQ
         # Reject a message with given delivery tag.
         #
         # @api public
-        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.14.)
+        # @see files.travis-ci.org/docs/amqp/0.9.1/AMQP091Reference.pdf AMQP 0.9.1 protocol reference (Section 1.8.3.14.)
         def reject(delivery_tag, requeue = true)
           @connection.send_frame(Protocol::Basic::Reject.encode(self.id, delivery_tag, requeue))
 
@@ -156,7 +156,7 @@ module AMQ
         # @return [Channel]  self
         #
         # @note RabbitMQ as of 2.3.1 does not support basic.recover with requeue = false.
-        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.8.3.16.)
+        # @see files.travis-ci.org/docs/amqp/0.9.1/AMQP091Reference.pdf AMQP 0.9.1 protocol reference (Section 1.8.3.16.)
         # @api public
         def recover(requeue = true, &block)
           @connection.send_frame(Protocol::Basic::Recover.encode(@id, requeue))
@@ -181,7 +181,7 @@ module AMQ
 
           self.redefine_callback :qos, &block
           self
-        end # qos(prefetch_size = 4096, prefetch_count = 32, global = false, &block)
+        end # qos
 
         # Asks the peer to pause or restart the flow of content data sent to a consumer.
         # This is a simple flow­control mechanism that a peer can use to avoid overflowing its
@@ -191,7 +191,7 @@ module AMQ
         #
         # @param [Boolean] active Desired flow state.
         #
-        # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.5.2.3.)
+        # @see files.travis-ci.org/docs/amqp/0.9.1/AMQP091Reference.pdf AMQP 0.9.1 protocol reference (Section 1.5.2.3.)
         # @api public
         def flow(active = false, &block)
           @connection.send_frame(Protocol::Channel::Flow.encode(@id, active))
@@ -412,11 +412,6 @@ module AMQ
         # @private
         def handle_close(channel_close)
           self.status = :closed
-          # Confirm closing the channel so that the broker will actually release all resources.
-          # TODO: channel.close-ok in the Java client takes no arguments. Almost certainly
-          #       this is an issue with our code generator. MK.
-          @connection.send_frame(Protocol::Channel::CloseOk.encode(@id))
-          
           self.connection.clear_frames_on(self.id)
 
           self.exec_callback_yielding_self(:error, channel_close)
