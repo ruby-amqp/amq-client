@@ -142,9 +142,14 @@ module AMQ
         def initialize(*args)
           super(*args)
 
-          # EventMachine 1.0+
-          if self.respond_to?(:set_sock_opt)
-            set_sock_opt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
+          begin
+            # EventMachine 1.0+
+            if self.respond_to?(:set_sock_opt)
+              set_sock_opt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
+            end
+          rescue Errno::EINVAL => e
+            # ignored, when connections fail this exception is raised with very
+            # obscure error messages. Bravo Ruby, bravo EventMachine.
           end
 
           self.logger   = self.class.logger
