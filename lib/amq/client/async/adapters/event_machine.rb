@@ -142,6 +142,11 @@ module AMQ
         def initialize(*args)
           super(*args)
 
+          # EventMachine 1.0+
+          if self.respond_to?(:set_sock_opt)
+            set_sock_opt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
+          end
+
           self.logger   = self.class.logger
 
           # channel => collected frames. MK.
@@ -174,7 +179,6 @@ module AMQ
 
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
-          self.set_sock_opt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
 
           self.initialize_heartbeat_sender if self.heartbeats_enabled?
         end # initialize(*args)
