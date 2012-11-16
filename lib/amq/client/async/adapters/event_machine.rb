@@ -5,8 +5,6 @@ require "amq/client"
 require "amq/client/async/adapter"
 require "amq/client/framing/string/frame"
 
-require "socket"
-
 module AMQ
   module Client
     module Async
@@ -174,7 +172,6 @@ module AMQ
 
           self.reset
           self.set_pending_connect_timeout((@settings[:timeout] || 3).to_f) unless defined?(JRUBY_VERSION)
-          self.set_sock_opt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
 
           self.initialize_heartbeat_sender if self.heartbeats_enabled?
         end # initialize(*args)
