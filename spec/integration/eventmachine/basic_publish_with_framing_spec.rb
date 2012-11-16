@@ -10,7 +10,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
   default_timeout 21.0
 
   context "when message size exceeds negotiated frame size" do
-    let(:message) { "z" * 1024 * 1024 * 8 }
+    let(:message) { "z" * 1024 * 1024 * 2 }
 
     it "correctly frames things" do
       @received_messages = []
