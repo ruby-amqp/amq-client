@@ -608,14 +608,13 @@ module AMQ
         #
         # @api plugin
         # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
-        def handle_tune(tune_ok)
-          @channel_max        = tune_ok.channel_max.freeze
-          @frame_max          = tune_ok.frame_max.freeze
-          @heartbeat_interval = if tune_ok.heartbeat > 0
-                                  tune_ok.heartbeat
-                                else
-                                  @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
-                                end
+        def handle_tune(connection_tune)
+          @channel_max        = connection_tune.channel_max.freeze
+          @frame_max          = connection_tune.frame_max.freeze
+
+          client_heartbeat    = @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
+
+          @heartbeat_interval = negotiate_heartbeat_value(client_heartbeat, connection_tune.heartbeat)
 
           self.send_frame(Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval))
         end # handle_tune(method)
@@ -655,6 +654,14 @@ module AMQ
 
 
         protected
+
+        def negotiate_heartbeat_value(client_value, server_value)
+          if client_value == 0 || server_value == 0
+            [client_value, server_value].max
+          else
+            [client_value, server_value].min
+          end
+        end
 
         # Returns next frame from buffer whenever possible
         #
