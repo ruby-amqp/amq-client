@@ -274,13 +274,13 @@ module AMQ
         # @return  [Fixnum]  Heartbeat interval this client uses, in seconds.
         # @see http://bit.ly/amqp091reference AMQP 0.9.1 protocol reference (Section 1.4.2.6)
         def heartbeat_interval
-          @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
+          @heartbeat_interval
         end # heartbeat_interval
 
         # Returns true if heartbeats are enabled (heartbeat interval is greater than 0)
         # @return [Boolean]
         def heartbeats_enabled?
-          self.heartbeat_interval > 0
+          @heartbeat_interval && (@heartbeat_interval > 0)
         end
 
 
@@ -611,7 +611,11 @@ module AMQ
         def handle_tune(tune_ok)
           @channel_max        = tune_ok.channel_max.freeze
           @frame_max          = tune_ok.frame_max.freeze
-          @heartbeat_interval = self.heartbeat_interval || tune_ok.heartbeat
+          @heartbeat_interval = if tune_ok.heartbeat > 0
+                                  tune_ok.heartbeat
+                                else
+                                  @settings[:heartbeat] || @settings[:heartbeat_interval] || 0
+                                end
 
           self.send_frame(Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval))
         end # handle_tune(method)
