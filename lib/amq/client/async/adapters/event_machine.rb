@@ -33,8 +33,7 @@ module AMQ
         # @option settings [String] :pass ("guest") Password to use for authentication.
         # @option settings [String] :ssl (false) Should be use TLS (SSL) for connection?
         # @option settings [String] :timeout (nil) Connection timeout.
-        # @option settings [String] :logging (false) Turns logging on or off.
-        # @option settings [String] :broker (nil) Broker name (use if you intend to use broker-specific features).
+        # @option settings [Fixnum] :heartbeat (0) Connection heartbeat, in seconds.
         # @option settings [Fixnum] :frame_max (131072) Maximum frame size to use. If broker cannot support frames this large, broker's maximum value will be used instead.
         #
         # @param [Hash] settings
