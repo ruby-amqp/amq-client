@@ -267,7 +267,7 @@ module AMQ
           @handling_skipped_hearbeats        = false
           @last_server_heartbeat             = Time.now
 
-          self.initialize_heartbeat_sender if self.heartbeat_interval > 0
+          self.initialize_heartbeat_sender if heartbeats_enabled?
 
           self.handshake
         end
