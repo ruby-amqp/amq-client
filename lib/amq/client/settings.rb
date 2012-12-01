@@ -51,7 +51,7 @@ module AMQ
         :information  => "http://github.com/ruby-amqp/amq-client",
         :version      => AMQ::Client::VERSION
       }
-      
+
       def self.client_properties
         @client_properties ||= CLIENT_PROPERTIES
       end
