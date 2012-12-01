@@ -8,7 +8,7 @@ module AMQ
     # backwards compatibility
     # @private
     Extensions = Async::Extensions unless defined?(Extensions)
-    
+
     module Settings
       CLIENT_PROPERTIES[:capabilities] ||= {}
       CLIENT_PROPERTIES[:capabilities][:consumer_cancel_notify] = true
