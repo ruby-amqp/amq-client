@@ -2,7 +2,7 @@
 
 require "amq/client/async/extensions/rabbitmq/cancel"
 
-# Basic.Nack
+# Basic.Cancel
 module AMQ
   module Client
     # backwards compatibility
