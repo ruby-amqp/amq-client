@@ -26,14 +26,14 @@ describe "AMQ::Client::CoolioClient", "Basic.Return", :nojruby => true do
           end
 
           messages.each do |message|
-            exchange.publish(message, AMQ::Protocol::EMPTY_STRING, {}, false, false)
+            exchange.publish(message, AMQ::Protocol::EMPTY_STRING, {}, true, false)
           end
         end
 
         done(0.6) { @returned_messages.size == messages.size }
       end
 
-      @returned_messages.should == ["NO_CONSUMERS"] * messages.size
+      @returned_messages.should == ["NO_ROUTE"] * messages.size
     end
   end
 end
