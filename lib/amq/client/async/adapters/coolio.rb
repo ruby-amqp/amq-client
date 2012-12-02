@@ -275,6 +275,10 @@ module AMQ
           AMQ::Client::TCPConnectionFailed
         end # self.tcp_connection_failure_exception_class
 
+        def initialize_heartbeat_sender
+          # TODO
+        end
+
         def handle_skipped_hearbeats
           # TODO
         end
