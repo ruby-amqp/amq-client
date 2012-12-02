@@ -15,7 +15,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Return" do
       em_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
-          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
+          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, false)
           # need to delete the queue manually because we don't start consumption,
           # hence, no auto-delete
           delayed(0.4) { queue.delete }
