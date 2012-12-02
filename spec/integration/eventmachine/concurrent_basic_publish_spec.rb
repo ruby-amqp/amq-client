@@ -57,7 +57,7 @@ if mri?
                 30.times do
                   Thread.new do
                     messages.each do |message|
-                      exchange.publish(message, queue.name, {}, false, true)
+                      exchange.publish(message, queue.name, {}, false, false)
                     end
                   end
                 end

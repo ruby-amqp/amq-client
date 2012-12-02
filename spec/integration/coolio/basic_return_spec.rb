@@ -15,7 +15,7 @@ describe "AMQ::Client::CoolioClient", "Basic.Return", :nojruby => true do
       coolio_amqp_connect do |client|
         channel = AMQ::Client::Channel.new(client, 1)
         channel.open do
-          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, true)
+          queue = AMQ::Client::Queue.new(client, channel).declare(false, false, false, false)
 
           # need to delete the queue manually because we don't start consumption,
           # hence, no auto-delete
@@ -26,7 +26,7 @@ describe "AMQ::Client::CoolioClient", "Basic.Return", :nojruby => true do
           end
 
           messages.each do |message|
-            exchange.publish(message, AMQ::Protocol::EMPTY_STRING, {}, false, true)
+            exchange.publish(message, AMQ::Protocol::EMPTY_STRING, {}, false, false)
           end
         end
 
