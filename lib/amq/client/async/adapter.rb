@@ -617,6 +617,7 @@ module AMQ
           @heartbeat_interval = negotiate_heartbeat_value(client_heartbeat, connection_tune.heartbeat)
 
           self.send_frame(Protocol::Connection::TuneOk.encode(@channel_max, [settings[:frame_max], @frame_max].min, @heartbeat_interval))
+          self.initialize_heartbeat_sender if heartbeats_enabled?
         end # handle_tune(method)
 
 
