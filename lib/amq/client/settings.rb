@@ -23,9 +23,10 @@ module AMQ
           :port  => AMQ::Protocol::DEFAULT_PORT,
 
           # login
-          :user  => "guest",
-          :pass  => "guest",
-          :vhost => "/",
+          :user           => "guest",
+          :pass           => "guest",
+          :auth_mechanism => "PLAIN",
+          :vhost          => "/",
 
           # connection timeout
           :timeout => nil,
