@@ -31,6 +31,7 @@ module AMQ
         # @option settings [String] :vhost ("/") Virtual host to use.
         # @option settings [String] :user ("guest") Username to use for authentication.
         # @option settings [String] :pass ("guest") Password to use for authentication.
+        # @optoin settings [String] :auth_mechanism ("PLAIN") SASL authentication mechanism to use.
         # @option settings [String] :ssl (false) Should be use TLS (SSL) for connection?
         # @option settings [String] :timeout (nil) Connection timeout.
         # @option settings [Fixnum] :heartbeat (0) Connection heartbeat, in seconds.
