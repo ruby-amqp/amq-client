@@ -163,7 +163,7 @@ module AMQ
             raise self.class.authentication_failure_exception_class.new(settings)
           }
 
-          @mechanism         = "PLAIN"
+          @mechanism         = @settings.fetch(:auth_mechanism, "PLAIN")
           @locale            = @settings.fetch(:locale, "en_GB")
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 
