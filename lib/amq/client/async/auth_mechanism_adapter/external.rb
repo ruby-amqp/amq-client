@@ -4,7 +4,7 @@ module AMQ::Client::Async
 
   # Manages the encoding of credentials for the EXTERNAL authentication
   # mechanism.
-  class AuthMechanismHelper::External < AuthMechanismHelper
+  class AuthMechanismAdapter::External < AuthMechanismAdapter
 
     auth_mechanism "EXTERNAL"
 

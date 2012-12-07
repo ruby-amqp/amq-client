@@ -5,22 +5,22 @@ module AMQ::Client::Async
   # EXTERNAL are provided by this gem. In order to implement a new
   # authentication mechanism, create a subclass like so:
   #
-  #   class MyAuthMechanism < AMQ::Client::Async::AuthMechanismHelper
+  #   class MyAuthMechanism < AMQ::Client::Async::AuthMechanismAdapter
   #     auth_mechanism "X-MYAUTH"
   #
   #     def encode_credentials(username, password)
   #       # ...
   #     end
   #   end
-  class AuthMechanismHelper
+  class AuthMechanismAdapter
 
-    # Find and instantiate an AuthMechanismHelper.
+    # Find and instantiate an AuthMechanismAdapter.
     #
     # @param [Adapter] adapter The Adapter for which to encode credentials.
-    # @return [AuthMechanismHelper] An AuthMechanismHelper that can encode
+    # @return [AuthMechanismAdapter] An AuthMechanismAdapter that can encode
     #   credentials for the Adapter.
     # @raise [NotImplementedError] The Adapter's mechanism does not
-    #   correspond to any known AuthMechanismHelper.
+    #   correspond to any known AuthMechanismAdapter.
     def self.for_adapter(adapter)
       registry[adapter.mechanism].new adapter
     end
@@ -28,7 +28,7 @@ module AMQ::Client::Async
     protected
 
       # Used by subclasses to declare the mechanisms that an
-      # AuthMechanismHelper understands.
+      # AuthMechanismAdapter understands.
       #
       # @param [Array<String>] mechanisms One or more mechanisms that can be
       #   handled by the subclass.
@@ -38,7 +38,7 @@ module AMQ::Client::Async
 
     private
 
-      # Accesses the registry of AuthMechanismHelper subclasses. Keys in
+      # Accesses the registry of AuthMechanismAdapter subclasses. Keys in
       # this hash are the names of the authentication mechanisms; values are
       # the classes that handle them. Referencing an unknown mechanism from
       # this Hash will raise NotImplementedError.
@@ -48,12 +48,12 @@ module AMQ::Client::Async
 
     public
 
-      # The Adapter that this AuthMechanismHelper operates on behalf of.
+      # The Adapter that this AuthMechanismAdapter operates on behalf of.
       attr_reader :adapter
 
     private
 
-      # Create a new AuthMechanismHelper. Users of this class should instead
+      # Create a new AuthMechanismAdapter. Users of this class should instead
       # retrieve an instance through for_adapter.
       def initialize(adapter)
         @adapter = adapter

@@ -2,7 +2,7 @@
 
 require "amq/client/logging"
 require "amq/client/settings"
-require "amq/client/async/auth_mechanism_helper"
+require "amq/client/async/auth_mechanism_adapter"
 require "amq/client/async/entity"
 require "amq/client/async/channel"
 
@@ -510,15 +510,15 @@ module AMQ
         # @api plugin
         # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
         def encode_credentials(username, password)
-          auth_mechanism_helper.encode_credentials(username, password)
+          auth_mechanism_adapter.encode_credentials(username, password)
         end # encode_credentials(username, password)
 
-        # Retrieves an AuthMechanismHelper that will encode credentials for this
-        # Adapter.
+        # Retrieves an AuthMechanismAdapter that will encode credentials for
+        # this Adapter.
         #
         # @api plugin
-        def auth_mechanism_helper
-          @auth_mechanism_helper ||= AuthMechanismHelper.for_adapter(self)
+        def auth_mechanism_adapter
+          @auth_mechanism_adapter ||= AuthMechanismAdapter.for_adapter(self)
         end
 
 
