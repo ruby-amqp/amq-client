@@ -31,6 +31,7 @@ module AMQ
         # @option settings [String] :vhost ("/") Virtual host to use.
         # @option settings [String] :user ("guest") Username to use for authentication.
         # @option settings [String] :pass ("guest") Password to use for authentication.
+        # @option settings [String] :auth_mechanism ("PLAIN") SASL authentication mechanism to use.
         # @option settings [String] :ssl (false) Should be use TLS (SSL) for connection?
         # @option settings [String] :timeout (nil) Connection timeout.
         # @option settings [String] :logging (false) Turns logging on or off.
@@ -164,7 +165,7 @@ module AMQ
             raise self.class.authentication_failure_exception_class.new(settings)
           }
 
-          @mechanism         = "PLAIN"
+          @mechanism         = @settings.fetch(:auth_mechanism, "PLAIN")
           @locale            = @settings.fetch(:locale, "en_GB")
           @client_properties = Settings.client_properties.merge(@settings.fetch(:client_properties, Hash.new))
 

@@ -2,6 +2,7 @@
 
 require "amq/client/logging"
 require "amq/client/settings"
+require "amq/client/async/auth_mechanism_adapter"
 require "amq/client/async/entity"
 require "amq/client/async/channel"
 
@@ -509,8 +510,16 @@ module AMQ
         # @api plugin
         # @see http://tools.ietf.org/rfc/rfc2595.txt RFC 2595
         def encode_credentials(username, password)
-          "\0#{username}\0#{password}"
+          auth_mechanism_adapter.encode_credentials(username, password)
         end # encode_credentials(username, password)
+
+        # Retrieves an AuthMechanismAdapter that will encode credentials for
+        # this Adapter.
+        #
+        # @api plugin
+        def auth_mechanism_adapter
+          @auth_mechanism_adapter ||= AuthMechanismAdapter.for_adapter(self)
+        end
 
 
         # Processes a single frame.
@@ -600,7 +609,7 @@ module AMQ
           # @status undefined. So lets do this. MK.
           opening!
 
-          self.send_frame(Protocol::Connection::StartOk.encode(@client_properties, @mechanism, self.encode_credentials(username, password), @locale))
+          self.send_frame(Protocol::Connection::StartOk.encode(@client_properties, mechanism, self.encode_credentials(username, password), @locale))
         end
 
 

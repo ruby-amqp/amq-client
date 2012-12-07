@@ -1,11 +1,13 @@
-/*.gem
+bin/*
 .bundle
-vendor/bundle
-.yardoc/*
 doc/*
-.rvmrc
+/*.gem
 # see http://bit.ly/h2WJPm for reasoning
 Gemfile.lock
-vendor
+.rbenv-gemsets
+.rbenv-version
 .rbx/*
-bin/*
+.rvmrc
+vendor
+vendor/bundle
+.yardoc/*
