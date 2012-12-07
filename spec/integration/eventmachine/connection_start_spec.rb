@@ -19,14 +19,14 @@ describe AMQ::Client::EventMachineClient, "Connection.Start" do
 
   it "uses PLAIN authentication when explicitly set" do
     em do
-      AMQ::Client::EventMachineClient.new(0, auth_mechanism: "PLAIN").mechanism.should eq "PLAIN"
+      AMQ::Client::EventMachineClient.new(0, :auth_mechanism => "PLAIN").mechanism.should eq "PLAIN"
       done
     end
   end
 
   it "properly encodes username and password for PLAIN authentication" do
     em do
-      client = AMQ::Client::EventMachineClient.new 0, auth_mechanism: "PLAIN"
+      client = AMQ::Client::EventMachineClient.new 0, :auth_mechanism => "PLAIN"
       client.encode_credentials("user", "pass").should eq "\0user\0pass"
       done
     end
@@ -34,21 +34,21 @@ describe AMQ::Client::EventMachineClient, "Connection.Start" do
 
   it "uses EXTERNAL authentication when explicitly set" do
     em do
-      AMQ::Client::EventMachineClient.new(0, auth_mechanism: "EXTERNAL").mechanism.should eq "EXTERNAL"
+      AMQ::Client::EventMachineClient.new(0, :auth_mechanism => "EXTERNAL").mechanism.should eq "EXTERNAL"
       done
     end
   end
 
   it "skips encoding username and password for EXTERNAL authentication" do
     em do
-      client = AMQ::Client::EventMachineClient.new 0, auth_mechanism: "EXTERNAL"
+      client = AMQ::Client::EventMachineClient.new 0, :auth_mechanism => "EXTERNAL"
       client.encode_credentials("user", "pass").should eq ""
       done
     end
   end
 
   it "allows user-defined authentication mechanisms" do
-    Class.new AMQ::Client::Async::AuthMechanismHelper do
+    Class.new AMQ::Client::Async::AuthMechanismAdapter do
       auth_mechanism "FOO"
 
       def encode_credentials(username, password)
@@ -57,7 +57,7 @@ describe AMQ::Client::EventMachineClient, "Connection.Start" do
     end
 
     em do
-      client = AMQ::Client::EventMachineClient.new 0, auth_mechanism: "FOO"
+      client = AMQ::Client::EventMachineClient.new 0, :auth_mechanism => "FOO"
       client.encode_credentials("user", "pass").should eq "foo"
       done
     end
@@ -65,7 +65,7 @@ describe AMQ::Client::EventMachineClient, "Connection.Start" do
 
   it "fails for unimplemented authentication mechanisms" do
     em do
-      client = AMQ::Client::EventMachineClient.new 0, auth_mechanism: "BAR"
+      client = AMQ::Client::EventMachineClient.new 0, :auth_mechanism => "BAR"
       expect do
         client.encode_credentials("user", "pass")
       end.to raise_error(NotImplementedError)

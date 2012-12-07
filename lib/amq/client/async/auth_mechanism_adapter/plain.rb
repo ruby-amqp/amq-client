@@ -4,7 +4,7 @@ module AMQ::Client::Async
 
   # Manages the encoding of credentials for the PLAIN authentication
   # mechanism.
-  class AuthMechanismHelper::Plain < AuthMechanismHelper
+  class AuthMechanismAdapter::Plain < AuthMechanismAdapter
 
     auth_mechanism "PLAIN"
 
