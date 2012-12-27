@@ -7,4 +7,3 @@ module AMQ
     Queue = Async::Queue
   end
 end
-      
