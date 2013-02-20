@@ -352,7 +352,7 @@ module AMQ
         def handle_skipped_hearbeats
           if !@handling_skipped_hearbeats && @tcp_connection_established && !@intentionally_closing_connection
             @handling_skipped_hearbeats = true
-            @heartbeats_timer.cancel
+            self.cancel_heartbeat_sender
 
             self.run_skipped_heartbeats_callbacks
           end
@@ -362,6 +362,11 @@ module AMQ
         def initialize_heartbeat_sender
           @last_server_heartbeat = Time.now
           @heartbeats_timer      = EventMachine::PeriodicTimer.new(self.heartbeat_interval, &method(:send_heartbeat))
+        end
+
+        # @private
+        def cancel_heartbeat_sender
+          @heartbeats_timer.cancel
         end
 
 
