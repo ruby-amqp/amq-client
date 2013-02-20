@@ -367,7 +367,7 @@ module AMQ
 
         # @private
         def cancel_heartbeat_sender
-          @heartbeats_timer.cancel
+          @heartbeats_timer.cancel if @heartbeats_timer
         end
 
 
