@@ -369,6 +369,8 @@ module AMQ
         # @private
         # @api plugin
         def handle_connection_interruption
+          self.cancel_heartbeat_sender
+
           @channels.each { |n, c| c.handle_connection_interruption }
           self.exec_callback_yielding_self(:after_connection_interruption)
         end # handle_connection_interruption
