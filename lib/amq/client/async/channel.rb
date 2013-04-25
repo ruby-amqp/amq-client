@@ -415,8 +415,6 @@ module AMQ
           self.connection.clear_frames_on(self.id)
 
           self.exec_callback_yielding_self(:error, channel_close)
-
-          self.handle_connection_interruption(channel_close)
         end
 
 
