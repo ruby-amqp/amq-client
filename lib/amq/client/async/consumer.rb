@@ -61,6 +61,7 @@ module AMQ
 
 
         def consume(nowait = false, &block)
+          puts "About to send basic.consume"
           @connection.send_frame(Protocol::Basic::Consume.encode(@channel.id, @queue.name, @consumer_tag, @no_local, @no_ack, @exclusive, nowait, @arguments))
           self.redefine_callback(:consume, &block)
 
@@ -193,6 +194,9 @@ module AMQ
         # @endgroup
 
 
+        def to_s
+          "#<#{self.class.name}> @consumer_tag=#{@consumer_tag} @queue=#{@queue.name} @channel=#{@channel.id}"
+        end
 
 
         #
