@@ -43,7 +43,7 @@ describe AMQ::Client::EventMachineClient, "Basic.Publish" do
 
           delayed(15.0) {
             # we don't care about the exact number, just the fact that there are
-            # no UNEXPECTED_FRAME connection-level exceptions. MK.
+            # no framing-related connection-level exceptions. MK.
             @received_messages.size.should > 10
             @received_messages.all? {|m| m == message}.should be_true
 
