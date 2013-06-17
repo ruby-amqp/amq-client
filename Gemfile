@@ -30,14 +30,11 @@ group :development do
   gem "yard"
   # yard tags this buddy along
   gem "RedCloth", :platform => :mri
-
-  gem "nake",          :platform => :ruby_19
-  # excludes Windows and JRuby
-  gem "perftools.rb",  :platform => :mri
 end
 
 group :test do
-  gem "rspec", ">= 2.6.0"
+  gem "rake",  ">= 10.0.3"
+  gem "rspec", ">= 2.13.0"
   gem "evented-spec", :git => "git://github.com/ruby-amqp/evented-spec.git", :branch => "master"
   gem "effin_utf8"
 
