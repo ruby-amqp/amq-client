@@ -115,7 +115,7 @@ module AMQ
           @auto_delete = auto_delete
           @arguments   = arguments
 
-          nowait = true if !block && !@name.empty?
+          nowait = true if !block && !@name.empty? && nowait.nil?
           @connection.send_frame(Protocol::Queue::Declare.encode(@channel.id, @name, passive, durable, exclusive, auto_delete, nowait, arguments))
 
           if !nowait

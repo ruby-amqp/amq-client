@@ -193,6 +193,9 @@ module AMQ
         # @endgroup
 
 
+        def to_s
+          "#<#{self.class.name} @consumer_tag=#{@consumer_tag} @queue=#{@queue.name} @channel=#{@channel.id}>"
+        end
 
 
         #
