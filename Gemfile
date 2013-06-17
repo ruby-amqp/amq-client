@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-source :rubygems
+source "https://rubygems.org"
 
 # Use local clones if possible.
 # If you want to use your local copy, just symlink it to vendor.
@@ -20,7 +20,7 @@ extend Module.new {
   end
 }
 
-gem "eventmachine"
+gem "eventmachine", ">= 1.0.0"
 # cool.io uses iobuffer that won't compile on JRuby
 # (and, probably, Windows)
 gem "cool.io", :platform => :ruby
