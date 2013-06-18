@@ -290,6 +290,14 @@ module AMQ
           @blocked
         end
 
+        def on_blocked(&block)
+          redefine_callback(:blocked, &block)
+        end
+
+        def on_unblocked(&block)
+          redefine_callback(:unblocked, &block)
+        end
+
 
         # vhost this connection uses. Default is "/", a historically estabilished convention
         # of RabbitMQ and amqp gem.
@@ -654,13 +662,17 @@ module AMQ
         # @api plugin
         def handle_blocked(connection_blocked)
           @blocked = true
+
+          exec_callback_yielding_self(:blocked, connection_blocked)
         end
 
         # Handles Connection.Unblocked.
         #
         # @api plugin
-        def handle_unblocked(_)
+        def handle_unblocked(connection_unblocked)
           @blocked = false
+
+          exec_callback_yielding_self(:unblocked, connection_unblocked)
         end
 
 
