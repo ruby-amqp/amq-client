@@ -50,7 +50,17 @@ module AMQ
         :platform     => ::RUBY_DESCRIPTION,
         :product      => "AMQ Client",
         :information  => "http://github.com/ruby-amqp/amq-client",
-        :version      => AMQ::Client::VERSION
+        :version      => AMQ::Client::VERSION,
+        :capabilities => {
+          # once we roll extensions into the core (like with Bunny),
+          # these need to be re-enabled. MK.
+          #
+          # :publisher_confirms         => true,
+          # :consumer_cancel_notify     => true,
+          # :exchange_exchange_bindings => true,
+          # :"basic.nack"               => true,
+          :"connection.blocked"       => true
+        }
       }
 
       def self.client_properties
