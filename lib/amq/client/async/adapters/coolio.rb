@@ -235,6 +235,15 @@ module AMQ
           connection.handle_close_ok(frame.decode_payload)
         end
 
+        # RabbitMQ bug 25191
+        # requires RabbitMQ 3.2. MK.
+        self.handle(Protocol::Connection::Blocked) do |connection, frame|
+          connection.handle_blocked(frame.decode_payload)
+        end
+
+        self.handle(Protocol::Connection::Unblocked) do |connection, frame|
+          connection.handle_unblocked(frame.decode_payload)
+        end
 
 
 

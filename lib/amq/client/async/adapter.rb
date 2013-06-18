@@ -285,6 +285,12 @@ module AMQ
         end
 
 
+        # @return [Boolean] true when the connection is blocked because RabbitMQ is running low on RAM, disk or other resource; false otherwise
+        def blocked?
+          @blocked
+        end
+
+
         # vhost this connection uses. Default is "/", a historically estabilished convention
         # of RabbitMQ and amqp gem.
         #
@@ -641,6 +647,20 @@ module AMQ
 
           opened!
           self.connection_successful if self.respond_to?(:connection_successful)
+        end
+
+        # Handles Connection.Blocked.
+        #
+        # @api plugin
+        def handle_blocked(connection_blocked)
+          @blocked = true
+        end
+
+        # Handles Connection.Unblocked.
+        #
+        # @api plugin
+        def handle_unblocked(_)
+          @blocked = false
         end
 
 
