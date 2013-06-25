@@ -97,6 +97,17 @@ module AMQ
         end # cancel(nowait = false, &block)
 
 
+        def on_cancel(&block)
+          self.append_callback(:scancel, &block)
+
+          self
+        end # on_cancel(&block)
+
+        def handle_cancel(basic_cancel)
+          self.exec_callback(:scancel, basic_cancel)
+        end # handle_cancel(basic_cancel)
+
+
 
         def on_delivery(&block)
           self.append_callback(:delivery, &block)
@@ -270,6 +281,15 @@ module AMQ
         def unregister_with_queue
           @queue.consumers.delete(@consumer_tag)
         end # register_with_queue
+
+        handle(Protocol::Basic::Cancel) do |connection, method_frame|
+          channel      = connection.channels[method_frame.channel]
+          basic_cancel = method_frame.decode_payload
+          consumer     = channel.consumers[basic_cancel.consumer_tag]
+
+          # Handle the delivery only if the consumer still exists.
+          consumer.handle_cancel(basic_cancel) if consumer
+        end
       end # Consumer
     end # Async
   end # Client
