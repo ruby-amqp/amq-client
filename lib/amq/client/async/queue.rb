@@ -280,6 +280,11 @@ module AMQ
           self
         end # cancel(&block)
 
+        # @api public
+        def on_cancel(&block)
+          @default_consumer.on_cancel(&block)
+        end # on_cancel(&block)
+
         # @endgroup
 
 
