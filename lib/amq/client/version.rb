@@ -2,6 +2,6 @@
 
 module AMQ
   module Client
-    VERSION = "1.1.0.pre1"
+    VERSION = "1.1.0.pre2wip"
   end
 end
