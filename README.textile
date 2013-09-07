@@ -1,5 +1,11 @@
 h2. About amq-client
 
-This project is **DEPRECATED**.
+This project is **no longer actively developed**.
 
-All the relevant functionality will be merged into future amqp gem versions.
+It used to back "amqp gem":http://rubyamqp.info All the relevant functionality has
+now been merged into amqp gem. This library should only be used by projects that
+have really good reasons to do so.
+
+If you are looking for a good Ruby RabbitMQ client, consider "Bunny":http://rubybunny.info
+or "HotBunnies":http://hotbunnies.info.
+
