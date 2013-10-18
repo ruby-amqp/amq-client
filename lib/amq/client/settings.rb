@@ -136,7 +136,7 @@ module AMQ
       # @see http://bit.ly/ks8MXK Connecting to The Broker documentation guide
       # @api public
       def self.parse_amqp_url(connection_string)
-        uri = URI.parse(connection_string)
+        uri = ::URI.parse(connection_string)
         raise ArgumentError.new("Connection URI must use amqp or amqps schema (example: amqp://bus.megacorp.internal:5766), learn more at http://bit.ly/ks8MXK") unless %w{amqp amqps}.include?(uri.scheme)
 
         opts = {}
